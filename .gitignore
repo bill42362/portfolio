@@ -1,10 +1,12 @@
-# package directories
+# yarn
+yarn-error.log
 node_modules
+.yarn-cache
 
 # editor
 *.swp
 
-.patch # git patch file
+*.patch
 *.log
 *.DS_Store
 *backup*

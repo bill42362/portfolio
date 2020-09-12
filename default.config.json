@@ -1,0 +1,5 @@
+{
+  "NODE_ENV": "develop",
+  "SERVER_SIDE_RENDER": true,
+  "SERVICE_WORKER_FILENAME": "portfolio-service-worker"
+}
