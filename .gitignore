@@ -1,0 +1,19 @@
+# package directories
+node_modules
+
+# editor
+*.swp
+
+.patch # git patch file
+*.log
+*.DS_Store
+*backup*
+*config.json
+config.json
+!default.config.json
+!dev.config.json
+!production.config.json
+dist
+*.crt
+*.key
+*.pem
