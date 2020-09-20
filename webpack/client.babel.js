@@ -25,17 +25,23 @@ const devPlugins = [
 const prodPlugins = [
 ];
 
-// hot middleware
 export const hmrConfig = {
   path: '/__webpack_hmr',
   timeout: 20000,
   reload: true,
-  logLevel: 'warn',
-  // eslint-disable-next-line no-console
-  log: console.log,
+  logLevel: 'error',
   heartbeat: 10 * 1000,
+  clientLogLevel: 'silent',
+  noInfo: true,
+  quiet: true,
+  state: 'errors-only',
+  overlay: false,
+  compress: true,
 };
-const hotMiddlewareScript = `webpack-hot-middleware/client?path=${hmrConfig.path}&timeout=${hmrConfig.timeout}&reload=${hmrConfig.reload}`;
+
+// https://github.com/webpack-contrib/webpack-hot-middleware#client
+const hmrSearch = new URLSearchParams(hmrConfig);
+const hotMiddlewareScript = `webpack-hot-middleware/client?${hmrSearch.toString()}`;
 
 const bundle = ['./src/client/js/index.js'];
 const devBundle = [hotMiddlewareScript];

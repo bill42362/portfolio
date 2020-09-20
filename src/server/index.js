@@ -30,12 +30,13 @@ const createDevelopClientSideRender = app => {
   const webpackHotMiddleware = require('webpack-hot-middleware');
   const {
     default: clientConfig,
-    hmrConfig: { logLevel, log, path, heartbeat },
+    hmrConfig,
   } = require('../../webpack/client.babel.js');
 
   const devOptions = {
-    logLevel,
+    ...hmrConfig,
     publicPath: clientConfig.output.publicPath,
+    log: console.log,
     headers: {
       'Service-Worker-Allowed': '/',
     },
@@ -45,11 +46,10 @@ const createDevelopClientSideRender = app => {
     //   colors: true,
     // },
   };
-  const hotOptions = { log, path, heartbeat };
 
   const compiler = webpack(clientConfig);
   app.use(webpackDevMiddleware(compiler, devOptions));
-  app.use(webpackHotMiddleware(compiler, hotOptions));
+  app.use(webpackHotMiddleware(compiler, devOptions));
 
   const jsTags = '<script type=text/javascript src=/js/bundle.js></script>';
   const html = renderHtml({ jsTags });
