@@ -9,6 +9,7 @@
   },
   "license": "MIT",
   "scripts": {
+    "build": "NODE_OPTIONS='--max-old-space-size=8192' webpack --config webpack/client.babel.js",
     "start": "yarn build && node dist/server",
     "devserver": "babel-node --max-old-space-size=8192 src/server",
     "devstart": "yarn mkcert && HTTPS=true yarn devserver",
@@ -21,14 +22,24 @@
     "helmet": "^4.1.1",
     "html-minifier": "^4.0.0",
     "react": "^16.13.1",
-    "react-dom": "^16.13.1",
+    "react-dom": "npm:@hot-loader/react-dom",
+    "react-helmet": "^6.1.0",
+    "react-hot-loader": "^4.12.21",
     "redux": "^4.0.5",
-    "redux-thunk": "^2.3.0"
+    "redux-thunk": "^2.3.0",
+    "styled-components": "^5.2.0",
+    "styled-normalize": "^8.0.7"
   },
   "devDependencies": {
     "@babel/core": "^7.10.4",
     "@babel/node": "^7.10.4",
     "@babel/preset-env": "^7.10.4",
-    "@babel/preset-react": "^7.10.4"
+    "@babel/preset-react": "^7.10.4",
+    "babel-loader": "^8.1.0",
+    "terser-webpack-plugin": "^4.2.2",
+    "webpack": "^4.44.2",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-middleware": "^3.7.2",
+    "webpack-hot-middleware": "^2.25.0"
   }
 }

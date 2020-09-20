@@ -24,19 +24,35 @@ const minifyConfig = {
  * @param {Express.Express} app
  * @return Express.Express
  */
-function createDevelopClientSideRender(app) {
-  // this `__dirname` will be `src/server`.
-  app.use(
-    '/js',
-    ExpressStaticGzip(`${__dirname}/../client/js`, {
-      enableBrotli: true,
-      orderPreference: ['br'],
-      index: false,
-    })
-  );
+const createDevelopClientSideRender = app => {
+  const webpack = require('webpack');
+  const webpackDevMiddleware = require('webpack-dev-middleware');
+  const webpackHotMiddleware = require('webpack-hot-middleware');
+  const {
+    default: clientConfig,
+    hmrConfig: { logLevel, log, path, heartbeat },
+  } = require('../../webpack/client.babel.js');
 
-  // const jsTags = '<script type=text/javascript src=/js/bundle.js></script>';
-  const html = renderHtml();
+  const devOptions = {
+    logLevel,
+    publicPath: clientConfig.output.publicPath,
+    headers: {
+      'Service-Worker-Allowed': '/',
+    },
+    // stats: {
+    //   cachedAssets: false,
+    //   reasons: true,
+    //   colors: true,
+    // },
+  };
+  const hotOptions = { log, path, heartbeat };
+
+  const compiler = webpack(clientConfig);
+  app.use(webpackDevMiddleware(compiler, devOptions));
+  app.use(webpackHotMiddleware(compiler, hotOptions));
+
+  const jsTags = '<script type=text/javascript src=/js/bundle.js></script>';
+  const html = renderHtml({ jsTags });
   const minifiedHtml = HtmlMinifier.minify(html, minifyConfig);
   app.get(/^[^\.]*$/, (_, response) => response.send(minifiedHtml));
 
@@ -47,7 +63,7 @@ async function createServer() {
   const app = Express();
   app.use(Helmet());
 
-  const server = await createDevelopClientSideRender(app);
+  const server = createDevelopClientSideRender(app);
   return server;
 }
 
