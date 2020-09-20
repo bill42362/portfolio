@@ -14,9 +14,12 @@
     "devstart": "yarn mkcert && HTTPS=true yarn devserver",
     "test": "jest --coverage --config jest/jest.config.js"
   },
-  "homepage": "https://github.com/bill42362/portfolio.git",
+  "homepage": "https://github.com/bill42362/portfolio",
   "dependencies": {
     "express": "^4.16.3",
+    "express-static-gzip": "^2.0.8",
+    "helmet": "^4.1.1",
+    "html-minifier": "^4.0.0",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "redux": "^4.0.5",
