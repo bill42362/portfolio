@@ -9,11 +9,15 @@
   },
   "license": "MIT",
   "scripts": {
-    "build": "NODE_OPTIONS='--max-old-space-size=8192' webpack --config webpack/client.babel.js",
-    "start": "yarn build && node dist/server",
-    "devserver": "babel-node --max-old-space-size=8192 src/server",
+    "clean": "rimraf dist",
     "mkcert": "mkcert -cert-file devserver.crt -key-file devserver.key *.bill42362.net",
+    "devserver": "babel-node --max-old-space-size=8192 src/server",
     "devstart": "yarn mkcert && HTTPS=true yarn devserver",
+    "buildclient": "NODE_OPTIONS='--max-old-space-size=8192' webpack --config webpack/client.babel.js",
+    "buildserver": "NODE_OPTIONS='--max-old-space-size=8192' webpack --config webpack/server.babel.js",
+    "buildhtml": "babel-node src/server/buildHtml.js",
+    "build": "yarn clean && yarn buildclient && yarn buildserver && yarn buildhtml",
+    "start": "yarn build && yarn mkcert; node dist/server",
     "test": "jest --coverage --config jest/jest.config.js"
   },
   "homepage": "https://github.com/bill42362/portfolio",
@@ -22,6 +26,7 @@
     "express-static-gzip": "^2.0.8",
     "helmet": "^4.1.1",
     "html-minifier": "^4.0.0",
+    "morgan": "^1.10.0",
     "react": "^16.13.1",
     "react-dom": "npm:@hot-loader/react-dom",
     "react-helmet": "^6.1.0",
@@ -37,10 +42,14 @@
     "@babel/preset-env": "^7.10.4",
     "@babel/preset-react": "^7.10.4",
     "babel-loader": "^8.1.0",
+    "rimraf": "^3.0.2",
+    "stats-webpack-plugin": "^0.7.0",
     "terser-webpack-plugin": "^4.2.2",
     "webpack": "^4.44.2",
     "webpack-cli": "^3.3.12",
     "webpack-dev-middleware": "^3.7.2",
-    "webpack-hot-middleware": "^2.25.0"
+    "webpack-flush-chunks": "^2.0.3",
+    "webpack-hot-middleware": "^2.25.0",
+    "webpack-node-externals": "^2.5.2"
   }
 }

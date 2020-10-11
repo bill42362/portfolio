@@ -1,25 +1,46 @@
 // index.js
 import fs from 'fs';
 import https from 'https';
+import path from 'path';
 import Express from 'express';
 import Helmet from 'helmet';
 import ExpressStaticGzip from 'express-static-gzip';
 import HtmlMinifier from 'html-minifier';
+import morgan from 'morgan';
 
+import manifestHandler from './manifestHandler.js';
 import renderHtml from './renderHtml.js';
+import minifyHtmlConfig from './minifyHtmlConfig.js';
 
+const isProd = 'production' === process.env.NODE_ENV;
 const PORT = process.env.PORT || 3000;
+const ONE_YEAR_MSEC = 365 * 24 * 60 * 60 * 1000;
 
-const minifyConfig = {
-  collapseWhitespace: true,
-  html5: true,
-  removeAttributeQuotes: true,
-  removeComments: true,
-  removeEmptyAttributes: true,
-  removeRedundantAttributes: true,
-  minifyCSS: true,
-  minifyJS: true,
-};
+/**
+ * Create client side render server for production.
+ * @param {Express.Express} app
+ * @return Express.Express
+ */
+const createProductionClientSideRender = app => {
+  app.get('/manifest*.json', manifestHandler({ relativePath: '../client' }));
+  // this `__dirname` will be `/dist/server`.
+  app.use(
+    ExpressStaticGzip(`${__dirname}/../client`, {
+      enableBrotli: true,
+      orderPreference: ['br'],
+      index: false,
+      serveStatic: {
+        maxAge: ONE_YEAR_MSEC,
+        immutable: true,
+      },
+    })
+  );
+  // both these two line is essential
+  app.use('/', Express.static(`${__dirname}/../client/html`));
+  app.use('/*', Express.static(`${__dirname}/../client/html/index.html`));
+
+  return app;
+}
 
 /**
  * Create client side render server for develop.
@@ -55,7 +76,7 @@ const createDevelopClientSideRender = app => {
 
   const jsTags = '<script type=text/javascript src=/js/bundle.js></script>';
   const html = renderHtml({ jsTags });
-  const minifiedHtml = HtmlMinifier.minify(html, minifyConfig);
+  const minifiedHtml = HtmlMinifier.minify(html, minifyHtmlConfig);
   app.get(/^[^\.]*$/, (_, response) => response.send(minifiedHtml));
 
   return app;
@@ -63,9 +84,17 @@ const createDevelopClientSideRender = app => {
 
 async function createServer() {
   const app = Express();
+  if (process.env.MORGAN) {
+    app.use(morgan(process.env.MORGAN));
+  }
   app.use(Helmet());
 
-  let server = createDevelopClientSideRender(app);
+  let server = null;
+  if (isProd) {
+    server = createProductionClientSideRender(app);
+  } else {
+    server = createDevelopClientSideRender(app);
+  }
 
   if (process.env.HTTPS) {
     server = https.createServer(

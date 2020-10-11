@@ -4,6 +4,7 @@ import {
   HotModuleReplacementPlugin,
   NoEmitOnErrorsPlugin,
 } from 'webpack';
+import StatsPlugin from 'stats-webpack-plugin';
 import TerserWebpackPlugin from 'terser-webpack-plugin';
 
 import EnvConfig from '../config.json';
@@ -23,6 +24,7 @@ const devPlugins = [
   new NoEmitOnErrorsPlugin(),
 ];
 const prodPlugins = [
+  new StatsPlugin('stats.json'),
 ];
 
 export const hmrConfig = {
