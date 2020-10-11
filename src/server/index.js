@@ -1,4 +1,6 @@
 // index.js
+import fs from 'fs';
+import https from 'https';
 import Express from 'express';
 import Helmet from 'helmet';
 import ExpressStaticGzip from 'express-static-gzip';
@@ -63,7 +65,18 @@ async function createServer() {
   const app = Express();
   app.use(Helmet());
 
-  const server = createDevelopClientSideRender(app);
+  let server = createDevelopClientSideRender(app);
+
+  if (process.env.HTTPS) {
+    server = https.createServer(
+      {
+        key: fs.readFileSync('./devserver.key'),
+        cert: fs.readFileSync('./devserver.crt'),
+      },
+      server
+    );
+  }
+
   return server;
 }
 

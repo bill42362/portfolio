@@ -12,6 +12,7 @@
     "build": "NODE_OPTIONS='--max-old-space-size=8192' webpack --config webpack/client.babel.js",
     "start": "yarn build && node dist/server",
     "devserver": "babel-node --max-old-space-size=8192 src/server",
+    "mkcert": "mkcert -cert-file devserver.crt -key-file devserver.key *.bill42362.net",
     "devstart": "yarn mkcert && HTTPS=true yarn devserver",
     "test": "jest --coverage --config jest/jest.config.js"
   },
