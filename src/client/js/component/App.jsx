@@ -9,6 +9,8 @@ import styled, {
 import styledNormalize from 'styled-normalize';
 import { Helmet } from 'react-helmet';
 
+import XMenLogoSource from '../../img/x-men-school.svg';
+
 const GlobalStyle = createGlobalStyle`
   ${styledNormalize};
   *, ::after, ::before { box-sizing: border-box; }
@@ -62,7 +64,9 @@ const App = () => {
         {/* <meta property="twitter:image" content={twitterImageSource} /> */}
       </Helmet>
       <GlobalStyle />
-      <div>Hello World</div>
+      <div>
+        <img src={XMenLogoSource} title="Xavier school" />
+      </div>
     </>
   );
 };
