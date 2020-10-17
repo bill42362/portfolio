@@ -1,7 +1,6 @@
 // index.js
 import fs from 'fs';
 import https from 'https';
-import path from 'path';
 import Express from 'express';
 import Helmet from 'helmet';
 import ExpressStaticGzip from 'express-static-gzip';
@@ -40,7 +39,7 @@ const createProductionClientSideRender = app => {
   app.use('/*', Express.static(`${__dirname}/../client/html/index.html`));
 
   return app;
-}
+};
 
 /**
  * Create client side render server for develop.
@@ -59,6 +58,7 @@ const createDevelopClientSideRender = app => {
   const devOptions = {
     ...hmrConfig,
     publicPath: clientConfig.output.publicPath,
+    // eslint-disable-next-line no-console
     log: console.log,
     headers: {
       'Service-Worker-Allowed': '/',
@@ -77,10 +77,10 @@ const createDevelopClientSideRender = app => {
   const jsTags = '<script type=text/javascript src=/js/bundle.js></script>';
   const html = renderHtml({ jsTags });
   const minifiedHtml = HtmlMinifier.minify(html, minifyHtmlConfig);
-  app.get(/^[^\.]*$/, (_, response) => response.send(minifiedHtml));
+  app.get(/^[^.]*$/, (_, response) => response.send(minifiedHtml));
 
   return app;
-}
+};
 
 async function createServer() {
   const app = Express();
@@ -111,6 +111,7 @@ async function createServer() {
 
 createServer().then(server =>
   server.listen(PORT, () => {
+    // eslint-disable-next-line no-console
     console.log(`Server is listening ${PORT} port.`);
   })
 );

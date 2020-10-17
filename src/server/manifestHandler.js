@@ -17,6 +17,7 @@ const manifestHandler = ({ relativePath }) => {
         );
         manifestString = fs.readFileSync(manifestPath);
         manifest = JSON.parse(manifestString);
+        // eslint-disable-next-line no-empty
       } catch (_) {}
     }
     if (!manifest) {

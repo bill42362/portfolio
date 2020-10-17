@@ -1,4 +1,5 @@
 // client.babel.js
+import path from 'path';
 import {
   EnvironmentPlugin,
   HotModuleReplacementPlugin,
@@ -15,6 +16,10 @@ import EnvConfig from '../config.json';
 
 const nodeEnv = process.env.NODE_ENV || 'develop';
 const isProd = 'production' === nodeEnv;
+const eslintConfigFilepath = path.resolve(
+  __dirname,
+  isProd ? '../.eslintrc.strict.json' : '../.eslintrc.json'
+);
 
 const plugins = [
   new EnvironmentPlugin({
@@ -27,15 +32,13 @@ const devPlugins = [
   new HotModuleReplacementPlugin(),
   new NoEmitOnErrorsPlugin(),
 ];
-const prodPlugins = [
-  new StatsPlugin('stats.json'),
-];
+const prodPlugins = [new StatsPlugin('stats.json')];
 
 export const hmrConfig = {
   path: '/__webpack_hmr',
   timeout: 20000,
   reload: true,
-  logLevel: 'error',
+  logLevel: 'warn',
   heartbeat: 10 * 1000,
   clientLogLevel: 'silent',
   noInfo: true,
@@ -58,18 +61,26 @@ export default {
     bundle: isProd ? bundle : [...bundle, ...devBundle],
   },
   output: {
-    filename: chunkData =>
-      isProd
-        ? 'js/[name].[chunkhash:8].js'
-        : 'js/[name].js',
+    filename: () => (isProd ? 'js/[name].[chunkhash:8].js' : 'js/[name].js'),
     // default use output.filename if it's string.
     chunkFilename: isProd ? 'js/[name].[chunkhash:8].js' : 'js/[name].js',
-    path: `${__dirname}/../dist/client/`,
+    path: path.resolve(__dirname, '../dist/client/'),
     publicPath: '/',
     globalObject: "(typeof self !== 'undefined' ? self : this)",
   },
   module: {
     rules: [
+      {
+        enforce: 'pre',
+        test: /\.jsx?$/,
+        exclude: /node_modules/,
+        use: [
+          {
+            loader: 'eslint-loader',
+            options: { configFile: eslintConfigFilepath },
+          },
+        ],
+      },
       {
         test: /\.jsx?$/,
         exclude: /node_modules/,

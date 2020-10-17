@@ -8,7 +8,7 @@ export const resolveJsTags = ({ webpackStats, chunkNames = [] }) => {
     after: ['bundle'],
   });
   return js.toString();
-}
+};
 
 export const resolveStaticTags = ({ webpackStats }) => {
   const { assets, children } = webpackStats;
@@ -35,4 +35,4 @@ export const resolveStaticTags = ({ webpackStats }) => {
     pwaManifestTag,
     faviconTags,
   };
-}
+};

@@ -1,9 +1,8 @@
 // server.babel.js
-
 // https://medium.com/front-end-hacking/adding-a-server-side-rendering-support-for-an-existing-react-application-using-express-and-webpack-5a3d60cf9762
-
 import fs from 'fs';
 import os from 'os';
+import path from 'path';
 import { EnvironmentPlugin, optimize } from 'webpack';
 import nodeExternals from 'webpack-node-externals';
 import gifsicle from 'imagemin-gifsicle';
@@ -11,12 +10,18 @@ import mozjpeg from 'imagemin-mozjpeg';
 import pngquant from 'imagemin-pngquant';
 import svgo from 'imagemin-svgo';
 
-const isProd = 'production' === process.env.NODE_ENV;
+const nodeEnv = process.env.NODE_ENV || 'develop';
+const isProd = 'production' === nodeEnv;
+const eslintConfigFilepath = path.resolve(
+  __dirname,
+  isProd ? '../.eslintrc.strict.json' : '../.eslintrc.json'
+);
 const plugins = [
   new EnvironmentPlugin({
     BRANCH_NAME: 'local',
     TAG_NAME: '',
     SHORT_SHA: '',
+    NODE_ENV: nodeEnv,
   }),
   // Prevent get loading component on SSR.
   new optimize.LimitChunkCountPlugin({ maxChunks: 1 }),
@@ -37,6 +42,17 @@ export default {
   },
   module: {
     rules: [
+      {
+        enforce: 'pre',
+        test: /\.jsx?$/,
+        exclude: /node_modules/,
+        use: [
+          {
+            loader: 'eslint-loader',
+            options: { configFile: eslintConfigFilepath },
+          },
+        ],
+      },
       {
         test: /\.jsx?$/,
         exclude: /node_modules/,

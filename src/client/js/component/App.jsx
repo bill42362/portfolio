@@ -2,10 +2,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { hot } from 'react-hot-loader/root';
-import styled, {
-  createGlobalStyle,
-  StyleSheetManager,
-} from 'styled-components';
+import { createGlobalStyle, StyleSheetManager } from 'styled-components';
 import styledNormalize from 'styled-normalize';
 import { Helmet } from 'react-helmet';
 
@@ -44,7 +41,9 @@ const GlobalStyle = createGlobalStyle`
 const title = 'Portfolio';
 const description = "Bill's portfolio";
 
-const App = () => {
+const App = ({ request }) => {
+  // eslint-disable-next-line no-console
+  console.log('App() request:', request);
   return (
     <>
       <Helmet defaultTitle="Portfolio" titleTemplate="%s - Portfolio">
@@ -54,7 +53,10 @@ const App = () => {
         <meta name="author" content="Bill" />
         <meta name="description" content={description} />
 
-        <meta property="og:url" content="https://github.com/bill42362/portfolio" />
+        <meta
+          property="og:url"
+          content="https://github.com/bill42362/portfolio"
+        />
         <meta property="og:type" content="website" />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
