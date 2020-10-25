@@ -16,4 +16,21 @@ const presets = [
 
 const plugins = ['react-hot-loader/babel'];
 
-module.exports = { presets, plugins };
+const overrides = [
+  {
+    test: ['**/server/**'],
+    sourceType: 'unambiguous',
+    presets: [
+      [
+        '@babel/env',
+        {
+          targets: {
+            node: 'current',
+          },
+        },
+      ],
+    ],
+  },
+];
+
+module.exports = { presets, plugins, overrides };
