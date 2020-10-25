@@ -32,6 +32,7 @@
     "react-dom": "npm:@hot-loader/react-dom",
     "react-helmet": "^6.1.0",
     "react-hot-loader": "^4.12.21",
+    "react-is": "^17.0.1",
     "redux": "^4.0.5",
     "redux-thunk": "^2.3.0",
     "styled-components": "^5.2.0",
