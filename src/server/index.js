@@ -87,7 +87,9 @@ async function createServer() {
   if (process.env.MORGAN) {
     app.use(morgan(process.env.MORGAN));
   }
-  app.use(Helmet());
+  if ('false' !== process.env.HELMET) {
+    app.use(Helmet());
+  }
 
   let server = null;
   if (isProd) {
