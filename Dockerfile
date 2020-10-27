@@ -51,6 +51,11 @@ RUN     yarn buildhtml
 
 ###
 
+FROM    scratch AS export-client
+COPY    --from=build-client /workspace/dist/client /
+
+###
+
 FROM    node:12-alpine AS build-server
 
 WORKDIR /workspace
