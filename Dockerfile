@@ -33,7 +33,7 @@ COPY    .eslintrc.strict.json .
 COPY    .eslintrc.json .
 COPY    .prettierrc .
 COPY    webpack webpack
-COPY    config.json .
+COPY    default.config.json config.json
 COPY    package.json .
 COPY    src/client src/client
 
@@ -69,7 +69,7 @@ COPY    .eslintrc.json .
 COPY    .prettierrc .
 COPY    webpack webpack
 COPY    package.json .
-COPY    config.json .
+COPY    default.config.json config.json
 COPY    src/server src/server
 
 ARG     SHORT_SHA
