@@ -11,12 +11,11 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      # - name: Extract branch name
-      #   id: get_env
-      #   shell: bash
-      #   run: echo "##[set-output name=docker_tag;]$(echo ${GITHUB_REPOSITORY}:${GITHUB_REF#refs/heads/})"
       - name: Inject slug/short variables
         uses: rlespinasse/github-slug-action@v3.x
+      # - name: Prepare env variables
+      #   shell: bash
+      #   run: echo "##[set-output name=docker_tag;]$(echo ${GITHUB_REPOSITORY}:${GITHUB_REF#refs/heads/})"
       - name: Checkout
         uses: actions/checkout@v2
       - name: Set up Docker QEMU
@@ -28,12 +27,32 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build and push
-        id: docker_build
+      - name: Cache install-production
+        uses: docker/build-push-action@v2
+        with:
+          target: install-production
+          tags: ${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}.install-production
+          cache-from: type=registry,ref=${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}.install-production
+          cache-to: type=inline
+          push: true
+      - name: Cache install-develop
+        uses: docker/build-push-action@v2
+        with:
+          target: install-develop
+          tags: ${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}.install-develop
+          cache-from: |
+            type=registry,ref=${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}.install-production
+            type=registry,ref=${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}.install-develop
+          cache-to: type=inline
+          push: true
+      - name: Cache build-client
         uses: docker/build-push-action@v2
         with:
           target: build-client
-          tags: ${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}-base
-          cache-from: type=registry,ref=${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}-base
+          tags: ${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}.build-client
+          cache-from: |
+            type=registry,ref=${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}.install-production
+            type=registry,ref=${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}.install-develop
+            type=registry,ref=${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}.build-client
           cache-to: type=inline
           push: true
