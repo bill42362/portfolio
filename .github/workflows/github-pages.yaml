@@ -11,10 +11,12 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - name: Extract branch name
-        id: get_env
-        shell: bash
-        run: echo "##[set-output name=docker_tag;]$(echo ${GITHUB_REPOSITORY}:${GITHUB_REF#refs/heads/})"
+      # - name: Extract branch name
+      #   id: get_env
+      #   shell: bash
+      #   run: echo "##[set-output name=docker_tag;]$(echo ${GITHUB_REPOSITORY}:${GITHUB_REF#refs/heads/})"
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
       - name: Checkout
         uses: actions/checkout@v2
       - name: Set up Docker QEMU
@@ -31,7 +33,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           target: build-client
-          tags: ${{ steps.get_env.outputs.docker_tag }}-base
-          cache-from: type=registry,ref=${{ steps.get_env.outputs.docker_tag }}-base
+          tags: ${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}-base
+          cache-from: type=registry,ref=${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}-base
           cache-to: type=inline
           push: true
