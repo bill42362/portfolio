@@ -15,7 +15,7 @@ jobs:
         uses: rlespinasse/github-slug-action@v3.x
       - name: Prepare env variables
         run: |
-          echo "::set-env name=DOCKER_TAG_BASE::${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}"
+          echo "DOCKER_TAG_BASE=${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v2
       - name: Set up Docker QEMU
