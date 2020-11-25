@@ -7,8 +7,8 @@ on:
       - "v*"
 
 jobs:
-  build:
-    name: Build
+  setup:
+    name: Setup Builder
     runs-on: ubuntu-latest
     steps:
       - name: Inject slug/short variables
@@ -18,8 +18,6 @@ jobs:
           echo "DOCKER_TAG_BASE=${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Set up Docker QEMU
-        uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       - name: Login to Docker Hub
@@ -45,6 +43,25 @@ jobs:
             type=registry,ref=${{ env.DOCKER_TAG_BASE }}.install-develop
           cache-to: type=inline
           push: true
+  build-client:
+    name: Build Client
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
+      - name: Prepare env variables
+        run: |
+          echo "DOCKER_TAG_BASE=${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}" >> $GITHUB_ENV
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Cache build-client
         uses: docker/build-push-action@v2
         with:
@@ -56,3 +73,40 @@ jobs:
             type=registry,ref=${{ env.DOCKER_TAG_BASE }}.build-client
           cache-to: type=inline
           push: true
+  deploy-client:
+    name: Deploy Client
+    needs: build-client
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v3.x
+      - name: Prepare env variables
+        run: |
+          echo "DOCKER_TAG_BASE=${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}" >> $GITHUB_ENV
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Copy client artifact
+        uses: docker/build-push-action@v2
+        with:
+          target: export-client
+          cache-from: |
+            type=registry,ref=${{ env.DOCKER_TAG_BASE }}.install-production
+            type=registry,ref=${{ env.DOCKER_TAG_BASE }}.install-develop
+            type=registry,ref=${{ env.DOCKER_TAG_BASE }}.build-client
+          outputs: type=local,dest=output-folder
+      - name: Deploy to github page
+        uses: JamesIves/github-pages-deploy-action@3.7.1
+        with:
+          ACCESS_TOKEN: ${{ secrets.GH_TOKEN }}
+          BRANCH: gh-pages
+          FOLDER: output-folder
+          TARGET_FOLDER: ${{ env.GITHUB_REF_SLUG }}
