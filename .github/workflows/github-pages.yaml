@@ -15,7 +15,8 @@ jobs:
         uses: rlespinasse/github-slug-action@v3.x
       - name: Prepare env variables
         run: |
-          echo "DOCKER_TAG_BASE=${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}" >> $GITHUB_ENV
+          echo "DOCKER_TAG_MASTER=${{ github.repository }}:master" >> $GITHUB_ENV
+          echo "DOCKER_TAG_BRANCH=${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v2
       - name: Set up Docker Buildx
@@ -29,18 +30,22 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           target: install-production
-          tags: ${{ env.DOCKER_TAG_BASE }}.install-production
-          cache-from: type=registry,ref=${{ env.DOCKER_TAG_BASE }}.install-production
+          tags: ${{ env.DOCKER_TAG_BRANCH }}.install-production
+          cache-from: |
+            type=registry,ref=${{ env.DOCKER_TAG_MASTER }}.install-production
+            type=registry,ref=${{ env.DOCKER_TAG_BRANCH }}.install-production
           cache-to: type=inline
           push: true
       - name: Cache install-develop
         uses: docker/build-push-action@v2
         with:
           target: install-develop
-          tags: ${{ env.DOCKER_TAG_BASE }}.install-develop
+          tags: ${{ env.DOCKER_TAG_BRANCH }}.install-develop
           cache-from: |
-            type=registry,ref=${{ env.DOCKER_TAG_BASE }}.install-production
-            type=registry,ref=${{ env.DOCKER_TAG_BASE }}.install-develop
+            type=registry,ref=${{ env.DOCKER_TAG_MASTER }}.install-production
+            type=registry,ref=${{ env.DOCKER_TAG_BRANCH }}.install-production
+            type=registry,ref=${{ env.DOCKER_TAG_MASTER }}.install-develop
+            type=registry,ref=${{ env.DOCKER_TAG_BRANCH }}.install-develop
           cache-to: type=inline
           push: true
   build-client:
@@ -52,7 +57,8 @@ jobs:
         uses: rlespinasse/github-slug-action@v3.x
       - name: Prepare env variables
         run: |
-          echo "DOCKER_TAG_BASE=${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}" >> $GITHUB_ENV
+          echo "DOCKER_TAG_MASTER=${{ github.repository }}:master" >> $GITHUB_ENV
+          echo "DOCKER_TAG_BRANCH=${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v2
       - name: Set up Docker Buildx
@@ -66,11 +72,14 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           target: build-client
-          tags: ${{ env.DOCKER_TAG_BASE }}.build-client
+          tags: ${{ env.DOCKER_TAG_BRANCH }}.build-client
           cache-from: |
-            type=registry,ref=${{ env.DOCKER_TAG_BASE }}.install-production
-            type=registry,ref=${{ env.DOCKER_TAG_BASE }}.install-develop
-            type=registry,ref=${{ env.DOCKER_TAG_BASE }}.build-client
+            type=registry,ref=${{ env.DOCKER_TAG_MASTER }}.install-production
+            type=registry,ref=${{ env.DOCKER_TAG_BRANCH }}.install-production
+            type=registry,ref=${{ env.DOCKER_TAG_MASTER }}.install-develop
+            type=registry,ref=${{ env.DOCKER_TAG_BRANCH }}.install-develop
+            type=registry,ref=${{ env.DOCKER_TAG_MASTER }}.build-client
+            type=registry,ref=${{ env.DOCKER_TAG_BRANCH }}.build-client
           cache-to: type=inline
           push: true
   deploy-client:
@@ -82,7 +91,8 @@ jobs:
         uses: rlespinasse/github-slug-action@v3.x
       - name: Prepare env variables
         run: |
-          echo "DOCKER_TAG_BASE=${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}" >> $GITHUB_ENV
+          echo "DOCKER_TAG_MASTER=${{ github.repository }}:master" >> $GITHUB_ENV
+          echo "DOCKER_TAG_BRANCH=${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -99,9 +109,12 @@ jobs:
         with:
           target: export-client
           cache-from: |
-            type=registry,ref=${{ env.DOCKER_TAG_BASE }}.install-production
-            type=registry,ref=${{ env.DOCKER_TAG_BASE }}.install-develop
-            type=registry,ref=${{ env.DOCKER_TAG_BASE }}.build-client
+            type=registry,ref=${{ env.DOCKER_TAG_MASTER }}.install-production
+            type=registry,ref=${{ env.DOCKER_TAG_BRANCH }}.install-production
+            type=registry,ref=${{ env.DOCKER_TAG_MASTER }}.install-develop
+            type=registry,ref=${{ env.DOCKER_TAG_BRANCH }}.install-develop
+            type=registry,ref=${{ env.DOCKER_TAG_MASTER }}.build-client
+            type=registry,ref=${{ env.DOCKER_TAG_BRANCH }}.build-client
           outputs: type=local,dest=output-folder
       - name: Deploy to github page
         uses: JamesIves/github-pages-deploy-action@3.7.1
