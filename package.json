@@ -50,7 +50,7 @@
     "eslint-loader": "^4.0.2",
     "eslint-plugin-prettier": "^3.1.4",
     "eslint-plugin-react": "^7.21.5",
-    "eslint-plugin-react-hooks": "^4.1.2",
+    "eslint-plugin-react-hooks": "^4.2.0",
     "file-loader": "^6.1.1",
     "imagemin": "^7.0.1",
     "imagemin-gifsicle": "^7.0.0",
