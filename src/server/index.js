@@ -55,7 +55,7 @@ const createDevelopClientSideRender = app => {
     hmrConfig,
   } = require('../../webpack/client.babel.js');
 
-  const devOptions = {
+  const hotOptions = {
     ...hmrConfig,
     publicPath: clientConfig.output.publicPath,
     // eslint-disable-next-line no-console
@@ -70,9 +70,17 @@ const createDevelopClientSideRender = app => {
     // },
   };
 
+  // avaliable option keys:
+  // { mimeTypes?, writeToDisk?, methods?, headers?, publicPath?, serverSideRender?, outputFileSystem?, index? }
+  const devOptions = {
+    headers: hotOptions.headers,
+    publicPath: hotOptions.publicPath,
+    serverSideRender: true,
+  };
+
   const compiler = webpack(clientConfig);
   app.use(webpackDevMiddleware(compiler, devOptions));
-  app.use(webpackHotMiddleware(compiler, devOptions));
+  app.use(webpackHotMiddleware(compiler, hotOptions));
 
   const jsTags = '<script type=text/javascript src=/js/bundle.js></script>';
   const html = renderHtml({ jsTags });
