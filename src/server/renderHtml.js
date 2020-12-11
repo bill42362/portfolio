@@ -2,6 +2,7 @@
 
 const title = 'Portfolio';
 const description = "Bill's portfolio";
+const htmlBase = process.env.HTML_BASE;
 
 const defaultHelmet = {
   htmlAttributes: '',
@@ -25,12 +26,16 @@ export const renderHtml = ({
   helmet = defaultHelmet,
   styleTags = '',
   app = '',
-  jsTags = '',
+  jsTags: inputJsTags = '',
 } = {}) => {
+  const jsTags = htmlBase
+    ? inputJsTags.replace(/='\/js/gi, "='js")
+    : inputJsTags;
   return `
     <!doctype html>
     <html ${helmet.htmlAttributes.toString()}>
     <head>
+      ${htmlBase ? `<base href="${htmlBase}" />` : ''}
       <style>
         body {
           background-color: #191919;

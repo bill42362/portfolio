@@ -16,6 +16,7 @@ import EnvConfig from '../config.json';
 
 const nodeEnv = process.env.NODE_ENV || 'develop';
 const isProd = 'production' === nodeEnv;
+const htmlBase = process.env.HTML_BASE;
 const eslintConfigFilepath = path.resolve(
   __dirname,
   isProd ? '../.eslintrc.strict.json' : '../.eslintrc.json'
@@ -65,7 +66,7 @@ export default {
     // default use output.filename if it's string.
     chunkFilename: isProd ? 'js/[name].[chunkhash:8].js' : 'js/[name].js',
     path: path.resolve(__dirname, '../dist/client/'),
-    publicPath: '/',
+    publicPath: htmlBase ? './' : '/',
     globalObject: "(typeof self !== 'undefined' ? self : this)",
   },
   module: {
