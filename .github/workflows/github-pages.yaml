@@ -13,12 +13,10 @@ jobs:
     steps:
       - name: Inject slug/short variables
         uses: rlespinasse/github-slug-action@v3.x
-      - name: Prepare env variables
-        run: |
-          echo "DOCKER_TAG_MASTER=${{ github.repository }}:master" >> $GITHUB_ENV
-          echo "DOCKER_TAG_BRANCH=${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Setup enviroment with local action
+        uses: ./.github/actions/setup-env
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       - name: Login to Docker Hub
@@ -55,14 +53,10 @@ jobs:
     steps:
       - name: Inject slug/short variables
         uses: rlespinasse/github-slug-action@v3.x
-      - name: Prepare env variables
-        run: |
-          echo "DOCKER_TAG_MASTER=${{ github.repository }}:master" >> $GITHUB_ENV
-          echo "DOCKER_TAG_BRANCH=${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}" >> $GITHUB_ENV
-          echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
-          echo "REPO_NAME=$(echo ${GITHUB_REPOSITORY#${{ github.actor }}/})" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Setup enviroment with local action
+        uses: ./.github/actions/setup-env
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       - name: Login to Docker Hub
@@ -95,16 +89,12 @@ jobs:
     steps:
       - name: Inject slug/short variables
         uses: rlespinasse/github-slug-action@v3.x
-      - name: Prepare env variables
-        run: |
-          echo "DOCKER_TAG_MASTER=${{ github.repository }}:master" >> $GITHUB_ENV
-          echo "DOCKER_TAG_BRANCH=${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}" >> $GITHUB_ENV
-          echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
-          echo "REPO_NAME=$(echo ${GITHUB_REPOSITORY#${{ github.actor }}/})" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v2
         with:
           persist-credentials: false
+      - name: Setup enviroment with local action
+        uses: ./.github/actions/setup-env
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       - name: Login to Docker Hub
@@ -145,14 +135,10 @@ jobs:
     steps:
       - name: Inject slug/short variables
         uses: rlespinasse/github-slug-action@v3.x
-      - name: Prepare env variables
-        run: |
-          echo "DOCKER_TAG_MASTER=${{ github.repository }}:master" >> $GITHUB_ENV
-          echo "DOCKER_TAG_BRANCH=${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}" >> $GITHUB_ENV
-          echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
-          echo "REPO_NAME=$(echo ${GITHUB_REPOSITORY#${{ github.actor }}/})" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Setup enviroment with local action
+        uses: ./.github/actions/setup-env
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       - name: Login to Docker Hub
