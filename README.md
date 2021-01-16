@@ -1,6 +1,13 @@
 # portfolio
 Portfolio of bill42362
 
+# Usage
+## Run with docker ##
+```sh
+$ yarn dockerrun
+```
+
+
 # Roadmap
 * Enable server side render (SSR) on both production and develop enviroment.
   - [x] `yarn start`, `yarn devstart`

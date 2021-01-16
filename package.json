@@ -19,6 +19,7 @@
     "buildhtml": "babel-node src/server/buildHtml.js",
     "build": "yarn clean && yarn buildclient && yarn buildserver && yarn buildhtml",
     "start": "yarn build && yarn mkcert; node dist/server",
+    "dockerrun": "docker buildx build . -t local && docker run -p 3000:3000 local",
     "test": "jest --coverage --config jest/jest.config.js"
   },
   "homepage": "https://github.com/bill42362/portfolio",
