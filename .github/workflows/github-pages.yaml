@@ -4,7 +4,7 @@ on:
     branches:
       - "**"
     tags:
-      - "v*"
+      - "v*.*.*"
 
 jobs:
   setup:
@@ -71,6 +71,7 @@ jobs:
           build-args: |
             SHORT_SHA=${{ env.GITHUB_SHA_SHORT }}
             BRANCH_NAME=${{ env.BRANCH_NAME }}
+            TAG_NAME=${{ env.TAG_NAME }}
             HTML_BASE=https://${{ github.actor }}.github.io/${{ env.REPO_NAME }}/${{ env.GITHUB_REF_SLUG }}/
           tags: ${{ env.DOCKER_TAG_BRANCH }}.build-client
           cache-from: |
@@ -109,6 +110,7 @@ jobs:
           build-args: |
             SHORT_SHA=${{ env.GITHUB_SHA_SHORT }}
             BRANCH_NAME=${{ env.BRANCH_NAME }}
+            TAG_NAME=${{ env.TAG_NAME }}
             HTML_BASE=https://${{ github.actor }}.github.io/${{ env.REPO_NAME }}/${{ env.GITHUB_REF_SLUG }}/
           cache-from: |
             type=registry,ref=${{ env.DOCKER_TAG_MASTER }}.install-production
@@ -153,6 +155,7 @@ jobs:
           build-args: |
             SHORT_SHA=${{ env.GITHUB_SHA_SHORT }}
             BRANCH_NAME=${{ env.BRANCH_NAME }}
+            TAG_NAME=${{ env.TAG_NAME }}
             HTML_BASE=https://${{ github.actor }}.github.io/${{ env.REPO_NAME }}/${{ env.GITHUB_REF_SLUG }}/
           tags: ${{ env.DOCKER_TAG_BRANCH }}.build-server
           cache-from: |

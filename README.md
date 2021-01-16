@@ -23,7 +23,7 @@ $ yarn dockerrun
 * Enable hosting sample sites for each branch/tag on GitHub Page.
   - [x] Deploy static client side render files to gh-page branch during build process.
   - [x] Enable deploy gh-page folders by branch. (ex: **feature/async_import** branch to `/feature-async-import` folder)
-  - [ ] Enable deploy gh-page folders by tag. (ex: **v1.0.1** tag to `/v1-0-1` folder)
+  - [x] Enable deploy gh-page folders by tag. (ex: **v1.0.1** tag to `/v1.0.1` folder)
   - [x] Modify `<base>` tag to enable hosting branched on and files referencing.
 * Enable PWA for each branch.
   - [ ] Add manifest generator in webpack.

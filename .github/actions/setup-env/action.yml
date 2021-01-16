@@ -10,4 +10,5 @@ runs:
         echo "DOCKER_TAG_MASTER=${{ github.repository }}:master" >> $GITHUB_ENV
         echo "DOCKER_TAG_BRANCH=${{ github.repository }}:${{ env.GITHUB_REF_SLUG }}" >> $GITHUB_ENV
         echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
+        echo "TAG_NAME=$(echo ${GITHUB_REF#refs/tags/})" >> $GITHUB_ENV
         echo "REPO_NAME=$(echo ${GITHUB_REPOSITORY#${{ github.actor }}/})" >> $GITHUB_ENV
