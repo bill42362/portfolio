@@ -1,5 +1,5 @@
 // App.jsx
-import React, { useState } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import { hot } from 'react-hot-loader/root';
 import styled, {
@@ -9,8 +9,7 @@ import styled, {
 import styledNormalize from 'styled-normalize';
 import { Helmet } from 'react-helmet';
 
-import MediaStreamHandler from '../component/MediaStreamHandler.jsx';
-import MediaStreamMonitor from '../component/MediaStreamMonitor.jsx';
+import Main from '../component/Main.jsx';
 import Footer from '../component/Footer.jsx';
 
 import XMenLogoSource from '../../img/x-men-school.svg';
@@ -49,7 +48,6 @@ const title = 'Portfolio';
 const description = "Bill's portfolio";
 
 const App = ({ request }) => {
-  const [mediaStream, setMediaStream] = useState(null);
   // eslint-disable-next-line no-console
   console.log('App() request:', request);
   return (
@@ -75,15 +73,8 @@ const App = ({ request }) => {
       </Helmet>
       <GlobalStyle />
       <StyledApp>
-        <Main>
-          {!window && <img src={XMenLogoSource} title="Xavier school" />}
-          <ModuleWrapper>
-            <MediaStreamHandler onChange={({ value }) => setMediaStream(value)} />
-          </ModuleWrapper>
-          <ModuleWrapper>
-            <MediaStreamMonitor mediaStream={mediaStream} />
-          </ModuleWrapper>
-        </Main>
+        {!window && <img src={XMenLogoSource} title="Xavier school" />}
+        <Main />
         <Footer branchName={process.env.BRANCH_NAME} />
       </StyledApp>
     </>
@@ -104,19 +95,6 @@ const StyledApp = styled.div`
   justify-content: center;
   height: 100vh;
   background-color: #222f3e;
-`;
-
-const Main = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding: 8px;
-`;
-
-const ModuleWrapper = styled.div`
-  & + & {
-    margin-top: 8px;
-  }
 `;
 
 const Body = ({ sheet, ...props }) => {
