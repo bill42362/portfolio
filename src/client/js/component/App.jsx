@@ -2,10 +2,14 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { hot } from 'react-hot-loader/root';
-import { createGlobalStyle, StyleSheetManager } from 'styled-components';
+import styled, {
+  createGlobalStyle,
+  StyleSheetManager,
+} from 'styled-components';
 import styledNormalize from 'styled-normalize';
 import { Helmet } from 'react-helmet';
 
+import Footer from '../component/Footer.jsx';
 import XMenLogoSource from '../../img/x-men-school.svg';
 
 const GlobalStyle = createGlobalStyle`
@@ -66,9 +70,10 @@ const App = ({ request }) => {
         {/* <meta property="twitter:image" content={twitterImageSource} /> */}
       </Helmet>
       <GlobalStyle />
-      <div>
-        <img src={XMenLogoSource} title="Xavier school" />
-      </div>
+      <StyledApp>
+        {!window && <img src={XMenLogoSource} title="Xavier school" />}
+        <Footer />
+      </StyledApp>
     </>
   );
 };
@@ -80,6 +85,14 @@ App.propTypes = {
 App.defaultProps = {
   request: null,
 };
+
+const StyledApp = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100vh;
+  background-color: #222f3e;
+`;
 
 const Body = ({ sheet, ...props }) => {
   if (sheet.instance) {
