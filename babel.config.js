@@ -14,7 +14,15 @@ const presets = [
   '@babel/react',
 ];
 
-const plugins = ['react-hot-loader/babel'];
+const plugins = [
+  'react-hot-loader/babel',
+  '@babel/plugin-syntax-dynamic-import',
+  ['babel-plugin-styled-components', { ssr: true }],
+  '@babel/plugin-proposal-object-rest-spread',
+  '@babel/plugin-transform-spread',
+  ['@babel/plugin-proposal-class-properties', { loose: true }],
+  ['@babel/plugin-proposal-optional-chaining', { loose: false }],
+];
 
 const overrides = [
   {
