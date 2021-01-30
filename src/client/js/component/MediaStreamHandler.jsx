@@ -8,6 +8,7 @@ import ResetButtonStyle from '../style/ResetButtonStyle.js';
 export class MediaStreamHandler extends React.PureComponent {
   state = {
     isStarted: false,
+    shouldPreview: false,
     mediaStream: null,
     error: false,
   };
@@ -35,13 +36,17 @@ export class MediaStreamHandler extends React.PureComponent {
       const tracks = mediaStream.getTracks();
       tracks.forEach(track => track.stop());
       onChange({ value: null });
-      this.setState({ mediaStream: null, isStarted: false });
+      this.setState({
+        mediaStream: null,
+        isStarted: false,
+        shouldPreview: false,
+      });
     }
   };
 
   componentDidUpdate(_, prevState) {
-    const { mediaStream } = this.state;
-    if (mediaStream && mediaStream !== prevState.mediaStream) {
+    const { mediaStream, shouldPreview } = this.state;
+    if (shouldPreview && shouldPreview !== prevState.shouldPreview) {
       this.video.current.srcObject = mediaStream;
       this.video.current.play();
     }
@@ -70,17 +75,25 @@ export class MediaStreamHandler extends React.PureComponent {
   };
 
   renderBody = () => {
-    const { mediaStream } = this.state;
+    const { shouldPreview } = this.state;
     return (
       <Body>
         <div>{this.renderDescription()}</div>
-        {mediaStream && <video ref={this.video} playsInline />}
+        {shouldPreview && <video ref={this.video} playsInline />}
       </Body>
     );
   };
 
+  handleTogglePreview = () => {
+    const { mediaStream, shouldPreview } = this.state;
+    if (!mediaStream) {
+      return;
+    }
+    return this.setState({ shouldPreview: !shouldPreview });
+  };
+
   render() {
-    const { mediaStream } = this.state;
+    const { mediaStream, shouldPreview } = this.state;
     return (
       <StyledMediaStreamHandler>
         <Header>MediaStreamHandler</Header>
@@ -91,6 +104,13 @@ export class MediaStreamHandler extends React.PureComponent {
           ) : (
             <StartButton onClick={this.startRecording}>Start</StartButton>
           )}
+          <ToggleButton
+            isActived={shouldPreview}
+            disabled={!mediaStream}
+            onClick={this.handleTogglePreview}
+          >
+            Preview
+          </ToggleButton>
         </Footer>
       </StyledMediaStreamHandler>
     );
@@ -139,6 +159,9 @@ const Button = styled.button`
   padding: 4px;
   color: white;
   font-size: 14px;
+  & + & {
+    margin-left: 8px;
+  }
 `;
 
 const StartButton = styled(Button)`
@@ -148,5 +171,13 @@ const StartButton = styled(Button)`
 const StopButton = styled(Button)`
   background-color: #eb4d4b;
 `;
+
+const ToggleButton = styled(Button).attrs(({ isActived }) => {
+  return {
+    style: {
+      backgroundColor: isActived ? '#6ab04c' : '#badc58',
+    },
+  };
+})``;
 
 export default MediaStreamHandler;
