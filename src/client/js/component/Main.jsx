@@ -1,12 +1,14 @@
 // Main.jsx
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import styled from 'styled-components';
 
 import MediaStreamHandler from '../component/MediaStreamHandler.jsx';
 import MediaStreamMonitor from '../component/MediaStreamMonitor.jsx';
+import GreenBlueChannel from '../component/GreenBlueChannel.jsx';
 
 const Main = () => {
   const [mediaStream, setMediaStream] = useState(null);
+  const greenBlueChannelCanvas = useRef(null);
   return (
     <StyledMain>
       <ModuleWrapper>
@@ -14,6 +16,12 @@ const Main = () => {
       </ModuleWrapper>
       <ModuleWrapper>
         <MediaStreamMonitor mediaStream={mediaStream} />
+      </ModuleWrapper>
+      <ModuleWrapper>
+        <GreenBlueChannel
+          mediaStream={mediaStream}
+          canvasRef={greenBlueChannelCanvas}
+        />
       </ModuleWrapper>
     </StyledMain>
   );
