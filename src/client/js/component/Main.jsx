@@ -41,7 +41,7 @@ const Main = () => {
       </ModuleWrapper>
       <ModuleWrapper>
         <GreenBlueChannel
-          mediaStream={mediaStream}
+          pixelSource={sourceVideo.current}
           canvasRef={greenBlueChannelCanvas}
         />
       </ModuleWrapper>
