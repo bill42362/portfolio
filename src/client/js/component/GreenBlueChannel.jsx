@@ -3,25 +3,36 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 
+import ResetButtonStyle from '../style/ResetButtonStyle.js';
+
 const vertexShaderSource = `#version 300 es
 in vec4 aPosition;
+in vec2 aTextCoord;
+out vec2 vTextCoord;
 
 void main() {
   gl_Position = aPosition;
+  vTextCoord = aTextCoord;
 }
 `;
 
 const fragmentShaderSource = `#version 300 es
 precision highp float;
+
+uniform sampler2D uSource;
+in vec2 vTextCoord;
+
 out vec4 outColor;
 
 void main() {
-  outColor = vec4(1, 0, 0.5, 1);
+  outColor = texture(uSource, vTextCoord);
 }
 `;
 
 const vertexArray = [-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1];
 const vertexArrayBuffer = new Float32Array(vertexArray);
+const texCoordArray = [0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0];
+const texCoordArrayBuffer = new Float32Array(texCoordArray);
 
 const createShader = (context, type, source) => {
   const shader = context.createShader(type);
@@ -55,26 +66,18 @@ const createProgram = (context, vertexShader, fragmentShader) => {
 };
 
 export class GreenBlueChannel extends React.PureComponent {
-  video = null;
   webGlContext = null;
   vertexShader = null;
   fragmentShader = null;
   program = null;
-  aPositionLocation = null;
-  aPositionBuffer = null;
 
-  initVideo = () => {
-    const { mediaStream } = this.props;
-    if (!this.video) {
-      this.video = document.createElement('video');
-      // required to tell iOS safari we don't want fullscreen
-      this.video.setAttribute('playsinline', true);
-    }
-    if (mediaStream) {
-      this.video.srcObject = mediaStream;
-      this.video.play();
-    }
-  };
+  aPositionLocation = null;
+  aTexCoordLocation = null;
+  uSourceLocation = null;
+
+  aPositionBuffer = null;
+  aTexCoordBuffer = null;
+  uSourceTexture = null;
 
   initGl = () => {
     const { canvasRef } = this.props;
@@ -105,32 +108,19 @@ export class GreenBlueChannel extends React.PureComponent {
       this.vertexShader,
       this.fragmentShader
     );
+
     this.aPositionLocation = context.getAttribLocation(
       this.program,
       'aPosition'
     );
     this.aPositionBuffer = context.createBuffer();
-  };
-
-  nextFrame = () => {
-    const context = this.webGlContext;
-    if (!context) {
-      return;
-    }
-
-    // clear
-    context.clearColor(0, 0, 0, 1);
-    context.clear(context.COLOR_BUFFER_BIT);
-
-    // draw
-    context.useProgram(this.program);
-
     context.bindBuffer(context.ARRAY_BUFFER, this.aPositionBuffer);
     context.bufferData(
       context.ARRAY_BUFFER,
       vertexArrayBuffer,
       context.STATIC_DRAW
     );
+    context.enableVertexAttribArray(this.aPositionLocation);
     context.vertexAttribPointer(
       this.aPositionLocation,
       2, // numComponents
@@ -141,55 +131,97 @@ export class GreenBlueChannel extends React.PureComponent {
       0, // stride
       0 // offset
     );
-    context.enableVertexAttribArray(this.aPositionLocation);
+
+    this.aTexCoordLocation = context.getAttribLocation(
+      this.program,
+      'aTextCoord'
+    );
+    this.aTexCoordBuffer = context.createBuffer();
+    context.bindBuffer(context.ARRAY_BUFFER, this.aTexCoordBuffer);
+    context.bufferData(
+      context.ARRAY_BUFFER,
+      texCoordArrayBuffer,
+      context.STATIC_DRAW
+    );
+    context.enableVertexAttribArray(this.aTexCoordLocation);
+    context.vertexAttribPointer(
+      this.aTexCoordLocation,
+      2,
+      context.FLOAT,
+      false,
+      0,
+      0
+    );
+
+    const ctx = context;
+    this.uSourceLocation = ctx.getUniformLocation(this.program, 'uSource');
+    this.uSourceTexture = ctx.createTexture();
+    ctx.activeTexture(ctx.TEXTURE0 + 0);
+    ctx.bindTexture(ctx.TEXTURE_2D, this.uSourceTexture);
+    ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_S, ctx.CLAMP_TO_EDGE);
+    ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, ctx.CLAMP_TO_EDGE);
+    ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, ctx.NEAREST);
+    ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MAG_FILTER, ctx.NEAREST);
+    ctx.uniform1i(this.uSourceLocation, 0);
+  };
+
+  nextFrame = () => {
+    const { pixelSource } = this.props;
+    const context = this.webGlContext;
+    if (!context || !pixelSource) {
+      return;
+    }
+
+    // clear
+    context.clearColor(0, 0, 0, 1);
+    context.clear(context.COLOR_BUFFER_BIT);
+
+    // draw
+    context.useProgram(this.program);
+
+    context.bindTexture(context.TEXTURE_2D, this.uSourceTexture);
+    context.texImage2D(
+      context.TEXTURE_2D,
+      0, // mip level
+      context.RGBA, // internam format
+      context.RGBA, // src format
+      context.UNSIGNED_BYTE, // src type
+      pixelSource
+    );
+
+    context.bindBuffer(context.ARRAY_BUFFER, this.aPositionBuffer);
     context.drawArrays(context.TRIANGLES, 0, vertexArrayBuffer.length / 2);
   };
 
-  clearVideo = () => {
-    if (this.video) {
-      this.video.pause();
-      this.video.srcObject = null;
-    }
-  };
-
   componentDidMount() {
-    this.initVideo();
     this.initGl();
-    this.nextFrame();
-  }
-
-  componentDidUpdate(prevProps) {
-    const { mediaStream } = this.props;
-    if (!mediaStream && mediaStream !== prevProps.mediaStream) {
-      this.clearVideo();
-    }
-  }
-
-  componentWillUnmount() {
-    this.clearVideo();
   }
 
   render() {
-    const { canvasRef } = this.props;
+    const { canvasRef, pixelSource } = this.props;
     return (
       <StyledGreenBlueChannel>
         <Header>GreenBlueChannel</Header>
         <Body>
           <canvas ref={canvasRef} />
         </Body>
-        <Footer></Footer>
+        <Footer>
+          <DrawButton disabled={!pixelSource} onClick={this.nextFrame}>
+            Draw
+          </DrawButton>
+        </Footer>
       </StyledGreenBlueChannel>
     );
   }
 }
 
 GreenBlueChannel.propTypes = {
-  mediaStream: PropTypes.object,
+  pixelSource: PropTypes.any,
   canvasRef: PropTypes.object.isRequired,
 };
 
 GreenBlueChannel.defaultProps = {
-  mediaStream: null,
+  pixelSource: null,
 };
 
 const StyledGreenBlueChannel = styled.div`
@@ -212,9 +244,28 @@ const Body = styled.div`
   }
 `;
 
+const Button = styled.button`
+  ${ResetButtonStyle}
+  border-radius: 4px;
+  padding: 4px;
+  color: white;
+  font-size: 14px;
+  & + & {
+    margin-left: 8px;
+  }
+`;
+
 const Footer = styled.div`
   background-color: #4834d4;
   padding: 8px;
 `;
+
+const DrawButton = styled(Button).attrs(({ isActived }) => {
+  return {
+    style: {
+      backgroundColor: isActived ? '#6ab04c' : '#badc58',
+    },
+  };
+})``;
 
 export default GreenBlueChannel;
