@@ -10,6 +10,7 @@ import styledNormalize from 'styled-normalize';
 import { Helmet } from 'react-helmet';
 
 import MediaStreamHandler from '../component/MediaStreamHandler.jsx';
+import MediaStreamMonitor from '../component/MediaStreamMonitor.jsx';
 import Footer from '../component/Footer.jsx';
 
 import XMenLogoSource from '../../img/x-men-school.svg';
@@ -80,8 +81,12 @@ const App = ({ request }) => {
       <StyledApp>
         <Main>
           {!window && <img src={XMenLogoSource} title="Xavier school" />}
-          <MediaStreamHandler onChange={({ value }) => setMediaStream(value)} />
-          {mediaStream?.id}
+          <ModuleWrapper>
+            <MediaStreamHandler onChange={({ value }) => setMediaStream(value)} />
+          </ModuleWrapper>
+          <ModuleWrapper>
+            <MediaStreamMonitor mediaStream={mediaStream} />
+          </ModuleWrapper>
         </Main>
         <Footer branchName={branchName} />
       </StyledApp>
@@ -110,6 +115,12 @@ const Main = styled.div`
   flex-direction: column;
   height: 100%;
   padding: 8px;
+`;
+
+const ModuleWrapper = styled.div`
+  & + & {
+    margin-top: 8px;
+  }
 `;
 
 const Body = ({ sheet, ...props }) => {
