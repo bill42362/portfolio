@@ -81,15 +81,15 @@ App.defaultProps = {
   request: null,
 };
 
-const Body = ({ sheet, request }) => {
+const Body = ({ sheet, ...props }) => {
   if (sheet.instance) {
     return (
       <StyleSheetManager sheet={sheet.instance}>
-        <App request={request} />
+        <App {...props} />
       </StyleSheetManager>
     );
   } else {
-    return <App request={request} />;
+    return <App {...props} />;
   }
 };
 
