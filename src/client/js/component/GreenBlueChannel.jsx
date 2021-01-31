@@ -31,55 +31,251 @@ void main() {
 }
 `;
 
-const vertexArray = [-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1];
-const vertexArrayBuffer = new Float32Array(vertexArray);
-const texCoordArray = [0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0];
-const texCoordArrayBuffer = new Float32Array(texCoordArray);
+const vertexAttribute = {
+  array: [-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1],
+  numComponents: 2,
+};
+const textCoordAttribute = {
+  array: [0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0],
+  numComponents: 2,
+};
+
+const glStateTemplate = {
+  sources: {
+    attributes: {
+      vertex: null,
+      textCoord: null,
+    },
+    shaders: {
+      vertex: null,
+      fragment: null,
+    },
+  },
+  program: null,
+  shaders: { vertex: null, fragment: null },
+  locations: {
+    attributes: { aPosition: null, aTextCoord: null },
+    textures: { uSource: null },
+  },
+  buffers: { aPosition: null, aTextCoord: null },
+  textures: { uSource: null },
+};
+
+const getGlState = ({
+  vertexShaderSource = null,
+  fragmentShaderSource = null,
+  vertexAttribute = null,
+  textCoordAttribute = null,
+} = {}) => {
+  return {
+    ...glStateTemplate,
+    sources: {
+      attributes: {
+        vertex: vertexAttribute,
+        textCoord: textCoordAttribute,
+      },
+      shaders: { vertex: vertexShaderSource, fragment: fragmentShaderSource },
+    },
+  };
+};
 
 const createShader = (context, type, source) => {
   const shader = context.createShader(type);
   context.shaderSource(shader, source);
   context.compileShader(shader);
-  const success = context.getShaderParameter(shader, context.COMPILE_STATUS);
-  if (success) {
-    return shader;
-  }
-
-  // eslint-disable-next-line no-console
-  console.log(context.getShaderInfoLog(shader));
-  context.deleteShader(shader);
-  return null;
+  return shader;
 };
 
-const createProgram = (context, vertexShader, fragmentShader) => {
-  const program = context.createProgram();
-  context.attachShader(program, vertexShader);
-  context.attachShader(program, fragmentShader);
-  context.linkProgram(program);
-  const success = context.getProgramParameter(program, context.LINK_STATUS);
-  if (success) {
-    return program;
+const createBuffer = (context, attribute) => {
+  const buffer = context.createBuffer();
+  context.bindBuffer(context.ARRAY_BUFFER, buffer);
+  context.bufferData(
+    context.ARRAY_BUFFER,
+    new Float32Array(attribute.array),
+    context.STATIC_DRAW
+  );
+  return {
+    buffer,
+    numComponents: attribute.numComponents,
+    count: Math.floor(attribute.array.length / attribute.numComponents),
+    type: context.FLOAT,
+    normalize: false,
+    offset: 0,
+    // how many bytes to get from one set of values to the next
+    // 0 = use type and numComponents above
+    stride: 0,
+  };
+};
+
+const dockBuffer = (context, location, buffer) => {
+  context.bindBuffer(context.ARRAY_BUFFER, buffer.buffer);
+  context.vertexAttribPointer(
+    location,
+    buffer.numComponents,
+    buffer.type,
+    buffer.normalize,
+    buffer.stride,
+    buffer.offset
+  );
+};
+
+const updateGlState = ({ context, oldState, newState }) => {
+  const newAttributes = newState.sources.attributes;
+  const oldAttributes = oldState.sources.attributes;
+  if (newAttributes.vertex !== oldAttributes.vertex) {
+    if (oldState.buffers.aPosition) {
+      context.deleteBuffer(oldState.buffers.aPosition);
+    }
+    newState.buffers.aPosition = createBuffer(context, newAttributes.vertex);
+  } else {
+    newState.buffers.aPosition = oldState.buffers.aPosition;
+  }
+  if (newAttributes.textCoord !== oldAttributes.textCoord) {
+    if (oldState.buffers.aTextCoord) {
+      context.deleteBuffer(oldState.buffers.aTextCoord);
+    }
+    newState.buffers.aTextCoord = createBuffer(
+      context,
+      newAttributes.textCoord
+    );
+  } else {
+    newState.buffers.aTextCoord = oldState.buffers.aTextCoord;
   }
 
-  // eslint-disable-next-line no-console
-  console.log(context.getProgramInfoLog(program));
-  context.deleteProgram(program);
-  return null;
+  if (!oldState.textures.uSource) {
+    const ctx = context;
+    const texture = ctx.createTexture();
+    ctx.activeTexture(ctx.TEXTURE0 + 0);
+    ctx.bindTexture(ctx.TEXTURE_2D, texture);
+    ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_S, ctx.CLAMP_TO_EDGE);
+    ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, ctx.CLAMP_TO_EDGE);
+    ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, ctx.NEAREST);
+    ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MAG_FILTER, ctx.NEAREST);
+    newState.textures.uSource = texture;
+  } else {
+    newState.textures.uSource = oldState.textures.uSource;
+  }
+
+  const shouldUpdateVertexShader =
+    oldState.sources.shaders.vertex !== newState.sources.shaders.vertex;
+  if (shouldUpdateVertexShader) {
+    newState.shaders.vertex = createShader(
+      context,
+      context.VERTEX_SHADER,
+      newState.sources.shaders.vertex
+    );
+  } else {
+    newState.shaders.vertex = oldState.shaders.vertex;
+  }
+
+  const shouldUpdateFragmentShader =
+    oldState.sources.shaders.fragment !== newState.sources.shaders.fragment;
+  if (shouldUpdateFragmentShader) {
+    newState.shaders.fragment = createShader(
+      context,
+      context.FRAGMENT_SHADER,
+      newState.sources.shaders.fragment
+    );
+  } else {
+    newState.shaders.fragment = oldState.shaders.fragment;
+  }
+
+  if (shouldUpdateVertexShader || shouldUpdateFragmentShader) {
+    const program = context.createProgram();
+    context.attachShader(program, newState.shaders.vertex);
+    context.attachShader(program, newState.shaders.fragment);
+    context.linkProgram(program);
+    const success = context.getProgramParameter(program, context.LINK_STATUS);
+    if (success) {
+      newState.program = program;
+      if (oldState.shaders.vertex) {
+        context.deleteShader(oldState.shaders.vertex);
+      }
+      if (oldState.shaders.fragment) {
+        context.deleteShader(oldState.shaders.fragment);
+      }
+      if (oldState.program) {
+        context.deleteProgram(oldState.program);
+      }
+    } else {
+      // eslint-disable-next-line no-console
+      console.error('Link failed:', context.getProgramInfoLog(program));
+      // eslint-disable-next-line no-console
+      console.error(
+        'vertex shader info-log:',
+        context.getShaderInfoLog(newState.shaders.vertex)
+      );
+      // eslint-disable-next-line no-console
+      console.error(
+        'fragment shader info-log:',
+        context.getShaderInfoLog(newState.shaders.fragment)
+      );
+      context.deleteShader(newState.shaders.vertex);
+      context.deleteShader(newState.shaders.fragment);
+      context.deleteProgram(program);
+      newState.program = oldState.program;
+    }
+  } else {
+    newState.program = oldState.program;
+  }
+
+  if (newState.program !== oldState.program) {
+    const oldLocations = oldState.locations;
+    const newLocations = newState.locations;
+    if (oldLocations.attributes.aPosition) {
+      context.disableVertexAttribArray(oldLocations.attributes.aPosition);
+    }
+    if (oldLocations.attributes.aTextCoord) {
+      context.disableVertexAttribArray(oldLocations.attributes.aTextCoord);
+    }
+
+    newLocations.attributes.aPosition = context.getAttribLocation(
+      newState.program,
+      'aPosition'
+    );
+    newLocations.attributes.aTextCoord = context.getAttribLocation(
+      newState.program,
+      'aTextCoord'
+    );
+    newLocations.textures.uSource = context.getUniformLocation(
+      newState.program,
+      'uSource'
+    );
+
+    context.enableVertexAttribArray(newLocations.attributes.aPosition);
+    context.enableVertexAttribArray(newLocations.attributes.aTextCoord);
+  } else {
+    newState.locations = oldState.locations;
+  }
+
+  if (
+    newState.program !== oldState.program ||
+    newAttributes.vertex !== oldAttributes.vertex
+  ) {
+    dockBuffer(
+      context,
+      newState.locations.attributes.aPosition,
+      newState.buffers.aPosition
+    );
+  }
+
+  if (
+    newState.program !== oldState.program ||
+    newAttributes.textCoord !== oldAttributes.textCoord
+  ) {
+    dockBuffer(
+      context,
+      newState.locations.attributes.aTextCoord,
+      newState.buffers.aTextCoord
+    );
+  }
+
+  return newState;
 };
 
 export class GreenBlueChannel extends React.PureComponent {
   webGlContext = null;
-  vertexShader = null;
-  fragmentShader = null;
-  program = null;
-
-  aPositionLocation = null;
-  aTexCoordLocation = null;
-  uSourceLocation = null;
-
-  aPositionBuffer = null;
-  aTexCoordBuffer = null;
-  uSourceTexture = null;
+  glState = getGlState();
 
   initGl = () => {
     const { canvasRef } = this.props;
@@ -94,77 +290,6 @@ export class GreenBlueChannel extends React.PureComponent {
     let context = null;
     context = canvas.getContext('webgl2');
     this.webGlContext = context;
-
-    this.vertexShader = createShader(
-      context,
-      context.VERTEX_SHADER,
-      vertexShaderSource
-    );
-    this.fragmentShader = createShader(
-      context,
-      context.FRAGMENT_SHADER,
-      fragmentShaderSource
-    );
-    this.program = createProgram(
-      context,
-      this.vertexShader,
-      this.fragmentShader
-    );
-
-    this.aPositionLocation = context.getAttribLocation(
-      this.program,
-      'aPosition'
-    );
-    this.aPositionBuffer = context.createBuffer();
-    context.bindBuffer(context.ARRAY_BUFFER, this.aPositionBuffer);
-    context.bufferData(
-      context.ARRAY_BUFFER,
-      vertexArrayBuffer,
-      context.STATIC_DRAW
-    );
-    context.enableVertexAttribArray(this.aPositionLocation);
-    context.vertexAttribPointer(
-      this.aPositionLocation,
-      2, // numComponents
-      context.FLOAT, // type
-      false, // normalize
-      // how many bytes to get from one set of values to the next
-      // 0 = use type and numComponents above
-      0, // stride
-      0 // offset
-    );
-
-    this.aTexCoordLocation = context.getAttribLocation(
-      this.program,
-      'aTextCoord'
-    );
-    this.aTexCoordBuffer = context.createBuffer();
-    context.bindBuffer(context.ARRAY_BUFFER, this.aTexCoordBuffer);
-    context.bufferData(
-      context.ARRAY_BUFFER,
-      texCoordArrayBuffer,
-      context.STATIC_DRAW
-    );
-    context.enableVertexAttribArray(this.aTexCoordLocation);
-    context.vertexAttribPointer(
-      this.aTexCoordLocation,
-      2,
-      context.FLOAT,
-      false,
-      0,
-      0
-    );
-
-    const ctx = context;
-    this.uSourceLocation = ctx.getUniformLocation(this.program, 'uSource');
-    this.uSourceTexture = ctx.createTexture();
-    ctx.activeTexture(ctx.TEXTURE0 + 0);
-    ctx.bindTexture(ctx.TEXTURE_2D, this.uSourceTexture);
-    ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_S, ctx.CLAMP_TO_EDGE);
-    ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, ctx.CLAMP_TO_EDGE);
-    ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, ctx.NEAREST);
-    ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MAG_FILTER, ctx.NEAREST);
-    ctx.uniform1i(this.uSourceLocation, 0);
   };
 
   nextFrame = () => {
@@ -174,14 +299,25 @@ export class GreenBlueChannel extends React.PureComponent {
       return;
     }
 
+    this.glState = updateGlState({
+      context,
+      oldState: this.glState,
+      newState: getGlState({
+        vertexShaderSource,
+        fragmentShaderSource,
+        vertexAttribute,
+        textCoordAttribute,
+      }),
+    });
+
     // clear
     context.clearColor(0, 0, 0, 1);
     context.clear(context.COLOR_BUFFER_BIT);
 
     // draw
-    context.useProgram(this.program);
+    context.useProgram(this.glState.program);
 
-    context.bindTexture(context.TEXTURE_2D, this.uSourceTexture);
+    context.bindTexture(context.TEXTURE_2D, this.glState.textures.uSource);
     context.texImage2D(
       context.TEXTURE_2D,
       0, // mip level
@@ -191,8 +327,9 @@ export class GreenBlueChannel extends React.PureComponent {
       pixelSource
     );
 
-    context.bindBuffer(context.ARRAY_BUFFER, this.aPositionBuffer);
-    context.drawArrays(context.TRIANGLES, 0, vertexArrayBuffer.length / 2);
+    const aPositionBuffer = this.glState.buffers.aPosition;
+    context.bindBuffer(context.ARRAY_BUFFER, aPositionBuffer.buffer);
+    context.drawArrays(context.TRIANGLES, 0, aPositionBuffer.count);
   };
 
   componentDidMount() {
