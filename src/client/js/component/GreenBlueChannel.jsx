@@ -274,8 +274,11 @@ const updateGlState = ({ context, oldState, newState }) => {
 };
 
 export class GreenBlueChannel extends React.PureComponent {
+  state = { maxFps: 30, fps: 0, shouldAnimate: false };
   webGlContext = null;
   glState = getGlState();
+  lastFrameTimestamp = 0;
+  animationFrame = null;
 
   initGl = () => {
     const { canvasRef } = this.props;
@@ -332,11 +335,36 @@ export class GreenBlueChannel extends React.PureComponent {
     context.drawArrays(context.TRIANGLES, 0, aPositionBuffer.count);
   };
 
+  animate = timestamp => {
+    const { maxFps, shouldAnimate } = this.state;
+    if (shouldAnimate) {
+      this.animationFrame = window.requestAnimationFrame(this.animate);
+    }
+
+    const minInterval = 1000 / maxFps;
+    const elapsed = timestamp - this.lastFrameTimestamp;
+    if (elapsed > minInterval) {
+      this.lastFrameTimestamp = timestamp;
+      this.nextFrame();
+      this.setState({ fps: Math.ceil(1000 / elapsed) });
+    }
+  };
+
+  toggleAnimate = () => {
+    const { shouldAnimate: currentShouldAnimate } = this.state;
+    const shouldAnimate = !currentShouldAnimate;
+    this.setState({ shouldAnimate });
+    if (shouldAnimate) {
+      this.animationFrame = window.requestAnimationFrame(this.animate);
+    }
+  };
+
   componentDidMount() {
     this.initGl();
   }
 
   render() {
+    const { shouldAnimate, fps } = this.state;
     const { canvasRef, pixelSource } = this.props;
     return (
       <StyledGreenBlueChannel>
@@ -345,9 +373,14 @@ export class GreenBlueChannel extends React.PureComponent {
           <canvas ref={canvasRef} />
         </Body>
         <Footer>
-          <DrawButton disabled={!pixelSource} onClick={this.nextFrame}>
+          <DrawButton
+            isActived={shouldAnimate}
+            disabled={!pixelSource}
+            onClick={this.toggleAnimate}
+          >
             Draw
           </DrawButton>
+          <span>FPS: {fps}</span>
         </Footer>
       </StyledGreenBlueChannel>
     );
@@ -397,6 +430,9 @@ const Button = styled.button`
 const Footer = styled.div`
   background-color: #4834d4;
   padding: 8px;
+  button + span {
+    margin-left: 8px;
+  }
 `;
 
 const DrawButton = styled(Button).attrs(({ isActived }) => {
