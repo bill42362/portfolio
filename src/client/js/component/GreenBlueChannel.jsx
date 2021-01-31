@@ -25,7 +25,9 @@ in vec2 vTextCoord;
 out vec4 outColor;
 
 void main() {
-  outColor = texture(uSource, vTextCoord);
+  vec4 originColor = texture(uSource, vTextCoord);
+  float gbColor = 2.0 * originColor.b * originColor.g;
+  outColor = vec4(gbColor, gbColor, gbColor, originColor.a);
 }
 `;
 
