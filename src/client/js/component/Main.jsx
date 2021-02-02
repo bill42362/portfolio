@@ -4,7 +4,7 @@ import styled from 'styled-components';
 
 import MediaStreamHandler from '../component/MediaStreamHandler.jsx';
 import MediaStreamMonitor from '../component/MediaStreamMonitor.jsx';
-import GreenBlueChannel from '../component/GreenBlueChannel.jsx';
+import GreenBlueChannelHook from '../component/GreenBlueChannelHook.jsx';
 
 const Main = () => {
   const [mediaStream, setMediaStream] = useState();
@@ -40,7 +40,7 @@ const Main = () => {
         <MediaStreamMonitor mediaStream={mediaStream} />
       </ModuleWrapper>
       <ModuleWrapper>
-        <GreenBlueChannel
+        <GreenBlueChannelHook
           pixelSource={sourceVideo.current}
           canvasRef={greenBlueChannelCanvas}
         />
