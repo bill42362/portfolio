@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 
+import { createProgram, clearGlCore } from '../resource/WebGL.js';
 import ResetButtonStyle from '../style/ResetButtonStyle.js';
 
 const vertexShaderSource = `#version 300 es
@@ -30,89 +31,33 @@ void main() {
 }
 `;
 
-const createShader = (context, type, source) => {
-  const shader = context.createShader(type);
-  context.shaderSource(shader, source);
-  context.compileShader(shader);
-  return shader;
-};
-
-const createProgram = ({
-  context,
-  vertexShaderSource,
-  fragmentShaderSource,
-}) => {
-  if (!context || !vertexShaderSource || !fragmentShaderSource) {
-    return;
-  }
-  const vertexShader = createShader(
-    context,
-    context.VERTEX_SHADER,
-    vertexShaderSource
-  );
-  const fragmentShader = createShader(
-    context,
-    context.FRAGMENT_SHADER,
-    fragmentShaderSource
-  );
-  const program = context.createProgram();
-  context.attachShader(program, vertexShader);
-  context.attachShader(program, fragmentShader);
-  context.linkProgram(program);
-  const success = context.getProgramParameter(program, context.LINK_STATUS);
-  if (success) {
-    return { vertexShader, fragmentShader, program };
-  }
-  // eslint-disable-next-line no-console
-  console.error('Link failed:', context.getProgramInfoLog(program));
-  // eslint-disable-next-line no-console
-  console.error('vs info-log:', context.getShaderInfoLog(vertexShader));
-  // eslint-disable-next-line no-console
-  console.error('fs info-log:', context.getShaderInfoLog(fragmentShader));
-  context.deleteShader(vertexShader);
-  context.deleteShader(fragmentShader);
-  context.deleteProgram(program);
-  return;
-};
-
-const clearGlCore = ({
-  context,
-  vertexShader,
-  fragmentShader,
-  program,
-} = {}) => {
-  if (!context) {
-    return;
-  }
-  vertexShader && context.deleteShader(vertexShader);
-  fragmentShader && context.deleteShader(fragmentShader);
-  program && context.deleteProgram(program);
-};
-
 const GreenBlueChannelHook = ({ canvasRef, pixelSource }) => {
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const [maxFps] = useState(30);
   const [fps, setFps] = useState(0);
 
+  const animationFrame = useRef();
+  const lastFrameTimestamp = useRef(0);
+
   const webGlContext = useRef();
   const vertexShader = useRef();
   const fragmentShader = useRef();
   const program = useRef();
-  const animationFrame = useRef();
-  const lastFrameTimestamp = useRef(0);
 
   useEffect(() => {
+    const clear = () => {
+      return clearGlCore({
+        context: webGlContext.current,
+        vertexShader: vertexShader.current,
+        fragmentShader: fragmentShader.current,
+        program: program.current,
+      });
+    };
+
     const canvas = canvasRef.current;
     if (!canvas) {
-      return () =>
-        clearGlCore({
-          context: webGlContext.current,
-          vertexShader: vertexShader.current,
-          fragmentShader: fragmentShader.current,
-          program: program.current,
-        });
+      return clear;
     }
-
     const rect = canvas.getBoundingClientRect();
     canvas.height = rect.height;
     canvas.width = rect.width;
@@ -123,19 +68,14 @@ const GreenBlueChannelHook = ({ canvasRef, pixelSource }) => {
       vertexShaderSource,
       fragmentShaderSource,
     });
-    if (glCore) {
-      vertexShader.current = glCore.vertexShader;
-      fragmentShader.current = glCore.fragmentShader;
-      program.current = glCore.program;
-
-      return () =>
-        clearGlCore({
-          context: webGlContext.current,
-          vertexShader: vertexShader.current,
-          fragmentShader: fragmentShader.current,
-          program: program.current,
-        });
+    if (!glCore) {
+      return clear;
     }
+    vertexShader.current = glCore.vertexShader;
+    fragmentShader.current = glCore.fragmentShader;
+    program.current = glCore.program;
+
+    return clear;
   }, [canvasRef]);
 
   useEffect(() => {
