@@ -27,13 +27,23 @@ precision highp float;
 
 uniform sampler2D uSource;
 uniform vec2 uResolution;
+uniform mat3 uKernel;
 in vec2 vTextCoord;
 
 out vec4 outColor;
 
 void main() {
-  vec4 originColor = texture(uSource, vTextCoord);
-  outColor = originColor;
+  vec2 delta = 1.0 / uResolution;
+  vec4 outputColor = vec4(0.0, 0.0, 0.0, 0.0);
+
+  for (int x = 0; x <= 2; x++) {
+    for (int y = 0; y <= 2; y++) {
+      vec2 offset = vTextCoord + vec2(x - 1, y - 1) * delta;
+      outputColor += uKernel[x][y] * texture(uSource, offset);
+    }
+  }
+
+  outColor = outputColor;
 }
 `;
 
@@ -44,6 +54,10 @@ const positionAttribute = {
 const textCoordAttribute = {
   array: [0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0],
   numComponents: 2,
+};
+const gaussianKernelAttribute = {
+  array: [0.0625, 0.125, 0.0625, 0.125, 0.25, 0.125, 0.0625, 0.125, 0.0625],
+  numComponents: 9,
 };
 
 const GaussianBlur = ({ canvasRef, pixelSource }) => {
@@ -62,6 +76,7 @@ const GaussianBlur = ({ canvasRef, pixelSource }) => {
   const positionLocation = useRef();
   const textCoordLocation = useRef();
   const resolutionLocation = useRef();
+  const kernalLocation = useRef();
   const pixelLocation = useRef();
 
   const positionBuffer = useRef();
@@ -134,6 +149,10 @@ const GaussianBlur = ({ canvasRef, pixelSource }) => {
       glCore.program,
       'uResolution'
     );
+    kernalLocation.current = context.getUniformLocation(
+      glCore.program,
+      'uKernel'
+    );
     pixelLocation.current = context.getAttribLocation(
       glCore.program,
       'uSource'
@@ -141,6 +160,18 @@ const GaussianBlur = ({ canvasRef, pixelSource }) => {
 
     context.enableVertexAttribArray(positionLocation.current);
     context.enableVertexAttribArray(textCoordLocation.current);
+
+    context.useProgram(program.current);
+    context.uniform2f(
+      resolutionLocation.current,
+      context.canvas.width,
+      context.canvas.height
+    );
+    context.uniformMatrix3fv(
+      kernalLocation.current,
+      false,
+      new Float32Array(gaussianKernelAttribute.array)
+    );
 
     positionBuffer.current = createBuffer({
       context,
@@ -189,6 +220,11 @@ const GaussianBlur = ({ canvasRef, pixelSource }) => {
         context.canvas.width = sourceWidth;
         context.canvas.height = sourceHeight;
         context.viewport(0, 0, sourceWidth, sourceHeight);
+        context.uniform2f(
+          resolutionLocation.current,
+          sourceWidth,
+          sourceHeight
+        );
       }
 
       // clear
@@ -197,11 +233,6 @@ const GaussianBlur = ({ canvasRef, pixelSource }) => {
 
       // draw
       context.useProgram(program.current);
-      context.uniform2f(
-        resolutionLocation.current,
-        context.canvas.width,
-        context.canvas.height
-      );
       context.texImage2D(
         context.TEXTURE_2D,
         0, // mip level
