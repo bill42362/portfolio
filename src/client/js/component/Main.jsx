@@ -4,12 +4,12 @@ import styled from 'styled-components';
 
 import MediaStreamHandler from '../component/MediaStreamHandler.jsx';
 import MediaStreamMonitor from '../component/MediaStreamMonitor.jsx';
-import GreenBlueChannel from '../component/GreenBlueChannel.jsx';
+import GaussianBlur from '../component/GaussianBlur.jsx';
 
 const Main = () => {
   const [mediaStream, setMediaStream] = useState();
   const sourceVideo = useRef();
-  const greenBlueChannelCanvas = useRef();
+  const gaussianBlurCanvas = useRef();
 
   useEffect(() => {
     const video = document.createElement('video');
@@ -40,9 +40,9 @@ const Main = () => {
         <MediaStreamMonitor mediaStream={mediaStream} />
       </ModuleWrapper>
       <ModuleWrapper>
-        <GreenBlueChannel
+        <GaussianBlur
           pixelSource={sourceVideo.current}
-          canvasRef={greenBlueChannelCanvas}
+          canvasRef={gaussianBlurCanvas}
         />
       </ModuleWrapper>
     </StyledMain>
