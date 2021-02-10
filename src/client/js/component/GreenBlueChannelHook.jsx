@@ -3,7 +3,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 
-import { createProgram, clearGlCore } from '../resource/WebGL.js';
+import {
+  createProgram,
+  clearGlCore,
+  createBuffer,
+  createTexture,
+  dockBuffer,
+} from '../resource/WebGL.js';
 import ResetButtonStyle from '../style/ResetButtonStyle.js';
 
 const vertexShaderSource = `#version 300 es
@@ -38,51 +44,6 @@ const positionAttribute = {
 const textCoordAttribute = {
   array: [0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0],
   numComponents: 2,
-};
-
-const createBuffer = ({ context, attribute }) => {
-  const buffer = context.createBuffer();
-  context.bindBuffer(context.ARRAY_BUFFER, buffer);
-  context.bufferData(
-    context.ARRAY_BUFFER,
-    new Float32Array(attribute.array),
-    context.STATIC_DRAW
-  );
-  return {
-    buffer,
-    numComponents: attribute.numComponents,
-    count: Math.floor(attribute.array.length / attribute.numComponents),
-    type: context.FLOAT,
-    normalize: false,
-    offset: 0,
-    // how many bytes to get from one set of values to the next
-    // 0 = use type and numComponents above
-    stride: 0,
-  };
-};
-
-const createTexture = ({ context }) => {
-  const ctx = context;
-  const texture = ctx.createTexture();
-  ctx.activeTexture(ctx.TEXTURE0 + 0);
-  ctx.bindTexture(ctx.TEXTURE_2D, texture);
-  ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_S, ctx.CLAMP_TO_EDGE);
-  ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, ctx.CLAMP_TO_EDGE);
-  ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, ctx.NEAREST);
-  ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MAG_FILTER, ctx.NEAREST);
-  return texture;
-};
-
-const dockBuffer = ({ context, location, buffer }) => {
-  context.bindBuffer(context.ARRAY_BUFFER, buffer.buffer);
-  context.vertexAttribPointer(
-    location,
-    buffer.numComponents,
-    buffer.type,
-    buffer.normalize,
-    buffer.stride,
-    buffer.offset
-  );
 };
 
 const GreenBlueChannelHook = ({ canvasRef, pixelSource }) => {
