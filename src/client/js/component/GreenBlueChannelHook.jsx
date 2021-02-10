@@ -31,6 +31,60 @@ void main() {
 }
 `;
 
+const positionAttribute = {
+  array: [-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1],
+  numComponents: 2,
+};
+const textCoordAttribute = {
+  array: [0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0],
+  numComponents: 2,
+};
+
+const createBuffer = ({ context, attribute }) => {
+  const buffer = context.createBuffer();
+  context.bindBuffer(context.ARRAY_BUFFER, buffer);
+  context.bufferData(
+    context.ARRAY_BUFFER,
+    new Float32Array(attribute.array),
+    context.STATIC_DRAW
+  );
+  return {
+    buffer,
+    numComponents: attribute.numComponents,
+    count: Math.floor(attribute.array.length / attribute.numComponents),
+    type: context.FLOAT,
+    normalize: false,
+    offset: 0,
+    // how many bytes to get from one set of values to the next
+    // 0 = use type and numComponents above
+    stride: 0,
+  };
+};
+
+const createTexture = ({ context }) => {
+  const ctx = context;
+  const texture = ctx.createTexture();
+  ctx.activeTexture(ctx.TEXTURE0 + 0);
+  ctx.bindTexture(ctx.TEXTURE_2D, texture);
+  ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_S, ctx.CLAMP_TO_EDGE);
+  ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, ctx.CLAMP_TO_EDGE);
+  ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, ctx.NEAREST);
+  ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MAG_FILTER, ctx.NEAREST);
+  return texture;
+};
+
+const dockBuffer = ({ context, location, buffer }) => {
+  context.bindBuffer(context.ARRAY_BUFFER, buffer.buffer);
+  context.vertexAttribPointer(
+    location,
+    buffer.numComponents,
+    buffer.type,
+    buffer.normalize,
+    buffer.stride,
+    buffer.offset
+  );
+};
+
 const GreenBlueChannelHook = ({ canvasRef, pixelSource }) => {
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const [maxFps] = useState(30);
@@ -44,10 +98,40 @@ const GreenBlueChannelHook = ({ canvasRef, pixelSource }) => {
   const fragmentShader = useRef();
   const program = useRef();
 
+  const positionLocation = useRef();
+  const textCoordLocation = useRef();
+  const pixelLocation = useRef();
+
+  const positionBuffer = useRef();
+  const textCoordBuffer = useRef();
+  const pixelTexture = useRef();
+
   useEffect(() => {
     const clear = () => {
+      const context = webGlContext.current;
+      if (!context) {
+        return;
+      }
+
+      if (positionBuffer.current.buffer) {
+        context.deleteBuffer(positionBuffer.current.buffer);
+      }
+      if (textCoordBuffer.current.buffer) {
+        context.deleteBuffer(textCoordBuffer.current.buffer);
+      }
+      if (pixelTexture.current) {
+        context.deleteTexture(pixelTexture.current);
+      }
+
+      if (positionLocation.current) {
+        context.disableVertexAttribArray(positionLocation.current);
+      }
+      if (textCoordLocation.current) {
+        context.disableVertexAttribArray(textCoordLocation.current);
+      }
+
       return clearGlCore({
-        context: webGlContext.current,
+        context,
         vertexShader: vertexShader.current,
         fragmentShader: fragmentShader.current,
         program: program.current,
@@ -61,10 +145,11 @@ const GreenBlueChannelHook = ({ canvasRef, pixelSource }) => {
     const rect = canvas.getBoundingClientRect();
     canvas.height = rect.height;
     canvas.width = rect.width;
-    webGlContext.current = canvas.getContext('webgl2');
+    const context = canvas.getContext('webgl2');
+    webGlContext.current = context;
 
     const glCore = createProgram({
-      context: webGlContext.current,
+      context,
       vertexShaderSource,
       fragmentShaderSource,
     });
@@ -74,6 +159,43 @@ const GreenBlueChannelHook = ({ canvasRef, pixelSource }) => {
     vertexShader.current = glCore.vertexShader;
     fragmentShader.current = glCore.fragmentShader;
     program.current = glCore.program;
+
+    positionLocation.current = context.getAttribLocation(
+      glCore.program,
+      'aPosition'
+    );
+    textCoordLocation.current = context.getAttribLocation(
+      glCore.program,
+      'aTextCoord'
+    );
+    pixelLocation.current = context.getAttribLocation(
+      glCore.program,
+      'uSource'
+    );
+
+    context.enableVertexAttribArray(positionLocation.current);
+    context.enableVertexAttribArray(textCoordLocation.current);
+
+    positionBuffer.current = createBuffer({
+      context,
+      attribute: positionAttribute,
+    });
+    textCoordBuffer.current = createBuffer({
+      context,
+      attribute: textCoordAttribute,
+    });
+    pixelTexture.current = createTexture({ context });
+
+    dockBuffer({
+      context,
+      location: positionLocation.current,
+      buffer: positionBuffer.current,
+    });
+    dockBuffer({
+      context,
+      location: textCoordLocation.current,
+      buffer: textCoordBuffer.current,
+    });
 
     return clear;
   }, [canvasRef]);
@@ -85,14 +207,21 @@ const GreenBlueChannelHook = ({ canvasRef, pixelSource }) => {
         return;
       }
 
-      console.log('nextFrame()');
-
       // clear
       context.clearColor(0, 0, 0, 1);
       context.clear(context.COLOR_BUFFER_BIT);
 
       // draw
       context.useProgram(program.current);
+      context.texImage2D(
+        context.TEXTURE_2D,
+        0, // mip level
+        context.RGBA, // internam format
+        context.RGBA, // src format
+        context.UNSIGNED_BYTE, // src type
+        pixelSource
+      );
+      context.drawArrays(context.TRIANGLES, 0, positionBuffer.current.count);
     };
 
     const animate = timestamp => {
@@ -139,9 +268,7 @@ const GreenBlueChannelHook = ({ canvasRef, pixelSource }) => {
 };
 
 GreenBlueChannelHook.propTypes = {
-  pixelSource: PropTypes.shape({
-    current: PropTypes.node,
-  }),
+  pixelSource: PropTypes.object,
   canvasRef: PropTypes.object.isRequired,
 };
 

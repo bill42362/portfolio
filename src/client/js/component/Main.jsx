@@ -9,7 +9,7 @@ import GreenBlueChannelHook from '../component/GreenBlueChannelHook.jsx';
 const Main = () => {
   const [mediaStream, setMediaStream] = useState();
   const sourceVideo = useRef();
-  const greenBlueChannelCanvas = useRef();
+  const greenBlueChannelHookCanvas = useRef();
 
   useEffect(() => {
     const video = document.createElement('video');
@@ -42,7 +42,7 @@ const Main = () => {
       <ModuleWrapper>
         <GreenBlueChannelHook
           pixelSource={sourceVideo.current}
-          canvasRef={greenBlueChannelCanvas}
+          canvasRef={greenBlueChannelHookCanvas}
         />
       </ModuleWrapper>
     </StyledMain>
