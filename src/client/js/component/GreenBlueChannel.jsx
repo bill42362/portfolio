@@ -1,8 +1,15 @@
 // GreenBlueChannel.jsx
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 
+import {
+  createProgram,
+  clearGlCore,
+  createBuffer,
+  createTexture,
+  dockBuffer,
+} from '../resource/WebGL.js';
 import ResetButtonStyle from '../style/ResetButtonStyle.js';
 
 const vertexShaderSource = `#version 300 es
@@ -15,7 +22,6 @@ void main() {
   vTextCoord = aTextCoord;
 }
 `;
-
 const fragmentShaderSource = `#version 300 es
 precision highp float;
 
@@ -31,7 +37,7 @@ void main() {
 }
 `;
 
-const vertexAttribute = {
+const positionAttribute = {
   array: [-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1],
   numComponents: 2,
 };
@@ -40,355 +46,190 @@ const textCoordAttribute = {
   numComponents: 2,
 };
 
-const glStateTemplate = {
-  sources: {
-    attributes: {
-      vertex: null,
-      textCoord: null,
-    },
-    shaders: {
-      vertex: null,
-      fragment: null,
-    },
-  },
-  program: null,
-  shaders: { vertex: null, fragment: null },
-  locations: {
-    attributes: { aPosition: null, aTextCoord: null },
-    textures: { uSource: null },
-  },
-  buffers: { aPosition: null, aTextCoord: null },
-  textures: { uSource: null },
-};
+const GreenBlueChannel = ({ canvasRef, pixelSource }) => {
+  const [shouldAnimate, setShouldAnimate] = useState(false);
+  const [maxFps] = useState(30);
+  const [fps, setFps] = useState(0);
 
-const getGlState = ({
-  vertexShaderSource = null,
-  fragmentShaderSource = null,
-  vertexAttribute = null,
-  textCoordAttribute = null,
-} = {}) => {
-  return {
-    ...glStateTemplate,
-    sources: {
-      attributes: {
-        vertex: vertexAttribute,
-        textCoord: textCoordAttribute,
-      },
-      shaders: { vertex: vertexShaderSource, fragment: fragmentShaderSource },
-    },
-  };
-};
+  const animationFrame = useRef();
+  const lastFrameTimestamp = useRef(0);
 
-const createShader = (context, type, source) => {
-  const shader = context.createShader(type);
-  context.shaderSource(shader, source);
-  context.compileShader(shader);
-  return shader;
-};
+  const webGlContext = useRef();
+  const vertexShader = useRef();
+  const fragmentShader = useRef();
+  const program = useRef();
 
-const createBuffer = (context, attribute) => {
-  const buffer = context.createBuffer();
-  context.bindBuffer(context.ARRAY_BUFFER, buffer);
-  context.bufferData(
-    context.ARRAY_BUFFER,
-    new Float32Array(attribute.array),
-    context.STATIC_DRAW
-  );
-  return {
-    buffer,
-    numComponents: attribute.numComponents,
-    count: Math.floor(attribute.array.length / attribute.numComponents),
-    type: context.FLOAT,
-    normalize: false,
-    offset: 0,
-    // how many bytes to get from one set of values to the next
-    // 0 = use type and numComponents above
-    stride: 0,
-  };
-};
+  const positionLocation = useRef();
+  const textCoordLocation = useRef();
+  const pixelLocation = useRef();
 
-const dockBuffer = (context, location, buffer) => {
-  context.bindBuffer(context.ARRAY_BUFFER, buffer.buffer);
-  context.vertexAttribPointer(
-    location,
-    buffer.numComponents,
-    buffer.type,
-    buffer.normalize,
-    buffer.stride,
-    buffer.offset
-  );
-};
+  const positionBuffer = useRef();
+  const textCoordBuffer = useRef();
+  const pixelTexture = useRef();
 
-const updateGlState = ({ context, oldState, newState }) => {
-  const newAttributes = newState.sources.attributes;
-  const oldAttributes = oldState.sources.attributes;
-  if (newAttributes.vertex !== oldAttributes.vertex) {
-    if (oldState.buffers.aPosition) {
-      context.deleteBuffer(oldState.buffers.aPosition);
-    }
-    newState.buffers.aPosition = createBuffer(context, newAttributes.vertex);
-  } else {
-    newState.buffers.aPosition = oldState.buffers.aPosition;
-  }
-  if (newAttributes.textCoord !== oldAttributes.textCoord) {
-    if (oldState.buffers.aTextCoord) {
-      context.deleteBuffer(oldState.buffers.aTextCoord);
-    }
-    newState.buffers.aTextCoord = createBuffer(
-      context,
-      newAttributes.textCoord
-    );
-  } else {
-    newState.buffers.aTextCoord = oldState.buffers.aTextCoord;
-  }
-
-  if (!oldState.textures.uSource) {
-    const ctx = context;
-    const texture = ctx.createTexture();
-    ctx.activeTexture(ctx.TEXTURE0 + 0);
-    ctx.bindTexture(ctx.TEXTURE_2D, texture);
-    ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_S, ctx.CLAMP_TO_EDGE);
-    ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, ctx.CLAMP_TO_EDGE);
-    ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, ctx.NEAREST);
-    ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MAG_FILTER, ctx.NEAREST);
-    newState.textures.uSource = texture;
-  } else {
-    newState.textures.uSource = oldState.textures.uSource;
-  }
-
-  const shouldUpdateVertexShader =
-    oldState.sources.shaders.vertex !== newState.sources.shaders.vertex;
-  if (shouldUpdateVertexShader) {
-    newState.shaders.vertex = createShader(
-      context,
-      context.VERTEX_SHADER,
-      newState.sources.shaders.vertex
-    );
-  } else {
-    newState.shaders.vertex = oldState.shaders.vertex;
-  }
-
-  const shouldUpdateFragmentShader =
-    oldState.sources.shaders.fragment !== newState.sources.shaders.fragment;
-  if (shouldUpdateFragmentShader) {
-    newState.shaders.fragment = createShader(
-      context,
-      context.FRAGMENT_SHADER,
-      newState.sources.shaders.fragment
-    );
-  } else {
-    newState.shaders.fragment = oldState.shaders.fragment;
-  }
-
-  if (shouldUpdateVertexShader || shouldUpdateFragmentShader) {
-    const program = context.createProgram();
-    context.attachShader(program, newState.shaders.vertex);
-    context.attachShader(program, newState.shaders.fragment);
-    context.linkProgram(program);
-    const success = context.getProgramParameter(program, context.LINK_STATUS);
-    if (success) {
-      newState.program = program;
-      if (oldState.shaders.vertex) {
-        context.deleteShader(oldState.shaders.vertex);
+  useEffect(() => {
+    const clear = () => {
+      const context = webGlContext.current;
+      if (!context) {
+        return;
       }
-      if (oldState.shaders.fragment) {
-        context.deleteShader(oldState.shaders.fragment);
+
+      if (positionBuffer.current.buffer) {
+        context.deleteBuffer(positionBuffer.current.buffer);
       }
-      if (oldState.program) {
-        context.deleteProgram(oldState.program);
+      if (textCoordBuffer.current.buffer) {
+        context.deleteBuffer(textCoordBuffer.current.buffer);
       }
-    } else {
-      // eslint-disable-next-line no-console
-      console.error('Link failed:', context.getProgramInfoLog(program));
-      // eslint-disable-next-line no-console
-      console.error(
-        'vertex shader info-log:',
-        context.getShaderInfoLog(newState.shaders.vertex)
-      );
-      // eslint-disable-next-line no-console
-      console.error(
-        'fragment shader info-log:',
-        context.getShaderInfoLog(newState.shaders.fragment)
-      );
-      context.deleteShader(newState.shaders.vertex);
-      context.deleteShader(newState.shaders.fragment);
-      context.deleteProgram(program);
-      newState.program = oldState.program;
-    }
-  } else {
-    newState.program = oldState.program;
-  }
+      if (pixelTexture.current) {
+        context.deleteTexture(pixelTexture.current);
+      }
 
-  if (newState.program !== oldState.program) {
-    const oldLocations = oldState.locations;
-    const newLocations = newState.locations;
-    if (oldLocations.attributes.aPosition) {
-      context.disableVertexAttribArray(oldLocations.attributes.aPosition);
-    }
-    if (oldLocations.attributes.aTextCoord) {
-      context.disableVertexAttribArray(oldLocations.attributes.aTextCoord);
-    }
+      if (positionLocation.current) {
+        context.disableVertexAttribArray(positionLocation.current);
+      }
+      if (textCoordLocation.current) {
+        context.disableVertexAttribArray(textCoordLocation.current);
+      }
 
-    newLocations.attributes.aPosition = context.getAttribLocation(
-      newState.program,
-      'aPosition'
-    );
-    newLocations.attributes.aTextCoord = context.getAttribLocation(
-      newState.program,
-      'aTextCoord'
-    );
-    newLocations.textures.uSource = context.getUniformLocation(
-      newState.program,
-      'uSource'
-    );
+      return clearGlCore({
+        context,
+        vertexShader: vertexShader.current,
+        fragmentShader: fragmentShader.current,
+        program: program.current,
+      });
+    };
 
-    context.enableVertexAttribArray(newLocations.attributes.aPosition);
-    context.enableVertexAttribArray(newLocations.attributes.aTextCoord);
-  } else {
-    newState.locations = oldState.locations;
-  }
-
-  if (
-    newState.program !== oldState.program ||
-    newAttributes.vertex !== oldAttributes.vertex
-  ) {
-    dockBuffer(
-      context,
-      newState.locations.attributes.aPosition,
-      newState.buffers.aPosition
-    );
-  }
-
-  if (
-    newState.program !== oldState.program ||
-    newAttributes.textCoord !== oldAttributes.textCoord
-  ) {
-    dockBuffer(
-      context,
-      newState.locations.attributes.aTextCoord,
-      newState.buffers.aTextCoord
-    );
-  }
-
-  return newState;
-};
-
-export class GreenBlueChannel extends React.PureComponent {
-  state = { maxFps: 30, fps: 0, shouldAnimate: false };
-  webGlContext = null;
-  glState = getGlState();
-  lastFrameTimestamp = 0;
-  animationFrame = null;
-
-  initGl = () => {
-    const { canvasRef } = this.props;
     const canvas = canvasRef.current;
     if (!canvas) {
-      return;
+      return clear;
     }
     const rect = canvas.getBoundingClientRect();
     canvas.height = rect.height;
     canvas.width = rect.width;
+    const context = canvas.getContext('webgl2');
+    webGlContext.current = context;
 
-    let context = null;
-    context = canvas.getContext('webgl2');
-    this.webGlContext = context;
-  };
+    const glCore = createProgram({
+      context,
+      vertexShaderSource,
+      fragmentShaderSource,
+    });
+    if (!glCore) {
+      return clear;
+    }
+    vertexShader.current = glCore.vertexShader;
+    fragmentShader.current = glCore.fragmentShader;
+    program.current = glCore.program;
 
-  nextFrame = () => {
-    const { pixelSource } = this.props;
-    const context = this.webGlContext;
-    if (!context || !pixelSource) {
+    positionLocation.current = context.getAttribLocation(
+      glCore.program,
+      'aPosition'
+    );
+    textCoordLocation.current = context.getAttribLocation(
+      glCore.program,
+      'aTextCoord'
+    );
+    pixelLocation.current = context.getAttribLocation(
+      glCore.program,
+      'uSource'
+    );
+
+    context.enableVertexAttribArray(positionLocation.current);
+    context.enableVertexAttribArray(textCoordLocation.current);
+
+    positionBuffer.current = createBuffer({
+      context,
+      attribute: positionAttribute,
+    });
+    textCoordBuffer.current = createBuffer({
+      context,
+      attribute: textCoordAttribute,
+    });
+    pixelTexture.current = createTexture({ context });
+
+    dockBuffer({
+      context,
+      location: positionLocation.current,
+      buffer: positionBuffer.current,
+    });
+    dockBuffer({
+      context,
+      location: textCoordLocation.current,
+      buffer: textCoordBuffer.current,
+    });
+
+    return clear;
+  }, [canvasRef]);
+
+  useEffect(() => {
+    const nextFrame = () => {
+      const context = webGlContext.current;
+      if (!context || !pixelSource || !program.current) {
+        return;
+      }
+
+      // clear
+      context.clearColor(0, 0, 0, 1);
+      context.clear(context.COLOR_BUFFER_BIT);
+
+      // draw
+      context.useProgram(program.current);
+      context.texImage2D(
+        context.TEXTURE_2D,
+        0, // mip level
+        context.RGBA, // internam format
+        context.RGBA, // src format
+        context.UNSIGNED_BYTE, // src type
+        pixelSource
+      );
+      context.drawArrays(context.TRIANGLES, 0, positionBuffer.current.count);
+    };
+
+    const animate = timestamp => {
+      if (shouldAnimate) {
+        animationFrame.current = window.requestAnimationFrame(animate);
+      }
+      const minInterval = 1000 / maxFps;
+      const elapsed = timestamp - lastFrameTimestamp.current;
+      if (elapsed >= minInterval) {
+        lastFrameTimestamp.current = timestamp;
+        nextFrame();
+        setFps(Math.ceil(1000 / elapsed));
+      }
+    };
+
+    if (!shouldAnimate) {
+      window.cancelAnimationFrame(animationFrame.current);
       return;
     }
 
-    this.glState = updateGlState({
-      context,
-      oldState: this.glState,
-      newState: getGlState({
-        vertexShaderSource,
-        fragmentShaderSource,
-        vertexAttribute,
-        textCoordAttribute,
-      }),
-    });
+    window.cancelAnimationFrame(animationFrame.current);
+    animationFrame.current = window.requestAnimationFrame(animate);
+    return () => window.cancelAnimationFrame(animationFrame.current);
+  }, [shouldAnimate, maxFps, pixelSource]);
 
-    // clear
-    context.clearColor(0, 0, 0, 1);
-    context.clear(context.COLOR_BUFFER_BIT);
-
-    // draw
-    context.useProgram(this.glState.program);
-
-    context.bindTexture(context.TEXTURE_2D, this.glState.textures.uSource);
-    context.texImage2D(
-      context.TEXTURE_2D,
-      0, // mip level
-      context.RGBA, // internam format
-      context.RGBA, // src format
-      context.UNSIGNED_BYTE, // src type
-      pixelSource
-    );
-
-    const aPositionBuffer = this.glState.buffers.aPosition;
-    context.bindBuffer(context.ARRAY_BUFFER, aPositionBuffer.buffer);
-    context.drawArrays(context.TRIANGLES, 0, aPositionBuffer.count);
-  };
-
-  animate = timestamp => {
-    const { maxFps, shouldAnimate } = this.state;
-    if (shouldAnimate) {
-      this.animationFrame = window.requestAnimationFrame(this.animate);
-    }
-
-    const minInterval = 1000 / maxFps;
-    const elapsed = timestamp - this.lastFrameTimestamp;
-    if (elapsed > minInterval) {
-      this.lastFrameTimestamp = timestamp;
-      this.nextFrame();
-      this.setState({ fps: Math.ceil(1000 / elapsed) });
-    }
-  };
-
-  toggleAnimate = () => {
-    const { shouldAnimate: currentShouldAnimate } = this.state;
-    const shouldAnimate = !currentShouldAnimate;
-    this.setState({ shouldAnimate });
-    if (shouldAnimate) {
-      this.animationFrame = window.requestAnimationFrame(this.animate);
-    }
-  };
-
-  componentDidMount() {
-    this.initGl();
-  }
-
-  render() {
-    const { shouldAnimate, fps } = this.state;
-    const { canvasRef, pixelSource } = this.props;
-    return (
-      <StyledGreenBlueChannel>
-        <Header>GreenBlueChannel</Header>
-        <Body>
-          <canvas ref={canvasRef} />
-        </Body>
-        <Footer>
-          <DrawButton
-            isActived={shouldAnimate}
-            disabled={!pixelSource}
-            onClick={this.toggleAnimate}
-          >
-            Draw
-          </DrawButton>
-          <span>FPS: {fps}</span>
-        </Footer>
-      </StyledGreenBlueChannel>
-    );
-  }
-}
+  return (
+    <StyledGreenBlueChannel>
+      <Header>GreenBlueChannel</Header>
+      <Body>
+        <canvas ref={canvasRef} />
+      </Body>
+      <Footer>
+        <DrawButton
+          isActived={shouldAnimate}
+          disabled={!pixelSource}
+          onClick={() => setShouldAnimate(!shouldAnimate)}
+        >
+          Draw
+        </DrawButton>
+        <span>FPS: {fps}</span>
+      </Footer>
+    </StyledGreenBlueChannel>
+  );
+};
 
 GreenBlueChannel.propTypes = {
-  pixelSource: PropTypes.any,
+  pixelSource: PropTypes.object,
   canvasRef: PropTypes.object.isRequired,
 };
 
