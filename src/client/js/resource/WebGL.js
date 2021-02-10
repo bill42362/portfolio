@@ -57,3 +57,48 @@ export const clearGlCore = ({
   fragmentShader && context.deleteShader(fragmentShader);
   program && context.deleteProgram(program);
 };
+
+export const createBuffer = ({ context, attribute }) => {
+  const buffer = context.createBuffer();
+  context.bindBuffer(context.ARRAY_BUFFER, buffer);
+  context.bufferData(
+    context.ARRAY_BUFFER,
+    new Float32Array(attribute.array),
+    context.STATIC_DRAW
+  );
+  return {
+    buffer,
+    numComponents: attribute.numComponents,
+    count: Math.floor(attribute.array.length / attribute.numComponents),
+    type: context.FLOAT,
+    normalize: false,
+    offset: 0,
+    // how many bytes to get from one set of values to the next
+    // 0 = use type and numComponents above
+    stride: 0,
+  };
+};
+
+export const createTexture = ({ context }) => {
+  const ctx = context;
+  const texture = ctx.createTexture();
+  ctx.activeTexture(ctx.TEXTURE0 + 0);
+  ctx.bindTexture(ctx.TEXTURE_2D, texture);
+  ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_S, ctx.CLAMP_TO_EDGE);
+  ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, ctx.CLAMP_TO_EDGE);
+  ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, ctx.NEAREST);
+  ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MAG_FILTER, ctx.NEAREST);
+  return texture;
+};
+
+export const dockBuffer = ({ context, location, buffer }) => {
+  context.bindBuffer(context.ARRAY_BUFFER, buffer.buffer);
+  context.vertexAttribPointer(
+    location,
+    buffer.numComponents,
+    buffer.type,
+    buffer.normalize,
+    buffer.stride,
+    buffer.offset
+  );
+};
