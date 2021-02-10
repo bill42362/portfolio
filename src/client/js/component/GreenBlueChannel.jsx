@@ -168,6 +168,24 @@ const GreenBlueChannel = ({ canvasRef, pixelSource }) => {
         return;
       }
 
+      let sourceWidth = context.canvas.width;
+      let sourceHeight = context.canvas.height;
+      if ('VIDEO' == pixelSource.nodeName) {
+        sourceWidth = pixelSource.videoWidth;
+        sourceHeight = pixelSource.videoHeight;
+      } else if ('CANVAS' === pixelSource.nodeName) {
+        sourceWidth = pixelSource.width;
+        sourceHeight = pixelSource.height;
+      }
+
+      const canvasWidth = context.canvas.width;
+      const canvasHeight = context.canvas.height;
+      if (canvasWidth !== sourceWidth || canvasHeight !== sourceHeight) {
+        context.canvas.width = sourceWidth;
+        context.canvas.height = sourceHeight;
+        context.viewport(0, 0, sourceWidth, sourceHeight);
+      }
+
       // clear
       context.clearColor(0, 0, 0, 1);
       context.clear(context.COLOR_BUFFER_BIT);
