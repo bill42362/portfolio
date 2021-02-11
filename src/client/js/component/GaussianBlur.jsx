@@ -27,7 +27,8 @@ precision highp float;
 
 uniform sampler2D uSource;
 uniform vec2 uResolution;
-uniform mat3 uKernel;
+uniform int uKernelSize;
+uniform float uKernelData[33];
 in vec2 vTextCoord;
 
 out vec4 outColor;
@@ -36,11 +37,9 @@ void main() {
   vec2 delta = 1.0 / uResolution;
   vec4 outputColor = vec4(0.0, 0.0, 0.0, 0.0);
 
-  for (int x = 0; x <= 2; x++) {
-    for (int y = 0; y <= 2; y++) {
-      vec2 offset = vTextCoord + vec2(x - 1, y - 1) * delta;
-      outputColor += uKernel[x][y] * texture(uSource, offset);
-    }
+  for (int x = -uKernelSize; x <= uKernelSize; x++) {
+    vec2 offset = vTextCoord + vec2(x, 0.0) * delta;
+    outputColor += uKernelData[x] * texture(uSource, offset);
   }
 
   outColor = outputColor;
@@ -55,18 +54,34 @@ const textCoordAttribute = {
   array: [0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0],
   numComponents: 2,
 };
-const gaussianKernelAttribute = {
-  array: [0.0625, 0.125, 0.0625, 0.125, 0.25, 0.125, 0.0625, 0.125, 0.0625],
-  numComponents: 9,
+
+const getKernal = (inputRadius, sigma) => {
+  const radius = Math.floor(Math.abs(inputRadius));
+  const size = radius * 2 + 1;
+  const sigma2 = sigma * sigma;
+  const data = new Array(size);
+  let sum = 0;
+  for (let x = -radius; x <= radius; ++x) {
+    const index = x + radius;
+    data[index] =
+      Math.exp(-(x * x) / (2.0 * sigma2)) / Math.sqrt(2.0 * Math.PI * sigma2);
+    sum += data[index];
+  }
+  const normalizedData = data.map(value => value / sum);
+  return { data: new Float32Array(normalizedData), size };
 };
 
 const GaussianBlur = ({ canvasRef, pixelSource }) => {
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const [maxFps] = useState(30);
+  const [radius] = useState(8);
+  const [sigma] = useState(5);
   const [fps, setFps] = useState(0);
 
   const animationFrame = useRef();
   const lastFrameTimestamp = useRef(0);
+  const shouldUpdateKernalUniform = useRef(false);
+  const kernal = useRef();
 
   const webGlContext = useRef();
   const vertexShader = useRef();
@@ -76,12 +91,19 @@ const GaussianBlur = ({ canvasRef, pixelSource }) => {
   const positionLocation = useRef();
   const textCoordLocation = useRef();
   const resolutionLocation = useRef();
-  const kernalLocation = useRef();
   const pixelLocation = useRef();
+
+  const kernalDataLocation = useRef();
+  const kernalSizeLocation = useRef();
 
   const positionBuffer = useRef();
   const textCoordBuffer = useRef();
   const pixelTexture = useRef();
+
+  useEffect(() => {
+    kernal.current = getKernal(radius, sigma);
+    shouldUpdateKernalUniform.current = true;
+  }, [radius, sigma]);
 
   useEffect(() => {
     const clear = () => {
@@ -149,9 +171,13 @@ const GaussianBlur = ({ canvasRef, pixelSource }) => {
       glCore.program,
       'uResolution'
     );
-    kernalLocation.current = context.getUniformLocation(
+    kernalDataLocation.current = context.getUniformLocation(
       glCore.program,
-      'uKernel'
+      'uKernelData'
+    );
+    kernalSizeLocation.current = context.getUniformLocation(
+      glCore.program,
+      'uKernelSize'
     );
     pixelLocation.current = context.getAttribLocation(
       glCore.program,
@@ -167,11 +193,8 @@ const GaussianBlur = ({ canvasRef, pixelSource }) => {
       context.canvas.width,
       context.canvas.height
     );
-    context.uniformMatrix3fv(
-      kernalLocation.current,
-      false,
-      new Float32Array(gaussianKernelAttribute.array)
-    );
+    context.uniform1fv(kernalDataLocation.current, kernal.current.data);
+    context.uniform1i(kernalSizeLocation.current, kernal.current.size);
 
     positionBuffer.current = createBuffer({
       context,
@@ -214,6 +237,13 @@ const GaussianBlur = ({ canvasRef, pixelSource }) => {
         sourceHeight = pixelSource.height;
       }
 
+      // clear
+      context.clearColor(0, 0, 0, 1);
+      context.clear(context.COLOR_BUFFER_BIT);
+
+      // draw
+      context.useProgram(program.current);
+
       const canvasWidth = context.canvas.width;
       const canvasHeight = context.canvas.height;
       if (canvasWidth !== sourceWidth || canvasHeight !== sourceHeight) {
@@ -227,12 +257,12 @@ const GaussianBlur = ({ canvasRef, pixelSource }) => {
         );
       }
 
-      // clear
-      context.clearColor(0, 0, 0, 1);
-      context.clear(context.COLOR_BUFFER_BIT);
+      if (shouldUpdateKernalUniform.current) {
+        context.uniform1fv(kernalDataLocation.current, kernal.current.data);
+        context.uniform1i(kernalSizeLocation.current, kernal.current.size);
+        shouldUpdateKernalUniform.current = false;
+      }
 
-      // draw
-      context.useProgram(program.current);
       context.texImage2D(
         context.TEXTURE_2D,
         0, // mip level
