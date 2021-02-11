@@ -15,11 +15,19 @@ import ResetButtonStyle from '../style/ResetButtonStyle.js';
 const vertexShaderSource = `#version 300 es
 in vec4 aPosition;
 in vec2 aTextCoord;
+uniform int uIsVertical;
 out vec2 vTextCoord;
+flat out int vIsVertical;
 
 void main() {
-  gl_Position = aPosition;
+  vec4 position = aPosition;
+  if (1 == uIsVertical) {
+    // texture axis is opposite with canvas.
+    position = vec4(aPosition.x, -aPosition.y, aPosition.zw);
+  }
+  gl_Position = position;
   vTextCoord = aTextCoord;
+  vIsVertical = uIsVertical;
 }
 `;
 const fragmentShaderSource = `#version 300 es
@@ -30,6 +38,7 @@ uniform vec2 uResolution;
 uniform int uKernelSize;
 uniform float uKernelData[33];
 in vec2 vTextCoord;
+flat in int vIsVertical;
 
 out vec4 outColor;
 
@@ -37,9 +46,13 @@ void main() {
   vec2 delta = 1.0 / uResolution;
   vec4 outputColor = vec4(0.0, 0.0, 0.0, 0.0);
 
-  for (int x = -uKernelSize; x <= uKernelSize; x++) {
-    vec2 offset = vTextCoord + vec2(x, 0.0) * delta;
-    outputColor += uKernelData[x] * texture(uSource, offset);
+  for (int index = -uKernelSize; index <= uKernelSize; index++) {
+    vec2 step = vec2(index, 0.0);
+    if (1 == vIsVertical) {
+      step = vec2(0.0, index);
+    }
+    vec2 offset = vTextCoord + step * delta;
+    outputColor += uKernelData[index] * texture(uSource, offset);
   }
 
   outColor = outputColor;
@@ -74,7 +87,7 @@ const getKernal = (inputRadius, sigma) => {
 const GaussianBlur = ({ canvasRef, pixelSource }) => {
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const [maxFps] = useState(30);
-  const [radius] = useState(8);
+  const [radius] = useState(16);
   const [sigma] = useState(5);
   const [fps, setFps] = useState(0);
 
@@ -93,12 +106,16 @@ const GaussianBlur = ({ canvasRef, pixelSource }) => {
   const resolutionLocation = useRef();
   const pixelLocation = useRef();
 
+  const twoPassToggleLocation = useRef();
   const kernalDataLocation = useRef();
   const kernalSizeLocation = useRef();
 
   const positionBuffer = useRef();
   const textCoordBuffer = useRef();
   const pixelTexture = useRef();
+  const twoPassTexture = useRef();
+
+  const twoPassFramebuffer = useRef();
 
   useEffect(() => {
     kernal.current = getKernal(radius, sigma);
@@ -120,6 +137,9 @@ const GaussianBlur = ({ canvasRef, pixelSource }) => {
       }
       if (pixelTexture.current) {
         context.deleteTexture(pixelTexture.current);
+      }
+      if (twoPassFramebuffer.current) {
+        context.deleteFramebuffer(twoPassFramebuffer.current);
       }
 
       if (positionLocation.current) {
@@ -171,6 +191,10 @@ const GaussianBlur = ({ canvasRef, pixelSource }) => {
       glCore.program,
       'uResolution'
     );
+    twoPassToggleLocation.current = context.getUniformLocation(
+      glCore.program,
+      'uIsVertical'
+    );
     kernalDataLocation.current = context.getUniformLocation(
       glCore.program,
       'uKernelData'
@@ -179,7 +203,7 @@ const GaussianBlur = ({ canvasRef, pixelSource }) => {
       glCore.program,
       'uKernelSize'
     );
-    pixelLocation.current = context.getAttribLocation(
+    pixelLocation.current = context.getUniformLocation(
       glCore.program,
       'uSource'
     );
@@ -193,6 +217,7 @@ const GaussianBlur = ({ canvasRef, pixelSource }) => {
       context.canvas.width,
       context.canvas.height
     );
+    context.uniform1i(twoPassToggleLocation.current, 0);
     context.uniform1fv(kernalDataLocation.current, kernal.current.data);
     context.uniform1i(kernalSizeLocation.current, kernal.current.size);
 
@@ -204,7 +229,19 @@ const GaussianBlur = ({ canvasRef, pixelSource }) => {
       context,
       attribute: textCoordAttribute,
     });
-    pixelTexture.current = createTexture({ context });
+    pixelTexture.current = createTexture({ context, index: 0 });
+    twoPassTexture.current = createTexture({ context, index: 1 });
+    context.texImage2D(
+      context.TEXTURE_2D,
+      0, // level
+      context.RGBA, // internal format
+      context.canvas.width,
+      context.canvas.height,
+      0, // border
+      context.RGBA, // src format
+      context.UNSIGNED_BYTE, // src type
+      null
+    );
 
     dockBuffer({
       context,
@@ -216,6 +253,16 @@ const GaussianBlur = ({ canvasRef, pixelSource }) => {
       location: textCoordLocation.current,
       buffer: textCoordBuffer.current,
     });
+
+    twoPassFramebuffer.current = context.createFramebuffer();
+    context.bindFramebuffer(context.FRAMEBUFFER, twoPassFramebuffer.current);
+    context.framebufferTexture2D(
+      context.FRAMEBUFFER,
+      context.COLOR_ATTACHMENT0,
+      context.TEXTURE_2D,
+      twoPassTexture.current,
+      0 // level
+    );
 
     return clear;
   }, [canvasRef]);
@@ -255,6 +302,17 @@ const GaussianBlur = ({ canvasRef, pixelSource }) => {
           sourceWidth,
           sourceHeight
         );
+        context.texImage2D(
+          context.TEXTURE_2D,
+          0, // level
+          context.RGBA, // internal format
+          sourceWidth,
+          sourceHeight,
+          0, // border
+          context.RGBA, // src format
+          context.UNSIGNED_BYTE, // src type
+          null
+        );
       }
 
       if (shouldUpdateKernalUniform.current) {
@@ -263,14 +321,24 @@ const GaussianBlur = ({ canvasRef, pixelSource }) => {
         shouldUpdateKernalUniform.current = false;
       }
 
+      context.bindFramebuffer(context.FRAMEBUFFER, twoPassFramebuffer.current);
+      context.uniform1i(pixelLocation.current, 0);
+      context.uniform1i(twoPassToggleLocation.current, 0);
+      context.bindTexture(context.TEXTURE_2D, pixelTexture.current);
       context.texImage2D(
         context.TEXTURE_2D,
         0, // mip level
-        context.RGBA, // internam format
+        context.RGBA, // internal format
         context.RGBA, // src format
         context.UNSIGNED_BYTE, // src type
         pixelSource
       );
+      context.drawArrays(context.TRIANGLES, 0, positionBuffer.current.count);
+
+      context.bindFramebuffer(context.FRAMEBUFFER, null);
+      context.uniform1i(pixelLocation.current, 1);
+      context.uniform1i(twoPassToggleLocation.current, 1);
+      context.bindTexture(context.TEXTURE_2D, twoPassTexture.current);
       context.drawArrays(context.TRIANGLES, 0, positionBuffer.current.count);
     };
 
