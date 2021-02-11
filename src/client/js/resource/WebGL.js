@@ -79,10 +79,10 @@ export const createBuffer = ({ context, attribute }) => {
   };
 };
 
-export const createTexture = ({ context }) => {
+export const createTexture = ({ context, index = 0 }) => {
   const ctx = context;
   const texture = ctx.createTexture();
-  ctx.activeTexture(ctx.TEXTURE0 + 0);
+  ctx.activeTexture(ctx.TEXTURE0 + index);
   ctx.bindTexture(ctx.TEXTURE_2D, texture);
   ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_S, ctx.CLAMP_TO_EDGE);
   ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, ctx.CLAMP_TO_EDGE);
