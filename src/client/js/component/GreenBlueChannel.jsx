@@ -129,7 +129,7 @@ const GreenBlueChannel = ({ canvasRef, pixelSource }) => {
       glCore.program,
       'aTextCoord'
     );
-    pixelLocation.current = context.getAttribLocation(
+    pixelLocation.current = context.getUniformLocation(
       glCore.program,
       'uSource'
     );
@@ -192,6 +192,7 @@ const GreenBlueChannel = ({ canvasRef, pixelSource }) => {
 
       // draw
       context.useProgram(program.current);
+      context.uniform1i(pixelLocation.current, 0);
       context.texImage2D(
         context.TEXTURE_2D,
         0, // mip level
