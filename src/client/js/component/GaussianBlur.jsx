@@ -35,8 +35,8 @@ precision highp float;
 
 uniform sampler2D uSource;
 uniform vec2 uResolution;
-uniform int uKernelSize;
-uniform float uKernelData[33];
+uniform int uKernalRadius;
+uniform float uKernelData[65];
 in vec2 vTextCoord;
 flat in int vIsVertical;
 
@@ -46,13 +46,13 @@ void main() {
   vec2 delta = 1.0 / uResolution;
   vec4 outputColor = vec4(0.0, 0.0, 0.0, 0.0);
 
-  for (int index = -uKernelSize; index <= uKernelSize; index++) {
+  for (int index = -uKernalRadius; index <= uKernalRadius; index++) {
     vec2 step = vec2(index, 0.0);
     if (1 == vIsVertical) {
       step = vec2(0.0, index);
     }
     vec2 offset = vTextCoord + step * delta;
-    outputColor += uKernelData[index] * texture(uSource, offset);
+    outputColor += uKernelData[index + uKernalRadius] * texture(uSource, offset);
   }
 
   outColor = outputColor;
@@ -70,9 +70,8 @@ const textCoordAttribute = {
 
 const getKernal = (inputRadius, sigma) => {
   const radius = Math.floor(Math.abs(inputRadius));
-  const size = radius * 2 + 1;
   const sigma2 = sigma * sigma;
-  const data = new Array(size);
+  const data = new Array(radius * 2 + 1);
   let sum = 0;
   for (let x = -radius; x <= radius; ++x) {
     const index = x + radius;
@@ -81,14 +80,14 @@ const getKernal = (inputRadius, sigma) => {
     sum += data[index];
   }
   const normalizedData = data.map(value => value / sum);
-  return { data: new Float32Array(normalizedData), size };
+  return { data: new Float32Array(normalizedData), radius };
 };
 
 const GaussianBlur = ({ canvasRef, pixelSource }) => {
   const [shouldAnimate, setShouldAnimate] = useState(false);
-  const [maxFps] = useState(30);
-  const [radius] = useState(16);
-  const [sigma] = useState(5);
+  const [maxFps, setMaxFps] = useState(30);
+  const [radius, setRadius] = useState(16);
+  const [sigma, setSigma] = useState(5);
   const [fps, setFps] = useState(0);
 
   const animationFrame = useRef();
@@ -108,7 +107,7 @@ const GaussianBlur = ({ canvasRef, pixelSource }) => {
 
   const twoPassToggleLocation = useRef();
   const kernalDataLocation = useRef();
-  const kernalSizeLocation = useRef();
+  const kernalRadiusLocation = useRef();
 
   const positionBuffer = useRef();
   const textCoordBuffer = useRef();
@@ -199,9 +198,9 @@ const GaussianBlur = ({ canvasRef, pixelSource }) => {
       glCore.program,
       'uKernelData'
     );
-    kernalSizeLocation.current = context.getUniformLocation(
+    kernalRadiusLocation.current = context.getUniformLocation(
       glCore.program,
-      'uKernelSize'
+      'uKernalRadius'
     );
     pixelLocation.current = context.getUniformLocation(
       glCore.program,
@@ -219,7 +218,7 @@ const GaussianBlur = ({ canvasRef, pixelSource }) => {
     );
     context.uniform1i(twoPassToggleLocation.current, 0);
     context.uniform1fv(kernalDataLocation.current, kernal.current.data);
-    context.uniform1i(kernalSizeLocation.current, kernal.current.size);
+    context.uniform1i(kernalRadiusLocation.current, kernal.current.radius);
 
     positionBuffer.current = createBuffer({
       context,
@@ -317,7 +316,7 @@ const GaussianBlur = ({ canvasRef, pixelSource }) => {
 
       if (shouldUpdateKernalUniform.current) {
         context.uniform1fv(kernalDataLocation.current, kernal.current.data);
-        context.uniform1i(kernalSizeLocation.current, kernal.current.size);
+        context.uniform1i(kernalRadiusLocation.current, kernal.current.radius);
         shouldUpdateKernalUniform.current = false;
       }
 
@@ -380,6 +379,41 @@ const GaussianBlur = ({ canvasRef, pixelSource }) => {
           Draw
         </DrawButton>
         <span>FPS: {fps}</span>
+        <Controls>
+          <Label>
+            <span>Max FPS: {maxFps}</span>
+            <input
+              type="range"
+              min="1"
+              max="60"
+              step="1"
+              value={maxFps}
+              onChange={e => setMaxFps(e.target.value)}
+            />
+          </Label>
+          <Label>
+            <span>Radius: {radius}</span>
+            <input
+              type="range"
+              min="1"
+              max="32"
+              step="1"
+              value={radius}
+              onChange={e => setRadius(e.target.value)}
+            />
+          </Label>
+          <Label>
+            <span>Sigma: {sigma}</span>
+            <input
+              type="range"
+              min="0.1"
+              max="20"
+              step="0.1"
+              value={sigma}
+              onChange={e => setSigma(e.target.value)}
+            />
+          </Label>
+        </Controls>
       </Footer>
     </StyledGaussianBlur>
   );
@@ -440,5 +474,18 @@ const DrawButton = styled(Button).attrs(({ isActived }) => {
     },
   };
 })``;
+
+const Controls = styled.div`
+  margin-top: 8px;
+`;
+
+const Label = styled.label`
+  display: flex;
+
+  input {
+    flex: 1;
+    margin-left: 8px;
+  }
+`;
 
 export default GaussianBlur;
