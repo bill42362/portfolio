@@ -48,7 +48,7 @@ const textCoordAttribute = {
 
 const GreenBlueChannel = ({ canvasRef, pixelSource }) => {
   const [shouldAnimate, setShouldAnimate] = useState(false);
-  const [maxFps] = useState(30);
+  const [maxFps, setMaxFps] = useState(30);
   const [fps, setFps] = useState(0);
 
   const animationFrame = useRef();
@@ -241,6 +241,19 @@ const GreenBlueChannel = ({ canvasRef, pixelSource }) => {
           Draw
         </DrawButton>
         <span>FPS: {fps}</span>
+        <Controls>
+          <Label>
+            <span>Max FPS: {maxFps}</span>
+            <input
+              type="range"
+              min="1"
+              max="60"
+              step="1"
+              value={maxFps}
+              onChange={e => setMaxFps(e.target.value)}
+            />
+          </Label>
+        </Controls>
       </Footer>
     </StyledGreenBlueChannel>
   );
@@ -301,5 +314,18 @@ const DrawButton = styled(Button).attrs(({ isActived }) => {
     },
   };
 })``;
+
+const Controls = styled.div`
+  margin-top: 8px;
+`;
+
+const Label = styled.label`
+  display: flex;
+
+  input {
+    flex: 1;
+    margin-left: 8px;
+  }
+`;
 
 export default GreenBlueChannel;
