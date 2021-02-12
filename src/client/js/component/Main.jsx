@@ -6,12 +6,14 @@ import MediaStreamHandler from '../component/MediaStreamHandler.jsx';
 import MediaStreamMonitor from '../component/MediaStreamMonitor.jsx';
 import GreenBlueChannel from '../component/GreenBlueChannel.jsx';
 import GaussianBlur from '../component/GaussianBlur.jsx';
+import HighPassFilter from '../component/HighPassFilter.jsx';
 
 const Main = () => {
   const [mediaStream, setMediaStream] = useState();
   const sourceVideo = useRef();
   const greenBlueChannelCanvas = useRef();
   const gaussianBlurCanvas = useRef();
+  const highPassFilterCanvas = useRef();
 
   useEffect(() => {
     const video = document.createElement('video');
@@ -51,6 +53,13 @@ const Main = () => {
         <GaussianBlur
           pixelSource={greenBlueChannelCanvas.current}
           canvasRef={gaussianBlurCanvas}
+        />
+      </ModuleWrapper>
+      <ModuleWrapper>
+        <HighPassFilter
+          pixelSource={greenBlueChannelCanvas.current}
+          blurredPixelSource={gaussianBlurCanvas.current}
+          canvasRef={highPassFilterCanvas}
         />
       </ModuleWrapper>
     </StyledMain>
