@@ -4,18 +4,12 @@ import styled from 'styled-components';
 
 import MediaStreamHandler from '../component/MediaStreamHandler.jsx';
 import MediaStreamMonitor from '../component/MediaStreamMonitor.jsx';
-import GreenBlueChannel from '../component/GreenBlueChannel.jsx';
-import GaussianBlur from '../component/GaussianBlur.jsx';
-import HighPassFilter from '../component/HighPassFilter.jsx';
-import HardLight from '../component/HardLight.jsx';
+import ToneCurve from '../component/ToneCurve.jsx';
 
 const Main = () => {
   const [mediaStream, setMediaStream] = useState();
   const sourceVideo = useRef();
-  const greenBlueChannelCanvas = useRef();
-  const gaussianBlurCanvas = useRef();
-  const highPassFilterCanvas = useRef();
-  const hardLightCanvas = useRef();
+  const toneCurveCanvas = useRef();
 
   useEffect(() => {
     const video = document.createElement('video');
@@ -46,28 +40,9 @@ const Main = () => {
         <MediaStreamMonitor mediaStream={mediaStream} />
       </ModuleWrapper>
       <ModuleWrapper>
-        <GreenBlueChannel
+        <ToneCurve
           pixelSource={sourceVideo.current}
-          canvasRef={greenBlueChannelCanvas}
-        />
-      </ModuleWrapper>
-      <ModuleWrapper>
-        <GaussianBlur
-          pixelSource={greenBlueChannelCanvas.current}
-          canvasRef={gaussianBlurCanvas}
-        />
-      </ModuleWrapper>
-      <ModuleWrapper>
-        <HighPassFilter
-          pixelSource={greenBlueChannelCanvas.current}
-          blurredPixelSource={gaussianBlurCanvas.current}
-          canvasRef={highPassFilterCanvas}
-        />
-      </ModuleWrapper>
-      <ModuleWrapper>
-        <HardLight
-          pixelSource={highPassFilterCanvas.current}
-          canvasRef={hardLightCanvas}
+          canvasRef={toneCurveCanvas}
         />
       </ModuleWrapper>
     </StyledMain>
