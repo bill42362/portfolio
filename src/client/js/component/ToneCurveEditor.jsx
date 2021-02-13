@@ -9,6 +9,7 @@ const ToneCurveEditor = ({ onChange }) => {
   const [tension, setTension] = useState(0.5);
   const [redControlPoints] = useState([
     { x: 0, y: 0 },
+    { x: 120, y: 146 },
     { x: 255, y: 255 },
   ]);
   const [redCurvePoints, setRedCurvePoints] = useState([]);
@@ -33,7 +34,14 @@ const ToneCurveEditor = ({ onChange }) => {
       context.lineTo(point.x, 255 - point.y);
     });
     context.stroke();
-  }, [redCurvePoints]);
+
+    context.fillStyle = 'red';
+    redControlPoints.forEach(point => {
+      context.beginPath();
+      context.arc(point.x, 255 - point.y, 2, 0, 2 * Math.PI);
+      context.fill();
+    });
+  }, [redControlPoints, redCurvePoints]);
 
   return (
     <StyledToneCurveEditor>
