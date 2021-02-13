@@ -3,6 +3,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 
+import ToneCurveEditor from '../component/ToneCurveEditor.jsx';
+
 import {
   createProgram,
   clearGlCore,
@@ -283,6 +285,7 @@ const ToneCurve = ({ canvasRef, pixelSource }) => {
               onChange={e => setStrength(e.target.value)}
             />
           </Label>
+          <ToneCurveEditor />
         </Controls>
       </Footer>
     </StyledToneCurve>
@@ -347,6 +350,9 @@ const DrawButton = styled(Button).attrs(({ isActived }) => {
 
 const Controls = styled.div`
   margin-top: 8px;
+  * + * {
+    margin-top: 4px;
+  }
 `;
 
 const Label = styled.label`
