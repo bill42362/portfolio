@@ -29,6 +29,7 @@ precision highp float;
 
 uniform int uStrength;
 uniform sampler2D uSource;
+uniform sampler2D uTone;
 in vec2 vTextCoord;
 
 out vec4 outColor;
@@ -47,15 +48,19 @@ const textCoordAttribute = {
   array: [0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0],
   numComponents: 2,
 };
+const defaultToneTextureData = new Uint8ClampedArray(
+  new Array(256).fill(0).flatMap((_, index) => [index, index, index, 255])
+);
 
 const ToneCurve = ({ canvasRef, pixelSource }) => {
   const [shouldAnimate, setShouldAnimate] = useState(false);
-  const [strength, setStrength] = useState(3);
+  const [strength, setStrength] = useState(0.5);
   const [maxFps, setMaxFps] = useState(30);
   const [fps, setFps] = useState(0);
 
   const animationFrame = useRef();
   const lastFrameTimestamp = useRef(0);
+  const toneTextureData = useRef(defaultToneTextureData);
 
   const webGlContext = useRef();
   const vertexShader = useRef();
@@ -65,13 +70,16 @@ const ToneCurve = ({ canvasRef, pixelSource }) => {
   const positionLocation = useRef();
   const textCoordLocation = useRef();
   const pixelLocation = useRef();
+  const strengthLocation = useRef();
+  const toneLocation = useRef();
 
   const shouldUpdateStrength = useRef(true);
-  const strengthLocation = useRef();
+  const shouldUpdateToneTexture = useRef(true);
 
   const positionBuffer = useRef();
   const textCoordBuffer = useRef();
   const pixelTexture = useRef();
+  const toneTexture = useRef();
 
   useEffect(() => {
     shouldUpdateStrength.current = true;
@@ -92,6 +100,9 @@ const ToneCurve = ({ canvasRef, pixelSource }) => {
       }
       if (pixelTexture.current) {
         context.deleteTexture(pixelTexture.current);
+      }
+      if (toneTexture.current) {
+        context.deleteTexture(toneTexture.current);
       }
 
       if (positionLocation.current) {
@@ -147,6 +158,7 @@ const ToneCurve = ({ canvasRef, pixelSource }) => {
       glCore.program,
       'uStrength'
     );
+    toneLocation.current = context.getUniformLocation(glCore.program, 'uTone');
 
     context.enableVertexAttribArray(positionLocation.current);
     context.enableVertexAttribArray(textCoordLocation.current);
@@ -160,6 +172,7 @@ const ToneCurve = ({ canvasRef, pixelSource }) => {
       attribute: textCoordAttribute,
     });
     pixelTexture.current = createTexture({ context });
+    toneTexture.current = createTexture({ context, index: 1 });
 
     dockBuffer({
       context,
@@ -211,8 +224,22 @@ const ToneCurve = ({ canvasRef, pixelSource }) => {
         context.uniform1i(strengthLocation.current, strength);
         shouldUpdateStrength.current = false;
       }
+      if (shouldUpdateToneTexture.current) {
+        context.uniform1i(toneLocation.current, 1);
+        context.bindTexture(context.TEXTURE_2D, toneTexture.current);
+        context.texImage2D(
+          context.TEXTURE_2D,
+          0, // mip level
+          context.RGBA, // internam format
+          context.RGBA, // src format
+          context.UNSIGNED_BYTE, // src type
+          toneTextureData.current
+        );
+        shouldUpdateToneTexture.current = false;
+      }
 
       context.uniform1i(pixelLocation.current, 0);
+      context.bindTexture(context.TEXTURE_2D, pixelTexture.current);
       context.texImage2D(
         context.TEXTURE_2D,
         0, // mip level
@@ -278,14 +305,14 @@ const ToneCurve = ({ canvasRef, pixelSource }) => {
             <span>Strength: {strength}</span>
             <input
               type="range"
-              min="1"
-              max="8"
-              step="1"
+              min="0"
+              max="1"
+              step="0.01"
               value={strength}
               onChange={e => setStrength(e.target.value)}
             />
           </Label>
-          <ToneCurveEditor />
+          <ToneCurveEditor onChange={console.log} />
         </Controls>
       </Footer>
     </StyledToneCurve>
