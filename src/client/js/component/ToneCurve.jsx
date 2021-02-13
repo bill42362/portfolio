@@ -27,7 +27,7 @@ void main() {
 const fragmentShaderSource = `#version 300 es
 precision highp float;
 
-uniform int uStrength;
+uniform float uStrength;
 uniform sampler2D uSource;
 uniform sampler2D uTone;
 in vec2 vTextCoord;
@@ -35,8 +35,14 @@ in vec2 vTextCoord;
 out vec4 outColor;
 
 void main() {
-  vec4 originColor = texture(uSource, vTextCoord);
-  outColor = originColor;
+  vec4 colorIndex = texture(uSource, vTextCoord);
+  float revStr = 1.0 - uStrength;
+  outColor = vec4(
+    uStrength * vec4(texture(uTone, vec2(colorIndex.r, 0))).r + revStr * colorIndex.r,
+    uStrength * vec4(texture(uTone, vec2(colorIndex.g, 0))).g + revStr * colorIndex.g,
+    uStrength * vec4(texture(uTone, vec2(colorIndex.b, 0))).b + revStr * colorIndex.b,
+    1.0
+  );
 }
 `;
 
@@ -48,8 +54,11 @@ const textCoordAttribute = {
   array: [0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0],
   numComponents: 2,
 };
-const defaultToneTextureData = new Uint8ClampedArray(
-  new Array(256).fill(0).flatMap((_, index) => [index, index, index, 255])
+const defaultToneTextureData = new ImageData(
+  new Uint8ClampedArray(
+    new Array(256).fill(0).flatMap((_, index) => [index, index, index, 255])
+  ),
+  256
 );
 
 const ToneCurve = ({ canvasRef, pixelSource }) => {
@@ -171,7 +180,7 @@ const ToneCurve = ({ canvasRef, pixelSource }) => {
       context,
       attribute: textCoordAttribute,
     });
-    pixelTexture.current = createTexture({ context });
+    pixelTexture.current = createTexture({ context, index: 0 });
     toneTexture.current = createTexture({ context, index: 1 });
 
     dockBuffer({
@@ -221,21 +230,8 @@ const ToneCurve = ({ canvasRef, pixelSource }) => {
       context.useProgram(program.current);
 
       if (shouldUpdateStrength.current) {
-        context.uniform1i(strengthLocation.current, strength);
+        context.uniform1f(strengthLocation.current, strength);
         shouldUpdateStrength.current = false;
-      }
-      if (shouldUpdateToneTexture.current) {
-        context.uniform1i(toneLocation.current, 1);
-        context.bindTexture(context.TEXTURE_2D, toneTexture.current);
-        context.texImage2D(
-          context.TEXTURE_2D,
-          0, // mip level
-          context.RGBA, // internam format
-          context.RGBA, // src format
-          context.UNSIGNED_BYTE, // src type
-          toneTextureData.current
-        );
-        shouldUpdateToneTexture.current = false;
       }
 
       context.uniform1i(pixelLocation.current, 0);
@@ -248,6 +244,23 @@ const ToneCurve = ({ canvasRef, pixelSource }) => {
         context.UNSIGNED_BYTE, // src type
         pixelSource
       );
+
+      if (shouldUpdateToneTexture.current) {
+        shouldUpdateToneTexture.current = false;
+      }
+      // TODO: figure out why must apply tone texture every frame
+      // TODO: figure out why must apply tone texture after pixelSource
+      context.uniform1i(toneLocation.current, 1);
+      context.bindTexture(context.TEXTURE_2D, toneTexture.current);
+      context.texImage2D(
+        context.TEXTURE_2D,
+        0, // mip level
+        context.RGBA, // internam format
+        context.RGBA, // src format
+        context.UNSIGNED_BYTE, // src type
+        toneTextureData.current
+      );
+
       context.drawArrays(context.TRIANGLES, 0, positionBuffer.current.count);
     };
 
@@ -273,6 +286,24 @@ const ToneCurve = ({ canvasRef, pixelSource }) => {
     animationFrame.current = window.requestAnimationFrame(animate);
     return () => window.cancelAnimationFrame(animationFrame.current);
   }, [shouldAnimate, maxFps, strength, pixelSource]);
+
+  const handleToneChange = tonePoints => {
+    const data = new ImageData(
+      new Uint8ClampedArray(
+        new Array(256)
+          .fill(0)
+          .flatMap((_, index) => [
+            tonePoints.red[index].y,
+            tonePoints.green[index].y,
+            tonePoints.blue[index].y,
+            255,
+          ])
+      ),
+      256
+    );
+    toneTextureData.current = data;
+    shouldUpdateToneTexture.current = true;
+  };
 
   return (
     <StyledToneCurve>
@@ -312,7 +343,7 @@ const ToneCurve = ({ canvasRef, pixelSource }) => {
               onChange={e => setStrength(e.target.value)}
             />
           </Label>
-          <ToneCurveEditor onChange={console.log} />
+          <ToneCurveEditor onChange={handleToneChange} />
         </Controls>
       </Footer>
     </StyledToneCurve>

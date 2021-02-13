@@ -45,8 +45,8 @@ const ToneCurveEditor = ({ onChange }) => {
   const [tension, setTension] = useState(0);
   const [redControlPoints] = useState([
     { x: 0, y: 0 },
-    // { x: 120, y: 146 },
-    { x: 120, y: 186 },
+    { x: 120, y: 146 }, // default
+    // { x: 120, y: 186 },
     { x: 255, y: 255 },
   ]);
   const [redCurvePoints, setRedCurvePoints] = useState([]);
