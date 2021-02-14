@@ -9,6 +9,7 @@ import GaussianBlur from '../component/GaussianBlur.jsx';
 import HighPassFilter from '../component/HighPassFilter.jsx';
 import HardLight from '../component/HardLight.jsx';
 import ToneCurve from '../component/ToneCurve.jsx';
+import MaskBlender from '../component/MaskBlender.jsx';
 
 const Main = () => {
   const [mediaStream, setMediaStream] = useState();
@@ -18,6 +19,7 @@ const Main = () => {
   const highPassFilterCanvas = useRef();
   const hardLightCanvas = useRef();
   const toneCurveCanvas = useRef();
+  const maskBlenderCanvas = useRef();
 
   useEffect(() => {
     const video = document.createElement('video');
@@ -75,6 +77,14 @@ const Main = () => {
           <ToneCurve
             pixelSource={sourceVideo.current}
             canvasRef={toneCurveCanvas}
+          />
+        </ModuleWrapper>
+        <ModuleWrapper>
+          <MaskBlender
+            pixelSource={sourceVideo.current}
+            maskSource={hardLightCanvas.current}
+            blendSource={toneCurveCanvas.current}
+            canvasRef={maskBlenderCanvas}
           />
         </ModuleWrapper>
       </Modules>
