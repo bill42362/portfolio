@@ -27,6 +27,7 @@ precision highp float;
 
 uniform sampler2D uSource;
 uniform sampler2D uMask;
+uniform sampler2D uBlend;
 in vec2 vTextCoord;
 
 out vec4 outColor;
@@ -34,7 +35,8 @@ out vec4 outColor;
 void main() {
   vec4 originColor = texture(uSource, vTextCoord);
   vec4 maskColor = texture(uMask, vTextCoord);
-  outColor = originColor;
+  vec4 blendColor = texture(uBlend, vTextCoord);
+  outColor = vec4(mix(originColor.rgb, blendColor.rgb, 1.0 - maskColor.b), 1.0);
 }
 `;
 
@@ -47,7 +49,7 @@ const textCoordAttribute = {
   numComponents: 2,
 };
 
-const MaskBlender = ({ canvasRef, pixelSource, maskSource }) => {
+const MaskBlender = ({ canvasRef, pixelSource, maskSource, blendSource }) => {
   const [shouldAnimate, setShouldAnimate] = useState(false);
   const [maxFps, setMaxFps] = useState(30);
   const [fps, setFps] = useState(0);
@@ -64,11 +66,13 @@ const MaskBlender = ({ canvasRef, pixelSource, maskSource }) => {
   const textCoordLocation = useRef();
   const pixelLocation = useRef();
   const maskLocation = useRef();
+  const blendLocation = useRef();
 
   const positionBuffer = useRef();
   const textCoordBuffer = useRef();
   const pixelTexture = useRef();
   const maskTexture = useRef();
+  const blendTexture = useRef();
 
   useEffect(() => {
     const clear = () => {
@@ -88,6 +92,9 @@ const MaskBlender = ({ canvasRef, pixelSource, maskSource }) => {
       }
       if (maskTexture.current) {
         context.deleteTexture(maskTexture.current);
+      }
+      if (blendTexture.current) {
+        context.deleteTexture(blendTexture.current);
       }
 
       if (positionLocation.current) {
@@ -140,6 +147,10 @@ const MaskBlender = ({ canvasRef, pixelSource, maskSource }) => {
       'uSource'
     );
     maskLocation.current = context.getUniformLocation(glCore.program, 'uMask');
+    blendLocation.current = context.getUniformLocation(
+      glCore.program,
+      'uBlend'
+    );
 
     context.enableVertexAttribArray(positionLocation.current);
     context.enableVertexAttribArray(textCoordLocation.current);
@@ -154,6 +165,7 @@ const MaskBlender = ({ canvasRef, pixelSource, maskSource }) => {
     });
     pixelTexture.current = createTexture({ context, index: 0 });
     maskTexture.current = createTexture({ context, index: 1 });
+    blendTexture.current = createTexture({ context, index: 2 });
 
     dockBuffer({
       context,
@@ -202,6 +214,7 @@ const MaskBlender = ({ canvasRef, pixelSource, maskSource }) => {
       context.useProgram(program.current);
       context.uniform1i(pixelLocation.current, 0);
       context.uniform1i(maskLocation.current, 1);
+      context.uniform1i(blendLocation.current, 2);
       context.bindTexture(context.TEXTURE_2D, pixelTexture.current);
       context.texImage2D(
         context.TEXTURE_2D,
@@ -219,6 +232,15 @@ const MaskBlender = ({ canvasRef, pixelSource, maskSource }) => {
         context.RGBA, // src format
         context.UNSIGNED_BYTE, // src type
         maskSource
+      );
+      context.bindTexture(context.TEXTURE_2D, blendTexture.current);
+      context.texImage2D(
+        context.TEXTURE_2D,
+        0, // mip level
+        context.RGBA, // internal format
+        context.RGBA, // src format
+        context.UNSIGNED_BYTE, // src type
+        blendSource
       );
       context.drawArrays(context.TRIANGLES, 0, positionBuffer.current.count);
     };
@@ -244,7 +266,7 @@ const MaskBlender = ({ canvasRef, pixelSource, maskSource }) => {
     window.cancelAnimationFrame(animationFrame.current);
     animationFrame.current = window.requestAnimationFrame(animate);
     return () => window.cancelAnimationFrame(animationFrame.current);
-  }, [shouldAnimate, maxFps, pixelSource, maskSource]);
+  }, [shouldAnimate, maxFps, pixelSource, maskSource, blendSource]);
 
   return (
     <StyledMaskBlender>

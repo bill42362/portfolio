@@ -46,9 +46,6 @@ const Main = () => {
       <MediaStreamHandler onChange={({ value }) => setMediaStream(value)} />
       <Modules>
         <ModuleWrapper>
-          <MediaStreamMonitor mediaStream={mediaStream} />
-        </ModuleWrapper>
-        <ModuleWrapper>
           <GreenBlueChannel
             pixelSource={sourceVideo.current}
             canvasRef={greenBlueChannelCanvas}
@@ -78,6 +75,9 @@ const Main = () => {
             pixelSource={sourceVideo.current}
             canvasRef={toneCurveCanvas}
           />
+        </ModuleWrapper>
+        <ModuleWrapper>
+          <MediaStreamMonitor mediaStream={mediaStream} />
         </ModuleWrapper>
         <ModuleWrapper>
           <MaskBlender
