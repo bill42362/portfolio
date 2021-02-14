@@ -4,6 +4,7 @@ import styled from 'styled-components';
 
 import MediaStreamHandler from '../component/MediaStreamHandler.jsx';
 import MediaStreamMonitor from '../component/MediaStreamMonitor.jsx';
+import ExposureValue from '../component/ExposureValue.jsx';
 import GreenBlueChannel from '../component/GreenBlueChannel.jsx';
 import GaussianBlur from '../component/GaussianBlur.jsx';
 import HighPassFilter from '../component/HighPassFilter.jsx';
@@ -14,6 +15,7 @@ import MaskBlender from '../component/MaskBlender.jsx';
 const Main = () => {
   const [mediaStream, setMediaStream] = useState();
   const sourceVideo = useRef();
+  const exposureValueCanvas = useRef();
   const greenBlueChannelCanvas = useRef();
   const gaussianBlurCanvas = useRef();
   const highPassFilterCanvas = useRef();
@@ -46,8 +48,14 @@ const Main = () => {
       <MediaStreamHandler onChange={({ value }) => setMediaStream(value)} />
       <Modules>
         <ModuleWrapper>
-          <GreenBlueChannel
+          <ExposureValue
             pixelSource={sourceVideo.current}
+            canvasRef={exposureValueCanvas}
+          />
+        </ModuleWrapper>
+        <ModuleWrapper>
+          <GreenBlueChannel
+            pixelSource={exposureValueCanvas.current}
             canvasRef={greenBlueChannelCanvas}
           />
         </ModuleWrapper>
