@@ -4,6 +4,7 @@ import styled from 'styled-components';
 
 import MediaStreamHandler from '../component/MediaStreamHandler.jsx';
 import MediaStreamMonitor from '../component/MediaStreamMonitor.jsx';
+import BeautifyFilter from '../component/BeautifyFilter.jsx';
 import ExposureValue from '../component/ExposureValue.jsx';
 import GreenBlueChannel from '../component/GreenBlueChannel.jsx';
 import GaussianBlur from '../component/GaussianBlur.jsx';
@@ -47,6 +48,9 @@ const Main = () => {
     <StyledMain>
       <MediaStreamHandler onChange={({ value }) => setMediaStream(value)} />
       <Modules>
+        <ModuleWrapper>
+          <BeautifyFilter pixelSource={sourceVideo.current} />
+        </ModuleWrapper>
         <ModuleWrapper>
           <ExposureValue
             pixelSource={sourceVideo.current}
