@@ -88,6 +88,18 @@ export const createTexture = ({ context, index = 0 }) => {
   ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, ctx.CLAMP_TO_EDGE);
   ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, ctx.NEAREST);
   ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MAG_FILTER, ctx.NEAREST);
+  // setup default texture data
+  ctx.texImage2D(
+    ctx.TEXTURE_2D,
+    0, // level
+    ctx.RGBA, // internal format
+    ctx.canvas.width,
+    ctx.canvas.height,
+    0, // border
+    ctx.RGBA, // src format
+    ctx.UNSIGNED_BYTE, // src type
+    null
+  );
   return texture;
 };
 
