@@ -8,6 +8,10 @@ import {
 import mirrorVertexShaderSource from '../shaderSource/mirrorVertex.js';
 import mirrorFragmentShaderSource from '../shaderSource/mirrorFragment.js';
 
+const textureIndex = {
+  SOURCE: 0,
+  GREEN_BLUE_CHANNEL: 1,
+};
 const positionAttribute = {
   array: [-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1],
   numComponents: 2,
@@ -27,10 +31,25 @@ const BeautifyFilter = function () {
   window.context = context;
 
   this.texture = {};
-  this.texture.source = createTexture({ context, index: 0 });
+  this.texture.source = createTexture({ context, index: textureIndex.SOURCE });
+  this.texture.greenBlueChannel = createTexture({
+    context,
+    index: textureIndex.GREEN_BLUE_CHANNEL,
+  });
 
   this.frameBuffer = {};
-  this.frameBuffer.source = context.createFramebuffer();
+  this.frameBuffer.greenBlueChannel = context.createFramebuffer();
+  context.bindFramebuffer(
+    context.FRAMEBUFFER,
+    this.frameBuffer.greenBlueChannel
+  );
+  context.framebufferTexture2D(
+    context.FRAMEBUFFER,
+    context.COLOR_ATTACHMENT0,
+    context.TEXTURE_2D,
+    this.texture.greenBlueChannel,
+    0 // level
+  );
 
   this.copySource = {};
   this.copySource.core = createProgram({
@@ -88,7 +107,12 @@ BeautifyFilter.prototype.draw = function ({ pixelSource }) {
   context.clear(context.COLOR_BUFFER_BIT);
 
   context.useProgram(this.copySource.core.program);
-  context.uniform1i(this.copySource.location.uSource, 0);
+  context.bindFramebuffer(
+    context.FRAMEBUFFER,
+    this.frameBuffer.greenBlueChannel
+  );
+  context.bindTexture(context.TEXTURE_2D, this.texture.source);
+  context.uniform1i(this.copySource.location.uSource, textureIndex.SOURCE);
   context.texImage2D(
     context.TEXTURE_2D,
     0, // mip level
@@ -96,6 +120,18 @@ BeautifyFilter.prototype.draw = function ({ pixelSource }) {
     context.RGBA, // src format
     context.UNSIGNED_BYTE, // src type
     pixelSource
+  );
+  context.drawArrays(
+    context.TRIANGLES,
+    0,
+    this.copySource.buffer.aPosition.count
+  );
+
+  context.bindFramebuffer(context.FRAMEBUFFER, null);
+  context.bindTexture(context.TEXTURE_2D, this.texture.greenBlueChannel);
+  context.uniform1i(
+    this.copySource.location.uSource,
+    textureIndex.GREEN_BLUE_CHANNEL
   );
   context.drawArrays(
     context.TRIANGLES,
@@ -126,6 +162,22 @@ BeautifyFilter.prototype.updateCanvasSize = function ({ pixelSource }) {
     context.canvas.width = sourceWidth;
     context.canvas.height = sourceHeight;
     context.viewport(0, 0, sourceWidth, sourceHeight);
+    // update texture sizes
+    Object.keys(this.texture).forEach(textureKey => {
+      const texture = this.texture[textureKey];
+      context.bindTexture(context.TEXTURE_2D, texture);
+      context.texImage2D(
+        context.TEXTURE_2D,
+        0, // level
+        context.RGBA, // internal format
+        sourceWidth,
+        sourceHeight,
+        0, // border
+        context.RGBA, // src format
+        context.UNSIGNED_BYTE, // src type
+        null
+      );
+    });
   }
 };
 
