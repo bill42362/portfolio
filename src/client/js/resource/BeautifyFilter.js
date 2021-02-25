@@ -5,10 +5,11 @@ import {
   createTexture,
   dockBuffer,
 } from '../resource/WebGL.js';
+import GaussianBlurFilter from '../resource/GaussianBlurFilter.js';
+
 import mirrorVertexShaderSource from '../shaderSource/mirrorVertex.js';
 import mirrorFragmentShaderSource from '../shaderSource/mirrorFragment.js';
 import greenBlueChannelFragmentShaderSource from '../shaderSource/greenBlueChannelFragment.js';
-import gaussianBlurFragmentShaderSource from '../shaderSource/gaussianBlurFragment.js';
 
 const textureIndex = {
   source: 0,
@@ -35,21 +36,6 @@ const frameBufferNames = [
   'gaussianBlurMid',
   'gaussianBlur',
 ];
-
-const getGussianBlurKernal = (inputRadius, sigma) => {
-  const radius = Math.floor(Math.abs(inputRadius));
-  const sigma2 = sigma * sigma;
-  const data = new Array(radius * 2 + 1);
-  let sum = 0;
-  for (let x = -radius; x <= radius; ++x) {
-    const index = x + radius;
-    data[index] =
-      Math.exp(-(x * x) / (2.0 * sigma2)) / Math.sqrt(2.0 * Math.PI * sigma2);
-    sum += data[index];
-  }
-  const normalizedData = data.map(value => value / sum);
-  return { data: new Float32Array(normalizedData), radius };
-};
 
 const BeautifyFilter = function () {
   const canvas = document.createElement('canvas');
@@ -126,60 +112,15 @@ const BeautifyFilter = function () {
     'uSource'
   );
 
-  this.gaussianBlur = {};
-  this.gaussianBlur.core = createProgram({
-    context,
-    vertexShaderSource: mirrorVertexShaderSource,
-    fragmentShaderSource: gaussianBlurFragmentShaderSource,
-  });
-
-  this.gaussianBlur.location = {};
-  this.gaussianBlur.location.aPosition = context.getAttribLocation(
-    this.gaussianBlur.core.program,
-    'aPosition'
-  );
-  this.gaussianBlur.location.aTextCoord = context.getAttribLocation(
-    this.gaussianBlur.core.program,
-    'aTextCoord'
-  );
-  context.enableVertexAttribArray(this.gaussianBlur.location.aPosition);
-  context.enableVertexAttribArray(this.gaussianBlur.location.aTextCoord);
-  dockBuffer({
-    context,
-    location: this.gaussianBlur.location.aPosition,
+  this.gaussianBlur = new GaussianBlurFilter({ context: this.context });
+  this.gaussianBlur.dockBuffer({
+    key: 'aPosition',
     buffer: this.buffer.aPosition,
   });
-  dockBuffer({
-    context,
-    location: this.gaussianBlur.location.aTextCoord,
+  this.gaussianBlur.dockBuffer({
+    key: 'aTextCoord',
     buffer: this.buffer.aTextCoord,
   });
-
-  this.gaussianBlur.location.uIsFrameBuffer = context.getUniformLocation(
-    this.gaussianBlur.core.program,
-    'uIsFrameBuffer'
-  );
-  this.gaussianBlur.location.uSource = context.getUniformLocation(
-    this.gaussianBlur.core.program,
-    'uSource'
-  );
-  this.gaussianBlur.location.uResolution = context.getUniformLocation(
-    this.gaussianBlur.core.program,
-    'uResolution'
-  );
-  this.gaussianBlur.location.uKernalRadius = context.getUniformLocation(
-    this.gaussianBlur.core.program,
-    'uKernalRadius'
-  );
-  this.gaussianBlur.location.uKernelData = context.getUniformLocation(
-    this.gaussianBlur.core.program,
-    'uKernelData'
-  );
-  this.gaussianBlur.location.uIsVertical = context.getUniformLocation(
-    this.gaussianBlur.core.program,
-    'uIsVertical'
-  );
-  this.gaussianBlur.kernal = getGussianBlurKernal(16, 5);
 
   this.mirrorTexture = {};
   this.mirrorTexture.core = createProgram({
@@ -252,43 +193,14 @@ BeautifyFilter.prototype.draw = function ({ pixelSource }) {
   );
   context.drawArrays(context.TRIANGLES, 0, this.buffer.aPosition.count);
 
-  context.useProgram(this.gaussianBlur.core.program);
-  context.uniform2f(
-    this.gaussianBlur.location.uResolution,
-    context.canvas.width,
-    context.canvas.height
-  );
-  context.uniform1i(
-    this.gaussianBlur.location.uKernalRadius,
-    this.gaussianBlur.kernal.radius
-  );
-  context.uniform1fv(
-    this.gaussianBlur.location.uKernelData,
-    this.gaussianBlur.kernal.data
-  );
-
-  context.bindFramebuffer(
-    context.FRAMEBUFFER,
-    this.frameBuffer.gaussianBlurMid
-  );
-  context.bindTexture(context.TEXTURE_2D, this.texture.greenBlueChannel);
-  context.uniform1i(this.gaussianBlur.location.uIsFrameBuffer, 1);
-  context.uniform1i(
-    this.gaussianBlur.location.uSource,
-    textureIndex.greenBlueChannel
-  );
-  context.uniform1i(this.gaussianBlur.location.uIsVertical, 1);
-  context.drawArrays(context.TRIANGLES, 0, this.buffer.aPosition.count);
-
-  context.bindFramebuffer(context.FRAMEBUFFER, this.frameBuffer.gaussianBlur);
-  context.bindTexture(context.TEXTURE_2D, this.texture.gaussianBlurMid);
-  context.uniform1i(this.gaussianBlur.location.uIsFrameBuffer, 1);
-  context.uniform1i(
-    this.gaussianBlur.location.uSource,
-    textureIndex.gaussianBlurMid
-  );
-  context.uniform1i(this.gaussianBlur.location.uIsVertical, 0);
-  context.drawArrays(context.TRIANGLES, 0, this.buffer.aPosition.count);
+  this.gaussianBlur.draw({
+    sourceTexture: this.texture.greenBlueChannel,
+    sourceTextureIndex: textureIndex.greenBlueChannel,
+    midFrameBuffer: this.frameBuffer.gaussianBlurMid,
+    midTexture: this.texture.gaussianBlurMid,
+    midTextureIndex: textureIndex.gaussianBlurMid,
+    targetFrameBuffer: this.frameBuffer.gaussianBlur,
+  });
 
   context.useProgram(this.mirrorTexture.core.program);
   context.bindFramebuffer(context.FRAMEBUFFER, null);
