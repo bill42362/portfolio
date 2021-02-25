@@ -1,6 +1,6 @@
-// mirrorVertex.js
+// gaussianBlurVertex.js
 
-const mirrorVertex = `#version 300 es
+const gaussianBlurVertex = `#version 300 es
 in vec4 aPosition;
 in vec2 aTextCoord;
 uniform int uIsFrameBuffer;
@@ -17,4 +17,4 @@ void main() {
 }
 `;
 
-export default mirrorVertex;
+export default gaussianBlurVertex;
