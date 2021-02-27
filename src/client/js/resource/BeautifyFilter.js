@@ -5,11 +5,11 @@ import {
   createTexture,
   dockBuffer,
 } from '../resource/WebGL.js';
+import GreenBlueChannel from '../resource/GreenBlueChannel.js';
 import GaussianBlurFilter from '../resource/GaussianBlurFilter.js';
 
 import mirrorVertexShaderSource from '../shaderSource/mirrorVertex.js';
 import mirrorFragmentShaderSource from '../shaderSource/mirrorFragment.js';
-import greenBlueChannelFragmentShaderSource from '../shaderSource/greenBlueChannelFragment.js';
 
 const textureIndex = {
   source: 0,
@@ -74,43 +74,15 @@ const BeautifyFilter = function () {
     );
   });
 
-  this.greenBlueChannel = {};
-  this.greenBlueChannel.core = createProgram({
-    context,
-    vertexShaderSource: mirrorVertexShaderSource,
-    fragmentShaderSource: greenBlueChannelFragmentShaderSource,
-  });
-
-  this.greenBlueChannel.location = {};
-  this.greenBlueChannel.location.aPosition = context.getAttribLocation(
-    this.greenBlueChannel.core.program,
-    'aPosition'
-  );
-  this.greenBlueChannel.location.aTextCoord = context.getAttribLocation(
-    this.greenBlueChannel.core.program,
-    'aTextCoord'
-  );
-  context.enableVertexAttribArray(this.greenBlueChannel.location.aPosition);
-  context.enableVertexAttribArray(this.greenBlueChannel.location.aTextCoord);
-  dockBuffer({
-    context,
-    location: this.greenBlueChannel.location.aPosition,
+  this.greenBlueChannel = new GreenBlueChannel({ context: this.context });
+  this.greenBlueChannel.dockBuffer({
+    key: 'aPosition',
     buffer: this.buffer.aPosition,
   });
-  dockBuffer({
-    context,
-    location: this.greenBlueChannel.location.aTextCoord,
+  this.greenBlueChannel.dockBuffer({
+    key: 'aTextCoord',
     buffer: this.buffer.aTextCoord,
   });
-
-  this.greenBlueChannel.location.uIsFrameBuffer = context.getUniformLocation(
-    this.greenBlueChannel.core.program,
-    'uIsFrameBuffer'
-  );
-  this.greenBlueChannel.location.uSource = context.getUniformLocation(
-    this.greenBlueChannel.core.program,
-    'uSource'
-  );
 
   this.gaussianBlur = new GaussianBlurFilter({ context: this.context });
   this.gaussianBlur.dockBuffer({
@@ -172,17 +144,7 @@ BeautifyFilter.prototype.draw = function ({ pixelSource }) {
   context.clearColor(0, 0, 0, 1);
   context.clear(context.COLOR_BUFFER_BIT);
 
-  context.useProgram(this.greenBlueChannel.core.program);
-  context.bindFramebuffer(
-    context.FRAMEBUFFER,
-    this.frameBuffer.greenBlueChannel
-  );
   context.bindTexture(context.TEXTURE_2D, this.texture.source);
-  context.uniform1i(this.greenBlueChannel.location.uIsFrameBuffer, 1);
-  context.uniform1i(
-    this.greenBlueChannel.location.uSource,
-    textureIndex.source
-  );
   context.texImage2D(
     context.TEXTURE_2D,
     0, // mip level
@@ -191,7 +153,12 @@ BeautifyFilter.prototype.draw = function ({ pixelSource }) {
     context.UNSIGNED_BYTE, // src type
     pixelSource
   );
-  context.drawArrays(context.TRIANGLES, 0, this.buffer.aPosition.count);
+
+  this.greenBlueChannel.draw({
+    sourceTexture: this.texture.source,
+    sourceTextureIndex: textureIndex.source,
+    targetFrameBuffer: this.frameBuffer.greenBlueChannel,
+  });
 
   this.gaussianBlur.draw({
     sourceTexture: this.texture.greenBlueChannel,
