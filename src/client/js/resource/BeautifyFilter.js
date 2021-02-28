@@ -1,15 +1,8 @@
 // BeautifyFilter.js
-import {
-  createProgram,
-  createBuffer,
-  createTexture,
-  dockBuffer,
-} from '../resource/WebGL.js';
+import { createBuffer, createTexture } from '../resource/WebGL.js';
 import GreenBlueChannel from '../resource/GreenBlueChannel.js';
 import GaussianBlurFilter from '../resource/GaussianBlurFilter.js';
-
-import mirrorVertexShaderSource from '../shaderSource/mirrorVertex.js';
-import mirrorFragmentShaderSource from '../shaderSource/mirrorFragment.js';
+import CopyTexture from '../resource/CopyTexture.js';
 
 const textureIndex = {
   source: 0,
@@ -94,43 +87,15 @@ const BeautifyFilter = function () {
     buffer: this.buffer.aTextCoord,
   });
 
-  this.mirrorTexture = {};
-  this.mirrorTexture.core = createProgram({
-    context,
-    vertexShaderSource: mirrorVertexShaderSource,
-    fragmentShaderSource: mirrorFragmentShaderSource,
-  });
-
-  this.mirrorTexture.location = {};
-  this.mirrorTexture.location.aPosition = context.getAttribLocation(
-    this.mirrorTexture.core.program,
-    'aPosition'
-  );
-  this.mirrorTexture.location.aTextCoord = context.getAttribLocation(
-    this.mirrorTexture.core.program,
-    'aTextCoord'
-  );
-  context.enableVertexAttribArray(this.mirrorTexture.location.aPosition);
-  context.enableVertexAttribArray(this.mirrorTexture.location.aTextCoord);
-  dockBuffer({
-    context,
-    location: this.mirrorTexture.location.aPosition,
+  this.copyTexture = new CopyTexture({ context: this.context });
+  this.copyTexture.dockBuffer({
+    key: 'aPosition',
     buffer: this.buffer.aPosition,
   });
-  dockBuffer({
-    context,
-    location: this.mirrorTexture.location.aTextCoord,
+  this.copyTexture.dockBuffer({
+    key: 'aTextCoord',
     buffer: this.buffer.aTextCoord,
   });
-
-  this.mirrorTexture.location.uIsFrameBuffer = context.getUniformLocation(
-    this.mirrorTexture.core.program,
-    'uIsFrameBuffer'
-  );
-  this.mirrorTexture.location.uSource = context.getUniformLocation(
-    this.mirrorTexture.core.program,
-    'uSource'
-  );
 };
 
 BeautifyFilter.prototype.draw = function ({ pixelSource }) {
@@ -169,15 +134,10 @@ BeautifyFilter.prototype.draw = function ({ pixelSource }) {
     targetFrameBuffer: this.frameBuffer.gaussianBlur,
   });
 
-  context.useProgram(this.mirrorTexture.core.program);
-  context.bindFramebuffer(context.FRAMEBUFFER, null);
-  context.bindTexture(context.TEXTURE_2D, this.texture.gaussianBlur);
-  context.uniform1i(this.mirrorTexture.location.uIsFrameBuffer, 0);
-  context.uniform1i(
-    this.mirrorTexture.location.uSource,
-    textureIndex.gaussianBlur
-  );
-  context.drawArrays(context.TRIANGLES, 0, this.buffer.aPosition.count);
+  this.copyTexture.draw({
+    sourceTexture: this.texture.gaussianBlur,
+    sourceTextureIndex: textureIndex.gaussianBlur,
+  });
 };
 
 BeautifyFilter.prototype.updateCanvasSize = function ({ pixelSource }) {
