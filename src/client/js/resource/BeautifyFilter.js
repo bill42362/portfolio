@@ -2,6 +2,7 @@
 import { createBuffer, createTexture } from '../resource/WebGL.js';
 import GreenBlueChannel from '../resource/GreenBlueChannel.js';
 import GaussianBlurFilter from '../resource/GaussianBlurFilter.js';
+import HighPassFilter from '../resource/HighPassFilter.js';
 import CopyTexture from '../resource/CopyTexture.js';
 
 const textureIndex = {
@@ -9,6 +10,7 @@ const textureIndex = {
   greenBlueChannel: 1,
   gaussianBlurMid: 2,
   gaussianBlur: 3,
+  highPassFilter: 4,
 };
 const positionAttribute = {
   array: [-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1],
@@ -23,11 +25,13 @@ const textureNames = [
   'greenBlueChannel',
   'gaussianBlurMid',
   'gaussianBlur',
+  'highPassFilter',
 ];
 const frameBufferNames = [
   'greenBlueChannel',
   'gaussianBlurMid',
   'gaussianBlur',
+  'highPassFilter',
 ];
 
 const BeautifyFilter = function () {
@@ -87,6 +91,16 @@ const BeautifyFilter = function () {
     buffer: this.buffer.aTextCoord,
   });
 
+  this.highPassFilter = new HighPassFilter({ context: this.context });
+  this.highPassFilter.dockBuffer({
+    key: 'aPosition',
+    buffer: this.buffer.aPosition,
+  });
+  this.highPassFilter.dockBuffer({
+    key: 'aTextCoord',
+    buffer: this.buffer.aTextCoord,
+  });
+
   this.copyTexture = new CopyTexture({ context: this.context });
   this.copyTexture.dockBuffer({
     key: 'aPosition',
@@ -134,9 +148,17 @@ BeautifyFilter.prototype.draw = function ({ pixelSource }) {
     targetFrameBuffer: this.frameBuffer.gaussianBlur,
   });
 
+  this.highPassFilter.draw({
+    sourceTexture: this.texture.greenBlueChannel,
+    sourceTextureIndex: textureIndex.greenBlueChannel,
+    blurredSourceTexture: this.texture.gaussianBlur,
+    blurredSourceTextureIndex: textureIndex.gaussianBlur,
+    targetFrameBuffer: this.frameBuffer.highPassFilter,
+  });
+
   this.copyTexture.draw({
-    sourceTexture: this.texture.gaussianBlur,
-    sourceTextureIndex: textureIndex.gaussianBlur,
+    sourceTexture: this.texture.highPassFilter,
+    sourceTextureIndex: textureIndex.highPassFilter,
   });
 };
 
