@@ -53,7 +53,7 @@ HardLight.prototype.dockBuffer = function ({ key, buffer }) {
 };
 
 HardLight.prototype.updateCycles = function ({ cycles } = {}) {
-  if (!cycles) {
+  if (!cycles || isNaN(cycles)) {
     throw new Error('invalid cycles argument');
   }
   this._cycles = Math.max(Math.floor(cycles), 0) || this._cycles;
