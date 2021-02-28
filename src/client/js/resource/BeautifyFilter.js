@@ -3,6 +3,7 @@ import { createBuffer, createTexture } from '../resource/WebGL.js';
 import GreenBlueChannel from '../resource/GreenBlueChannel.js';
 import GaussianBlurFilter from '../resource/GaussianBlurFilter.js';
 import HighPassFilter from '../resource/HighPassFilter.js';
+import HardLight from '../resource/HardLight.js';
 import CopyTexture from '../resource/CopyTexture.js';
 
 const textureIndex = {
@@ -11,6 +12,7 @@ const textureIndex = {
   gaussianBlurMid: 2,
   gaussianBlur: 3,
   highPassFilter: 4,
+  hardLight: 5,
 };
 const positionAttribute = {
   array: [-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1],
@@ -26,12 +28,14 @@ const textureNames = [
   'gaussianBlurMid',
   'gaussianBlur',
   'highPassFilter',
+  'hardLight',
 ];
 const frameBufferNames = [
   'greenBlueChannel',
   'gaussianBlurMid',
   'gaussianBlur',
   'highPassFilter',
+  'hardLight',
 ];
 
 const BeautifyFilter = function () {
@@ -101,6 +105,16 @@ const BeautifyFilter = function () {
     buffer: this.buffer.aTextCoord,
   });
 
+  this.hardLight = new HardLight({ context: this.context });
+  this.hardLight.dockBuffer({
+    key: 'aPosition',
+    buffer: this.buffer.aPosition,
+  });
+  this.hardLight.dockBuffer({
+    key: 'aTextCoord',
+    buffer: this.buffer.aTextCoord,
+  });
+
   this.copyTexture = new CopyTexture({ context: this.context });
   this.copyTexture.dockBuffer({
     key: 'aPosition',
@@ -156,9 +170,15 @@ BeautifyFilter.prototype.draw = function ({ pixelSource }) {
     targetFrameBuffer: this.frameBuffer.highPassFilter,
   });
 
-  this.copyTexture.draw({
+  this.hardLight.draw({
     sourceTexture: this.texture.highPassFilter,
     sourceTextureIndex: textureIndex.highPassFilter,
+    targetFrameBuffer: this.frameBuffer.hardLight,
+  });
+
+  this.copyTexture.draw({
+    sourceTexture: this.texture.hardLight,
+    sourceTextureIndex: textureIndex.hardLight,
   });
 };
 
