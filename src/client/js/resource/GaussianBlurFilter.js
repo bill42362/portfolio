@@ -80,8 +80,17 @@ GaussianBlurFilter.prototype.dockBuffer = function ({ key, buffer }) {
 };
 
 GaussianBlurFilter.prototype.updateKernal = function ({ radius, sigma } = {}) {
-  if (radius && 32 < radius) {
-    throw new Error('radius must <= 32');
+  if (radius && isNaN(radius)) {
+    throw new Error('invalid radius');
+  }
+  if (radius && (32 < radius || 0 > radius)) {
+    throw new Error('radius must be [0, 32]');
+  }
+  if (sigma && isNaN(sigma)) {
+    throw new Error('invalid sigma');
+  }
+  if (sigma && 0 >= sigma) {
+    throw new Error('sigma must be > 0');
   }
   this._radius = radius || this._radius;
   this._sigma = sigma || this._sigma;

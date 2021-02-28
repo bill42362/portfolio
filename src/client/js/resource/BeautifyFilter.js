@@ -4,6 +4,7 @@ import GreenBlueChannel from '../resource/GreenBlueChannel.js';
 import GaussianBlurFilter from '../resource/GaussianBlurFilter.js';
 import HighPassFilter from '../resource/HighPassFilter.js';
 import HardLight from '../resource/HardLight.js';
+import ToneCurve from '../resource/ToneCurve.js';
 import CopyTexture from '../resource/CopyTexture.js';
 
 const textureIndex = {
@@ -13,6 +14,8 @@ const textureIndex = {
   gaussianBlur: 3,
   highPassFilter: 4,
   hardLight: 5,
+  toneMap: 6,
+  toneCurve: 7,
 };
 const positionAttribute = {
   array: [-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1],
@@ -29,6 +32,8 @@ const textureNames = [
   'gaussianBlur',
   'highPassFilter',
   'hardLight',
+  'toneMap',
+  'toneCurve',
 ];
 const frameBufferNames = [
   'greenBlueChannel',
@@ -36,6 +41,7 @@ const frameBufferNames = [
   'gaussianBlur',
   'highPassFilter',
   'hardLight',
+  'toneCurve',
 ];
 
 const BeautifyFilter = function () {
@@ -115,6 +121,20 @@ const BeautifyFilter = function () {
     buffer: this.buffer.aTextCoord,
   });
 
+  this.toneCurve = new ToneCurve({
+    context: this.context,
+    toneMapTexture: this.texture.toneMap,
+    toneMapTextureIndex: textureIndex.toneMap,
+  });
+  this.toneCurve.dockBuffer({
+    key: 'aPosition',
+    buffer: this.buffer.aPosition,
+  });
+  this.toneCurve.dockBuffer({
+    key: 'aTextCoord',
+    buffer: this.buffer.aTextCoord,
+  });
+
   this.copyTexture = new CopyTexture({ context: this.context });
   this.copyTexture.dockBuffer({
     key: 'aPosition',
@@ -176,9 +196,15 @@ BeautifyFilter.prototype.draw = function ({ pixelSource }) {
     targetFrameBuffer: this.frameBuffer.hardLight,
   });
 
+  this.toneCurve.draw({
+    sourceTexture: this.texture.source,
+    sourceTextureIndex: textureIndex.source,
+    targetFrameBuffer: this.frameBuffer.toneCurve,
+  });
+
   this.copyTexture.draw({
-    sourceTexture: this.texture.hardLight,
-    sourceTextureIndex: textureIndex.hardLight,
+    sourceTexture: this.texture.toneCurve,
+    sourceTextureIndex: textureIndex.toneCurve,
   });
 };
 
