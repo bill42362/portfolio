@@ -27,8 +27,6 @@ const BeautifyFilter = ({ pixelSource }) => {
         return;
       }
 
-      filterCore.current.draw({ pixelSource });
-
       let sourceWidth = context.canvas.width;
       let sourceHeight = context.canvas.height;
       if ('VIDEO' == pixelSource.nodeName) {
@@ -38,6 +36,12 @@ const BeautifyFilter = ({ pixelSource }) => {
         sourceWidth = pixelSource.width;
         sourceHeight = pixelSource.height;
       }
+
+      if (!sourceWidth || !sourceHeight) {
+        return;
+      }
+
+      filterCore.current.draw({ pixelSource });
 
       const canvasWidth = context.canvas.width;
       const canvasHeight = context.canvas.height;
