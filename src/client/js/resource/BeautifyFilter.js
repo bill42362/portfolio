@@ -8,25 +8,6 @@ import ToneCurve from '../resource/ToneCurve.js';
 import MaskBlender from '../resource/MaskBlender.js';
 import CopyTexture from '../resource/CopyTexture.js';
 
-const textureIndex = {
-  source: 0,
-  greenBlueChannel: 1,
-  gaussianBlurMid: 2,
-  gaussianBlur: 3,
-  highPassFilter: 4,
-  hardLight: 5,
-  toneMap: 6,
-  toneCurve: 7,
-  maskBlender: 8,
-};
-const positionAttribute = {
-  array: [-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1],
-  numComponents: 2,
-};
-const textCoordAttribute = {
-  array: [0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0],
-  numComponents: 2,
-};
 const textureNames = [
   'source',
   'greenBlueChannel',
@@ -47,6 +28,18 @@ const frameBufferNames = [
   'toneCurve',
   'maskBlender',
 ];
+const textureIndex = textureNames.reduce(
+  (current, textureName, index) => ({ ...current, [textureName]: index }),
+  {}
+);
+const positionAttribute = {
+  array: [-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1],
+  numComponents: 2,
+};
+const textCoordAttribute = {
+  array: [0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0],
+  numComponents: 2,
+};
 
 const BeautifyFilter = function () {
   const canvas = document.createElement('canvas');
