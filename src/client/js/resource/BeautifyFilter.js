@@ -5,6 +5,7 @@ import GaussianBlurFilter from '../resource/GaussianBlurFilter.js';
 import HighPassFilter from '../resource/HighPassFilter.js';
 import HardLight from '../resource/HardLight.js';
 import ToneCurve from '../resource/ToneCurve.js';
+import MaskBlender from '../resource/MaskBlender.js';
 import CopyTexture from '../resource/CopyTexture.js';
 
 const textureIndex = {
@@ -16,6 +17,7 @@ const textureIndex = {
   hardLight: 5,
   toneMap: 6,
   toneCurve: 7,
+  maskBlender: 8,
 };
 const positionAttribute = {
   array: [-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1],
@@ -34,6 +36,7 @@ const textureNames = [
   'hardLight',
   'toneMap',
   'toneCurve',
+  'maskBlender',
 ];
 const frameBufferNames = [
   'greenBlueChannel',
@@ -42,6 +45,7 @@ const frameBufferNames = [
   'highPassFilter',
   'hardLight',
   'toneCurve',
+  'maskBlender',
 ];
 
 const BeautifyFilter = function () {
@@ -135,6 +139,16 @@ const BeautifyFilter = function () {
     buffer: this.buffer.aTextCoord,
   });
 
+  this.maskBlender = new MaskBlender({ context: this.context });
+  this.maskBlender.dockBuffer({
+    key: 'aPosition',
+    buffer: this.buffer.aPosition,
+  });
+  this.maskBlender.dockBuffer({
+    key: 'aTextCoord',
+    buffer: this.buffer.aTextCoord,
+  });
+
   this.copyTexture = new CopyTexture({ context: this.context });
   this.copyTexture.dockBuffer({
     key: 'aPosition',
@@ -202,9 +216,19 @@ BeautifyFilter.prototype.draw = function ({ pixelSource }) {
     targetFrameBuffer: this.frameBuffer.toneCurve,
   });
 
+  this.maskBlender.draw({
+    sourceTexture: this.texture.source,
+    sourceTextureIndex: textureIndex.source,
+    maskTexture: this.texture.highPassFilter,
+    maskTextureIndex: textureIndex.highPassFilter,
+    blendSourceTexture: this.texture.toneCurve,
+    blendSourceTextureIndex: textureIndex.toneCurve,
+    targetFrameBuffer: this.frameBuffer.maskBlender,
+  });
+
   this.copyTexture.draw({
-    sourceTexture: this.texture.toneCurve,
-    sourceTextureIndex: textureIndex.toneCurve,
+    sourceTexture: this.texture.maskBlender,
+    sourceTextureIndex: textureIndex.maskBlender,
   });
 };
 
