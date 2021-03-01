@@ -46,11 +46,9 @@ const textCoordAttribute = {
 const BeautifyFilter = function () {
   const canvas = document.createElement('canvas');
   this.canvas = canvas;
-  window.canvas = canvas;
 
   const context = canvas.getContext('webgl2');
   this.context = context;
-  window.context = context;
 
   this.buffer = {};
   this.buffer.aPosition = createBuffer({
@@ -165,7 +163,10 @@ const BeautifyFilter = function () {
   });
 };
 
-BeautifyFilter.prototype.draw = function ({ pixelSource }) {
+BeautifyFilter.prototype.draw = function ({
+  pixelSource,
+  greenBlueChannelMonitors = [],
+}) {
   if (!pixelSource || !this.context) {
     return;
   }
@@ -190,6 +191,12 @@ BeautifyFilter.prototype.draw = function ({ pixelSource }) {
     sourceTexture: this.texture.source,
     sourceTextureIndex: textureIndex.source,
     targetFrameBuffer: this.frameBuffer.greenBlueChannel,
+  });
+
+  this.exportTextureToCanvases({
+    texture: this.texture.greenBlueChannel,
+    textureIndex: textureIndex.greenBlueChannel,
+    canvases: greenBlueChannelMonitors,
   });
 
   this.gaussianBlur.draw({
@@ -276,6 +283,45 @@ BeautifyFilter.prototype.updateCanvasSize = function ({ pixelSource }) {
       );
     });
   }
+};
+
+BeautifyFilter.prototype.exportTextureToCanvases = function ({
+  texture,
+  textureIndex,
+  canvases,
+}) {
+  if (!texture || !textureIndex || !canvases?.length) return;
+
+  const targetContexts = canvases
+    .map(canvas => {
+      if ('CANVAS' !== canvas?.nodeName) return;
+      return canvas.getContext('2d');
+    })
+    .filter(Boolean);
+  if (!targetContexts.length) return;
+
+  this.copyTexture.draw({
+    sourceTexture: texture,
+    sourceTextureIndex: textureIndex,
+  });
+
+  targetContexts.forEach(targetContext => {
+    const sourceCanvas = this.canvas;
+    const sourceWidth = sourceCanvas.width;
+    const sourceHeight = sourceCanvas.height;
+
+    const targetWidth = targetContext.canvas.width;
+    const targetHeight = targetContext.canvas.height;
+
+    if (targetWidth !== sourceWidth || targetHeight !== sourceHeight) {
+      targetContext.canvas.width = sourceWidth;
+      targetContext.canvas.height = sourceHeight;
+    }
+    targetContext.clearRect(0, 0, sourceWidth, sourceHeight);
+    targetContext.drawImage(sourceCanvas, 0, 0);
+  });
+
+  this.fillColor.draw();
 };
 
 export default BeautifyFilter;
