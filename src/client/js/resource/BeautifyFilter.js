@@ -6,6 +6,7 @@ import HighPassFilter from '../resource/HighPassFilter.js';
 import HardLight from '../resource/HardLight.js';
 import ToneCurve from '../resource/ToneCurve.js';
 import MaskBlender from '../resource/MaskBlender.js';
+import FillColor from '../resource/FillColor.js';
 import CopyTexture from '../resource/CopyTexture.js';
 
 const textureNames = [
@@ -32,6 +33,7 @@ const textureIndex = textureNames.reduce(
   (current, textureName, index) => ({ ...current, [textureName]: index }),
   {}
 );
+const clearColor = [0, 0, 0, 0];
 const positionAttribute = {
   array: [-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1],
   numComponents: 2,
@@ -142,6 +144,16 @@ const BeautifyFilter = function () {
     buffer: this.buffer.aTextCoord,
   });
 
+  this.fillColor = new FillColor({ context: this.context, color: clearColor });
+  this.fillColor.dockBuffer({
+    key: 'aPosition',
+    buffer: this.buffer.aPosition,
+  });
+  this.fillColor.dockBuffer({
+    key: 'aTextCoord',
+    buffer: this.buffer.aTextCoord,
+  });
+
   this.copyTexture = new CopyTexture({ context: this.context });
   this.copyTexture.dockBuffer({
     key: 'aPosition',
@@ -161,7 +173,7 @@ BeautifyFilter.prototype.draw = function ({ pixelSource }) {
   this.updateCanvasSize({ pixelSource });
 
   const context = this.context;
-  context.clearColor(0, 0, 0, 1);
+  context.clearColor(...clearColor);
   context.clear(context.COLOR_BUFFER_BIT);
 
   context.bindTexture(context.TEXTURE_2D, this.texture.source);
