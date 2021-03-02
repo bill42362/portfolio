@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import MediaStreamHandler from '../component/MediaStreamHandler.jsx';
 import MediaStreamMonitor from '../component/MediaStreamMonitor.jsx';
 import BeautifyFilter from '../component/BeautifyFilter.jsx';
+import FilterPanel from '../component/FilterPanel.jsx';
 import ExposureValue from '../component/ExposureValue.jsx';
 import GreenBlueChannel from '../component/GreenBlueChannel.jsx';
 import GaussianBlur from '../component/GaussianBlur.jsx';
@@ -13,9 +14,12 @@ import HardLight from '../component/HardLight.jsx';
 import ToneCurve from '../component/ToneCurve.jsx';
 import MaskBlender from '../component/MaskBlender.jsx';
 
+import BeautifyFilterCore from '../resource/BeautifyFilter.js';
+
 const Main = () => {
   const [mediaStream, setMediaStream] = useState();
   const sourceVideo = useRef();
+  const beautifyFilterCore = useRef(new BeautifyFilterCore());
   const exposureValueCanvas = useRef();
   const greenBlueChannelCanvas = useRef();
   const gaussianBlurCanvas = useRef();
@@ -48,6 +52,13 @@ const Main = () => {
     <StyledMain>
       <MediaStreamHandler onChange={({ value }) => setMediaStream(value)} />
       <Modules>
+        <ModuleWrapper>
+          <FilterPanel
+            filterName="BeautifyFilterPanel"
+            filterCore={beautifyFilterCore.current}
+            pixelSource={sourceVideo.current}
+          />
+        </ModuleWrapper>
         <ModuleWrapper>
           <BeautifyFilter pixelSource={sourceVideo.current} />
         </ModuleWrapper>
