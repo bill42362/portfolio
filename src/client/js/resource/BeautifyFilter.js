@@ -50,6 +50,11 @@ const BeautifyFilter = function () {
   const context = canvas.getContext('webgl2');
   this.context = context;
 
+  this.slice = frameBufferNames.reduce(
+    (current, frameBufferName) => ({ ...current, [frameBufferName]: [] }),
+    {}
+  );
+
   this.buffer = {};
   this.buffer.aPosition = createBuffer({
     context,
@@ -163,10 +168,7 @@ const BeautifyFilter = function () {
   });
 };
 
-BeautifyFilter.prototype.draw = function ({
-  pixelSource,
-  greenBlueChannelMonitors = [],
-}) {
+BeautifyFilter.prototype.draw = function ({ pixelSource }) {
   if (!pixelSource || !this.context) {
     return;
   }
@@ -196,7 +198,7 @@ BeautifyFilter.prototype.draw = function ({
   this.exportTextureToCanvases({
     texture: this.texture.greenBlueChannel,
     textureIndex: textureIndex.greenBlueChannel,
-    canvases: greenBlueChannelMonitors,
+    canvases: this.slice['greenBlueChannel'],
   });
 
   this.gaussianBlur.draw({
@@ -208,6 +210,12 @@ BeautifyFilter.prototype.draw = function ({
     targetFrameBuffer: this.frameBuffer.gaussianBlur,
   });
 
+  this.exportTextureToCanvases({
+    texture: this.texture.gaussianBlur,
+    textureIndex: textureIndex.gaussianBlur,
+    canvases: this.slice['gaussianBlur'],
+  });
+
   this.highPassFilter.draw({
     sourceTexture: this.texture.greenBlueChannel,
     sourceTextureIndex: textureIndex.greenBlueChannel,
@@ -216,16 +224,34 @@ BeautifyFilter.prototype.draw = function ({
     targetFrameBuffer: this.frameBuffer.highPassFilter,
   });
 
+  this.exportTextureToCanvases({
+    texture: this.texture.highPassFilter,
+    textureIndex: textureIndex.highPassFilter,
+    canvases: this.slice['highPassFilter'],
+  });
+
   this.hardLight.draw({
     sourceTexture: this.texture.highPassFilter,
     sourceTextureIndex: textureIndex.highPassFilter,
     targetFrameBuffer: this.frameBuffer.hardLight,
   });
 
+  this.exportTextureToCanvases({
+    texture: this.texture.hardLight,
+    textureIndex: textureIndex.hardLight,
+    canvases: this.slice['hardLight'],
+  });
+
   this.toneCurve.draw({
     sourceTexture: this.texture.source,
     sourceTextureIndex: textureIndex.source,
     targetFrameBuffer: this.frameBuffer.toneCurve,
+  });
+
+  this.exportTextureToCanvases({
+    texture: this.texture.toneCurve,
+    textureIndex: textureIndex.toneCurve,
+    canvases: this.slice['toneCurve'],
   });
 
   this.maskBlender.draw({
@@ -236,6 +262,12 @@ BeautifyFilter.prototype.draw = function ({
     blendSourceTexture: this.texture.toneCurve,
     blendSourceTextureIndex: textureIndex.toneCurve,
     targetFrameBuffer: this.frameBuffer.maskBlender,
+  });
+
+  this.exportTextureToCanvases({
+    texture: this.texture.maskBlender,
+    textureIndex: textureIndex.maskBlender,
+    canvases: this.slice['maskBlender'],
   });
 
   this.copyTexture.draw({
@@ -283,6 +315,20 @@ BeautifyFilter.prototype.updateCanvasSize = function ({ pixelSource }) {
       );
     });
   }
+};
+
+BeautifyFilter.prototype.registerSlice = function ({
+  key = 'greenBlueChannel',
+  canvas,
+}) {
+  if (
+    !frameBufferNames.includes(key) ||
+    !canvas ||
+    'CANVAS' !== canvas.nodeName
+  ) {
+    return;
+  }
+  return this.slice[key].push(canvas);
 };
 
 BeautifyFilter.prototype.exportTextureToCanvases = function ({
