@@ -72,7 +72,7 @@ const FilterPanel = ({ filterName, filterCore, pixelSource }) => {
   }, [shouldAnimate, maxFps, filterCore, pixelSource]);
 
   return (
-    <StyledBeautifyFilter>
+    <StyledFilterPanel>
       <Header>{filterName}</Header>
       <Body>
         <canvas ref={canvasRef} />
@@ -100,7 +100,7 @@ const FilterPanel = ({ filterName, filterCore, pixelSource }) => {
           </Label>
         </Controls>
       </Footer>
-    </StyledBeautifyFilter>
+    </StyledFilterPanel>
   );
 };
 
@@ -116,7 +116,7 @@ FilterPanel.defaultProps = {
   pixelSource: null,
 };
 
-const StyledBeautifyFilter = styled.div`
+const StyledFilterPanel = styled.div`
   border: solid 1px #4834d4;
   border-radius: 8px;
   overflow: hidden;
