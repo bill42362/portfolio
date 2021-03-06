@@ -263,8 +263,8 @@ BeautifyFilter.prototype.draw = function ({ pixelSource }) {
   this.maskBlender.draw({
     sourceTexture: this.texture.source,
     sourceTextureIndex: textureIndex.source,
-    maskTexture: this.texture.highPassFilter,
-    maskTextureIndex: textureIndex.highPassFilter,
+    maskTexture: this.texture.hardLight,
+    maskTextureIndex: textureIndex.hardLight,
     blendSourceTexture: this.texture.toneCurve,
     blendSourceTextureIndex: textureIndex.toneCurve,
     targetFrameBuffer: this.frameBuffer.maskBlender,
