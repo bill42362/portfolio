@@ -5,14 +5,17 @@ import styled from 'styled-components';
 import MediaStreamHandler from '../component/MediaStreamHandler.jsx';
 import FilterPanel from '../component/FilterPanel.jsx';
 import SliceMonitor from '../component/SliceMonitor.jsx';
+import GaussianBlurPanel from '../component/GaussianBlurPanel.jsx';
 
 import BeautifyFilter from '../resource/BeautifyFilter.js';
 
 const Main = () => {
   const [mediaStream, setMediaStream] = useState();
+  const [gaussianBlur, setGaussianBlur] = useState({ radius: 16, sigma: 5 });
   const sourceVideo = useRef();
-  const beautifyFilter = useRef(new BeautifyFilter());
+  const beautifyFilter = useRef();
   const greenBlueCanvasRef = useRef();
+  const gaussianBlurCanvasRef = useRef();
 
   useEffect(() => {
     const video = document.createElement('video');
@@ -20,9 +23,14 @@ const Main = () => {
     video.setAttribute('playsinline', true);
     sourceVideo.current = video;
 
+    beautifyFilter.current = new BeautifyFilter();
     beautifyFilter.current.registerSlice({
       key: 'greenBlueChannel',
       canvas: greenBlueCanvasRef.current,
+    });
+    beautifyFilter.current.registerSlice({
+      key: 'gaussianBlur',
+      canvas: gaussianBlurCanvasRef.current,
     });
     return () => {
       video.srcObject = null;
@@ -39,10 +47,16 @@ const Main = () => {
     }
   }, [mediaStream]);
 
+  useEffect(() => {
+    beautifyFilter.current.updateGaussianBlurKernal(gaussianBlur);
+  }, [gaussianBlur]);
+
   return (
     <StyledMain>
-      <MediaStreamHandler onChange={({ value }) => setMediaStream(value)} />
       <Modules>
+        <ModuleWrapper>
+          <MediaStreamHandler onChange={({ value }) => setMediaStream(value)} />
+        </ModuleWrapper>
         <ModuleWrapper>
           <FilterPanel
             filterName="BeautifyFilterPanel"
@@ -54,6 +68,14 @@ const Main = () => {
           <SliceMonitor
             sliceName="GreenBlueChannel"
             canvasRef={greenBlueCanvasRef}
+          />
+        </ModuleWrapper>
+        <ModuleWrapper>
+          <GaussianBlurPanel
+            canvasRef={gaussianBlurCanvasRef}
+            radius={gaussianBlur.radius}
+            sigma={gaussianBlur.sigma}
+            onChange={setGaussianBlur}
           />
         </ModuleWrapper>
       </Modules>
