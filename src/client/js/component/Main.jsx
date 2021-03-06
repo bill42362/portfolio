@@ -17,6 +17,8 @@ const Main = () => {
   const sourceCanvasRef = useRef();
   const greenBlueCanvasRef = useRef();
   const gaussianBlurCanvasRef = useRef();
+  const hardLightCanvasRef = useRef();
+  const toneCurveCanvasRef = useRef();
 
   useEffect(() => {
     const video = document.createElement('video');
@@ -37,6 +39,14 @@ const Main = () => {
     beautifyFilter.current.registerSlice({
       key: 'gaussianBlur',
       canvas: gaussianBlurCanvasRef.current,
+    });
+    beautifyFilter.current.registerSlice({
+      key: 'hardLight',
+      canvas: hardLightCanvasRef.current,
+    });
+    beautifyFilter.current.registerSlice({
+      key: 'toneCurve',
+      canvas: toneCurveCanvasRef.current,
     });
     return () => {
       video.srcObject = null;
@@ -84,6 +94,12 @@ const Main = () => {
             sigma={gaussianBlur.sigma}
             onChange={setGaussianBlur}
           />
+        </ModuleWrapper>
+        <ModuleWrapper>
+          <SliceMonitor sliceName="HardLight" canvasRef={hardLightCanvasRef} />
+        </ModuleWrapper>
+        <ModuleWrapper>
+          <SliceMonitor sliceName="ToneCurve" canvasRef={toneCurveCanvasRef} />
         </ModuleWrapper>
       </Modules>
     </StyledMain>
