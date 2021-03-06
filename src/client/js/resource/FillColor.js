@@ -63,7 +63,7 @@ FillColor.prototype.updateColor = function ({ color } = {}) {
   context.uniform4f(this.location.uColor, ...this._color);
 };
 
-FillColor.prototype.draw = function ({ targetFrameBuffer }) {
+FillColor.prototype.draw = function ({ targetFrameBuffer } = {}) {
   const context = this.context;
   context.useProgram(this.core.program);
 
