@@ -14,6 +14,7 @@ const Main = () => {
   const [gaussianBlur, setGaussianBlur] = useState({ radius: 16, sigma: 5 });
   const sourceVideo = useRef();
   const beautifyFilter = useRef();
+  const sourceCanvasRef = useRef();
   const greenBlueCanvasRef = useRef();
   const gaussianBlurCanvasRef = useRef();
 
@@ -24,6 +25,11 @@ const Main = () => {
     sourceVideo.current = video;
 
     beautifyFilter.current = new BeautifyFilter();
+    window.beautifyFilter = beautifyFilter.current;
+    beautifyFilter.current.registerSlice({
+      key: 'source',
+      canvas: sourceCanvasRef.current,
+    });
     beautifyFilter.current.registerSlice({
       key: 'greenBlueChannel',
       canvas: greenBlueCanvasRef.current,
@@ -53,16 +59,17 @@ const Main = () => {
 
   return (
     <StyledMain>
+      <MediaStreamHandler onChange={({ value }) => setMediaStream(value)} />
       <Modules>
-        <ModuleWrapper>
-          <MediaStreamHandler onChange={({ value }) => setMediaStream(value)} />
-        </ModuleWrapper>
         <ModuleWrapper>
           <FilterPanel
             filterName="BeautifyFilterPanel"
             filterCore={beautifyFilter.current}
             pixelSource={sourceVideo.current}
           />
+        </ModuleWrapper>
+        <ModuleWrapper>
+          <SliceMonitor sliceName="Source" canvasRef={sourceCanvasRef} />
         </ModuleWrapper>
         <ModuleWrapper>
           <SliceMonitor

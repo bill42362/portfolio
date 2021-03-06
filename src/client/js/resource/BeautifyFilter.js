@@ -338,7 +338,7 @@ BeautifyFilter.prototype.exportTextureToCanvases = function ({
   textureIndex,
   canvases,
 }) {
-  if (!texture || !textureIndex || !canvases?.length) return;
+  if (!texture || isNaN(textureIndex) || !canvases?.length) return;
 
   const targetContexts = canvases
     .map(canvas => {
