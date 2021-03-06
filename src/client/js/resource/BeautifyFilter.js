@@ -370,4 +370,11 @@ BeautifyFilter.prototype.exportTextureToCanvases = function ({
   this.fillColor.draw();
 };
 
+BeautifyFilter.prototype.updateGaussianBlurKernal = function ({
+  radius,
+  sigma,
+} = {}) {
+  return this.gaussianBlur.updateKernal({ radius, sigma });
+};
+
 export default BeautifyFilter;
