@@ -79,7 +79,7 @@ ToneCurve.prototype.dockBuffer = function ({ key, buffer }) {
 };
 
 ToneCurve.prototype.updateStrength = function ({ strength } = {}) {
-  if (!strength || isNaN(strength)) {
+  if (isNaN(strength)) {
     throw new Error('invalid strength argument');
   }
   this._strength = Math.max(Math.min(strength, 1), 0) || this._strength;

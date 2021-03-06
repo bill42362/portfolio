@@ -383,4 +383,13 @@ BeautifyFilter.prototype.updateHardLightCycles = function ({ cycles } = {}) {
   return this.hardLight.updateCycles({ cycles });
 };
 
+BeautifyFilter.prototype.updateToneCurveData = function ({
+  strength,
+  controlPoints,
+  tension,
+} = {}) {
+  this.toneCurve.updateCurvePoints({ controlPoints, tension });
+  return this.toneCurve.updateStrength({ strength });
+};
+
 export default BeautifyFilter;

@@ -7,6 +7,8 @@ import FilterPanel from '../component/FilterPanel.jsx';
 import SliceMonitor from '../component/SliceMonitor.jsx';
 import GaussianBlurPanel from '../component/GaussianBlurPanel.jsx';
 import HardLightPanel from '../component/HardLightPanel.jsx';
+import ToneCurvePanel from '../component/ToneCurvePanel.jsx';
+import { defaultToneCurveControlPoints } from '../component/ToneCurveEditor.jsx';
 
 import BeautifyFilter from '../resource/BeautifyFilter.js';
 
@@ -14,6 +16,11 @@ const Main = () => {
   const [mediaStream, setMediaStream] = useState();
   const [gaussianBlur, setGaussianBlur] = useState({ radius: 16, sigma: 5 });
   const [hardLight, setHardLight] = useState({ cycles: 3 });
+  const [toneCurve, setToneCurve] = useState({
+    strength: 0.5,
+    controlPoints: defaultToneCurveControlPoints,
+    tension: 0.0,
+  });
   const sourceVideo = useRef();
   const beautifyFilter = useRef();
   const sourceCanvasRef = useRef();
@@ -78,6 +85,10 @@ const Main = () => {
     beautifyFilter.current.updateHardLightCycles(hardLight);
   }, [hardLight]);
 
+  useEffect(() => {
+    beautifyFilter.current.updateToneCurveData(toneCurve);
+  }, [toneCurve]);
+
   return (
     <StyledMain>
       <MediaStreamHandler onChange={({ value }) => setMediaStream(value)} />
@@ -120,7 +131,13 @@ const Main = () => {
           />
         </ModuleWrapper>
         <ModuleWrapper>
-          <SliceMonitor sliceName="ToneCurve" canvasRef={toneCurveCanvasRef} />
+          <ToneCurvePanel
+            canvasRef={toneCurveCanvasRef}
+            strength={toneCurve.strength}
+            controlPoints={toneCurve.controlPoints}
+            tension={toneCurve.tension}
+            onChange={setToneCurve}
+          />
         </ModuleWrapper>
       </Modules>
     </StyledMain>
