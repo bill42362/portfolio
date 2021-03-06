@@ -19,6 +19,7 @@ const Main = () => {
   const sourceCanvasRef = useRef();
   const greenBlueCanvasRef = useRef();
   const gaussianBlurCanvasRef = useRef();
+  const highPassFilterCanvasRef = useRef();
   const hardLightCanvasRef = useRef();
   const toneCurveCanvasRef = useRef();
 
@@ -41,6 +42,10 @@ const Main = () => {
     beautifyFilter.current.registerSlice({
       key: 'gaussianBlur',
       canvas: gaussianBlurCanvasRef.current,
+    });
+    beautifyFilter.current.registerSlice({
+      key: 'highPassFilter',
+      canvas: highPassFilterCanvasRef.current,
     });
     beautifyFilter.current.registerSlice({
       key: 'hardLight',
@@ -99,6 +104,12 @@ const Main = () => {
             radius={gaussianBlur.radius}
             sigma={gaussianBlur.sigma}
             onChange={setGaussianBlur}
+          />
+        </ModuleWrapper>
+        <ModuleWrapper>
+          <SliceMonitor
+            sliceName="HighPassFilter"
+            canvasRef={highPassFilterCanvasRef}
           />
         </ModuleWrapper>
         <ModuleWrapper>
