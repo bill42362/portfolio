@@ -379,4 +379,8 @@ BeautifyFilter.prototype.updateGaussianBlurKernal = function ({
   return this.gaussianBlur.updateKernal({ radius, sigma });
 };
 
+BeautifyFilter.prototype.updateHardLightCycles = function ({ cycles } = {}) {
+  return this.hardLight.updateCycles({ cycles });
+};
+
 export default BeautifyFilter;
