@@ -7,6 +7,18 @@ import { getCurvePoints } from '../resource/CardinalSpline.js';
 
 const SIZE = 256;
 
+const defaultCurveControlPoints = [
+  { x: 0, y: 0 },
+  { x: 120, y: 146 }, // default
+  // { x: 120, y: 186 },
+  { x: 255, y: 255 },
+];
+export const defaultToneCurveControlPoints = {
+  red: defaultCurveControlPoints,
+  green: defaultCurveControlPoints,
+  blue: defaultCurveControlPoints,
+};
+
 const drawAxis = context => {
   const originStrokeStyle = context.strokeStyle;
   context.strokeStyle = 'darkgray';
@@ -40,30 +52,25 @@ const drawCross = (context, point, size = 10) => {
   context.lineWidth = originLineWidth;
 };
 
-const ToneCurveEditor = ({ onChange }) => {
+const getToneCurvePoints = ({ controlPoints, tension }) => {
+  return {
+    red: getCurvePoints({ points: controlPoints.red, tension }),
+    green: getCurvePoints({ points: controlPoints.green, tension }),
+    blue: getCurvePoints({ points: controlPoints.blue, tension }),
+  };
+};
+
+const ToneCurveEditor = ({ controlPoints, tension, onChange }) => {
   const [cursorPoint, setCursorPoint] = useState();
-  const [tension, setTension] = useState(0);
-  const [redControlPoints] = useState([
-    { x: 0, y: 0 },
-    { x: 120, y: 146 }, // default
-    // { x: 120, y: 186 },
-    { x: 255, y: 255 },
-  ]);
-  const [redCurvePoints, setRedCurvePoints] = useState([]);
+  const [curvePoints, setCurvePoints] = useState(
+    getToneCurvePoints({ controlPoints, tension })
+  );
   const canvas = useRef();
 
   useEffect(() => {
-    const redCurvePoints = getCurvePoints({
-      tension,
-      points: redControlPoints,
-    });
-    setRedCurvePoints(redCurvePoints);
-    onChange({
-      red: redCurvePoints,
-      green: redCurvePoints,
-      blue: redCurvePoints,
-    });
-  }, [tension, redControlPoints, onChange]);
+    setCurvePoints(getToneCurvePoints({ controlPoints, tension }));
+    onChange({ controlPoints, tension });
+  }, [tension, controlPoints, onChange]);
 
   useEffect(() => {
     const context = canvas.current.getContext('2d');
@@ -75,18 +82,18 @@ const ToneCurveEditor = ({ onChange }) => {
     context.strokeStyle = 'red';
     context.beginPath();
     context.moveTo(0, SIZE);
-    redCurvePoints.forEach(point => {
+    curvePoints.red.forEach(point => {
       context.lineTo(point.x, SIZE - point.y);
     });
     context.stroke();
 
     context.fillStyle = 'red';
-    redControlPoints.forEach(point => {
+    controlPoints.red.forEach(point => {
       context.beginPath();
       context.arc(point.x, SIZE - point.y, 2, 0, 2 * Math.PI);
       context.fill();
     });
-  }, [redControlPoints, redCurvePoints, cursorPoint]);
+  }, [controlPoints, curvePoints, cursorPoint]);
 
   const handleOnMouseMove = e => {
     const x = e.clientX - e.target.offsetLeft;
@@ -112,7 +119,9 @@ const ToneCurveEditor = ({ onChange }) => {
             max="1"
             step="0.01"
             value={tension}
-            onChange={e => setTension(e.target.value)}
+            onChange={e =>
+              onChange({ controlPoints, tension: +e.target.value })
+            }
           />
         </Label>
       </Controls>
@@ -121,10 +130,18 @@ const ToneCurveEditor = ({ onChange }) => {
 };
 
 ToneCurveEditor.propTypes = {
+  controlPoints: PropTypes.shape({
+    red: PropTypes.array.isRequired,
+    green: PropTypes.array.isRequired,
+    blue: PropTypes.array.isRequired,
+  }),
+  tension: PropTypes.number,
   onChange: PropTypes.func,
 };
 
 ToneCurveEditor.defaultProps = {
+  controlPoints: defaultToneCurveControlPoints,
+  tension: 0.0,
   onChange: () => null,
 };
 

@@ -73,7 +73,7 @@ export const getCurvePoints = ({
     { x: 0, y: 0 },
     { x: 255, y: 255 },
   ],
-  tension = 0.5,
+  tension = 0,
 } = {}) => {
   const polynomials = getPolynomials({ points, tension });
 
