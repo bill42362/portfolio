@@ -50,8 +50,8 @@ const BeautifyFilter = function () {
   const context = canvas.getContext('webgl2');
   this.context = context;
 
-  this.slice = frameBufferNames.reduce(
-    (current, frameBufferName) => ({ ...current, [frameBufferName]: [] }),
+  this.slice = textureNames.reduce(
+    (current, textureName) => ({ ...current, [textureName]: [] }),
     {}
   );
 
@@ -189,6 +189,12 @@ BeautifyFilter.prototype.draw = function ({ pixelSource }) {
     pixelSource
   );
 
+  this.exportTextureToCanvases({
+    texture: this.texture.source,
+    textureIndex: textureIndex.source,
+    canvases: this.slice['source'],
+  });
+
   this.greenBlueChannel.draw({
     sourceTexture: this.texture.source,
     sourceTextureIndex: textureIndex.source,
@@ -321,11 +327,7 @@ BeautifyFilter.prototype.registerSlice = function ({
   key = 'greenBlueChannel',
   canvas,
 }) {
-  if (
-    !frameBufferNames.includes(key) ||
-    !canvas ||
-    'CANVAS' !== canvas.nodeName
-  ) {
+  if (!textureNames.includes(key) || !canvas || 'CANVAS' !== canvas.nodeName) {
     return;
   }
   return this.slice[key].push(canvas);
