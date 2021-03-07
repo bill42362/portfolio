@@ -49,6 +49,9 @@ const BeautifyFilter = function () {
 
   const context = canvas.getContext('webgl2');
   this.context = context;
+  if (!context) {
+    throw new Error('Browser not support WebGL2.0');
+  }
 
   this.slice = textureNames.reduce(
     (current, textureName) => ({ ...current, [textureName]: {} }),

@@ -13,6 +13,7 @@ import { defaultToneCurveControlPoints } from '../component/ToneCurveEditor.jsx'
 import BeautifyFilter from '../resource/BeautifyFilter.js';
 
 const Main = () => {
+  const [error, setError] = useState();
   const [mediaStream, setMediaStream] = useState();
   const [gaussianBlur, setGaussianBlur] = useState({ radius: 16, sigma: 5 });
   const [hardLight, setHardLight] = useState({ cycles: 3 });
@@ -32,11 +33,15 @@ const Main = () => {
     video.setAttribute('playsinline', true);
     sourceVideo.current = video;
 
-    beautifyFilter.current = new BeautifyFilter();
+    try {
+      beautifyFilter.current = new BeautifyFilter();
+    } catch (error) {
+      setError(error);
+    }
     window.beautifyFilter = beautifyFilter.current;
-    registerSlice.current = args => beautifyFilter.current.registerSlice(args);
+    registerSlice.current = args => beautifyFilter.current?.registerSlice(args);
     unregisterSlice.current = args =>
-      beautifyFilter.current.unregisterSlice(args);
+      beautifyFilter.current?.unregisterSlice(args);
     return () => {
       video.srcObject = null;
       return video.pause();
@@ -53,19 +58,20 @@ const Main = () => {
   }, [mediaStream]);
 
   useEffect(() => {
-    beautifyFilter.current.updateGaussianBlurKernal(gaussianBlur);
+    beautifyFilter.current?.updateGaussianBlurKernal(gaussianBlur);
   }, [gaussianBlur]);
 
   useEffect(() => {
-    beautifyFilter.current.updateHardLightCycles(hardLight);
+    beautifyFilter.current?.updateHardLightCycles(hardLight);
   }, [hardLight]);
 
   useEffect(() => {
-    beautifyFilter.current.updateToneCurveData(toneCurve);
+    beautifyFilter.current?.updateToneCurveData(toneCurve);
   }, [toneCurve]);
 
   return (
     <StyledMain>
+      {error && <ErrorPanel>{error.message}</ErrorPanel>}
       <MediaStreamHandler onChange={({ value }) => setMediaStream(value)} />
       <Modules>
         <ModuleWrapper>
@@ -133,6 +139,13 @@ const Main = () => {
 
 const StyledMain = styled.div`
   padding: 8px;
+`;
+
+const ErrorPanel = styled.div`
+  border-radius: 8px;
+  background-color: #eb4d4b;
+  padding: 8px;
+  margin-bottom: 8px;
 `;
 
 const Modules = styled.div`
