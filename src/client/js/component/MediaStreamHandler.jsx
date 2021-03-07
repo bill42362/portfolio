@@ -19,7 +19,11 @@ export class MediaStreamHandler extends React.PureComponent {
     try {
       this.setState({ isStarted: true });
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
+        video: {
+          facingMode: 'environment',
+          width: { min: 1024, ideal: 1280, max: 1920 },
+          height: { min: 576, ideal: 720, max: 1080 },
+        },
       });
       this.setState({ mediaStream: stream });
       return onChange({ value: stream });
