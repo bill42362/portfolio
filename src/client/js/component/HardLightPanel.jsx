@@ -1,15 +1,51 @@
 // HardLightPanel.jsx
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 
-const HardLightPanel = ({ canvasRef, cycles, onChange }) => {
+import ResetButtonStyle from '../style/ResetButtonStyle.js';
+
+const sliceKey = 'hardLight';
+
+const HardLightPanel = ({
+  registerSlice,
+  unregisterSlice,
+  cycles,
+  onChange,
+}) => {
+  const [isActived, setIsActived] = useState(false);
+  const canvasRef = useRef();
+  const sliceId = useRef(Math.random());
+
+  useEffect(() => {
+    const unregister = () =>
+      unregisterSlice({ key: sliceKey, sliceId: sliceId.current });
+    unregister();
+    if (isActived) {
+      registerSlice({
+        key: sliceKey,
+        sliceId: sliceId.current,
+        canvas: canvasRef.current,
+      });
+    }
+    return unregister;
+  }, [isActived, registerSlice, unregisterSlice]);
   return (
     <StyledHardLight>
-      <Header>HardLightPanel</Header>
-      <Body>
-        <canvas ref={canvasRef} />
-      </Body>
+      <Header>
+        <Title>HardLightPanel</Title>
+        <EnableButton
+          isActived={isActived}
+          onClick={() => setIsActived(!isActived)}
+        >
+          Open
+        </EnableButton>
+      </Header>
+      {isActived && (
+        <Body>
+          <canvas ref={canvasRef} />
+        </Body>
+      )}
       <Footer>
         <Controls>
           <Label>
@@ -30,12 +66,15 @@ const HardLightPanel = ({ canvasRef, cycles, onChange }) => {
 };
 
 HardLightPanel.propTypes = {
-  canvasRef: PropTypes.object.isRequired,
+  registerSlice: PropTypes.func,
+  unregisterSlice: PropTypes.func,
   cycles: PropTypes.number,
   onChange: PropTypes.func,
 };
 
 HardLightPanel.defaultProps = {
+  registerSlice: () => null,
+  unregisterSlice: () => null,
   cycles: 3,
   onChange: () => null,
 };
@@ -47,9 +86,34 @@ const StyledHardLight = styled.div`
 `;
 
 const Header = styled.div`
+  display: flex;
   background-color: #4834d4;
   padding: 8px;
 `;
+
+const Title = styled.div`
+  flex: 1;
+  align-self: center;
+`;
+
+const Button = styled.button`
+  ${ResetButtonStyle}
+  border-radius: 4px;
+  padding: 4px;
+  color: white;
+  font-size: 14px;
+  & + & {
+    margin-left: 8px;
+  }
+`;
+
+const EnableButton = styled(Button).attrs(({ isActived }) => {
+  return {
+    style: {
+      backgroundColor: isActived ? '#6ab04c' : '#badc58',
+    },
+  };
+})``;
 
 const Body = styled.div`
   position: relative;

@@ -23,12 +23,8 @@ const Main = () => {
   });
   const sourceVideo = useRef();
   const beautifyFilter = useRef();
-  const sourceCanvasRef = useRef();
-  const greenBlueCanvasRef = useRef();
-  const gaussianBlurCanvasRef = useRef();
-  const highPassFilterCanvasRef = useRef();
-  const hardLightCanvasRef = useRef();
-  const toneCurveCanvasRef = useRef();
+  const registerSlice = useRef();
+  const unregisterSlice = useRef();
 
   useEffect(() => {
     const video = document.createElement('video');
@@ -38,30 +34,9 @@ const Main = () => {
 
     beautifyFilter.current = new BeautifyFilter();
     window.beautifyFilter = beautifyFilter.current;
-    beautifyFilter.current.registerSlice({
-      key: 'source',
-      canvas: sourceCanvasRef.current,
-    });
-    beautifyFilter.current.registerSlice({
-      key: 'greenBlueChannel',
-      canvas: greenBlueCanvasRef.current,
-    });
-    beautifyFilter.current.registerSlice({
-      key: 'gaussianBlur',
-      canvas: gaussianBlurCanvasRef.current,
-    });
-    beautifyFilter.current.registerSlice({
-      key: 'highPassFilter',
-      canvas: highPassFilterCanvasRef.current,
-    });
-    beautifyFilter.current.registerSlice({
-      key: 'hardLight',
-      canvas: hardLightCanvasRef.current,
-    });
-    beautifyFilter.current.registerSlice({
-      key: 'toneCurve',
-      canvas: toneCurveCanvasRef.current,
-    });
+    registerSlice.current = args => beautifyFilter.current.registerSlice(args);
+    unregisterSlice.current = args =>
+      beautifyFilter.current.unregisterSlice(args);
     return () => {
       video.srcObject = null;
       return video.pause();
@@ -101,17 +76,25 @@ const Main = () => {
           />
         </ModuleWrapper>
         <ModuleWrapper>
-          <SliceMonitor sliceName="Source" canvasRef={sourceCanvasRef} />
+          <SliceMonitor
+            sliceKey="source"
+            sliceName="Source"
+            registerSlice={registerSlice.current}
+            unregisterSlice={unregisterSlice.current}
+          />
         </ModuleWrapper>
         <ModuleWrapper>
           <SliceMonitor
+            sliceKey="greenBlueChannel"
             sliceName="GreenBlueChannel"
-            canvasRef={greenBlueCanvasRef}
+            registerSlice={registerSlice.current}
+            unregisterSlice={unregisterSlice.current}
           />
         </ModuleWrapper>
         <ModuleWrapper>
           <GaussianBlurPanel
-            canvasRef={gaussianBlurCanvasRef}
+            registerSlice={registerSlice.current}
+            unregisterSlice={unregisterSlice.current}
             radius={gaussianBlur.radius}
             sigma={gaussianBlur.sigma}
             onChange={setGaussianBlur}
@@ -119,20 +102,24 @@ const Main = () => {
         </ModuleWrapper>
         <ModuleWrapper>
           <SliceMonitor
+            sliceKey="highPassFilter"
             sliceName="HighPassFilter"
-            canvasRef={highPassFilterCanvasRef}
+            registerSlice={registerSlice.current}
+            unregisterSlice={unregisterSlice.current}
           />
         </ModuleWrapper>
         <ModuleWrapper>
           <HardLightPanel
-            canvasRef={hardLightCanvasRef}
+            registerSlice={registerSlice.current}
+            unregisterSlice={unregisterSlice.current}
             cycles={hardLight.cycles}
             onChange={setHardLight}
           />
         </ModuleWrapper>
         <ModuleWrapper>
           <ToneCurvePanel
-            canvasRef={toneCurveCanvasRef}
+            registerSlice={registerSlice.current}
+            unregisterSlice={unregisterSlice.current}
             strength={toneCurve.strength}
             controlPoints={toneCurve.controlPoints}
             tension={toneCurve.tension}

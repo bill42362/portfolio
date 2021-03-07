@@ -51,7 +51,7 @@ const BeautifyFilter = function () {
   this.context = context;
 
   this.slice = textureNames.reduce(
-    (current, textureName) => ({ ...current, [textureName]: [] }),
+    (current, textureName) => ({ ...current, [textureName]: {} }),
     {}
   );
 
@@ -325,12 +325,28 @@ BeautifyFilter.prototype.updateCanvasSize = function ({ pixelSource }) {
 
 BeautifyFilter.prototype.registerSlice = function ({
   key = 'greenBlueChannel',
+  sliceId,
   canvas,
 }) {
-  if (!textureNames.includes(key) || !canvas || 'CANVAS' !== canvas.nodeName) {
+  if (
+    !textureNames.includes(key) ||
+    !sliceId ||
+    !canvas ||
+    'CANVAS' !== canvas.nodeName
+  ) {
     return;
   }
-  return this.slice[key].push(canvas);
+  return (this.slice[key][sliceId] = canvas);
+};
+
+BeautifyFilter.prototype.unregisterSlice = function ({
+  key = 'greenBlueChannel',
+  sliceId,
+}) {
+  if (!textureNames.includes(key) || !sliceId) {
+    return;
+  }
+  return delete this.slice[key][sliceId];
 };
 
 BeautifyFilter.prototype.exportTextureToCanvases = function ({
@@ -338,9 +354,10 @@ BeautifyFilter.prototype.exportTextureToCanvases = function ({
   textureIndex,
   canvases,
 }) {
-  if (!texture || isNaN(textureIndex) || !canvases?.length) return;
+  const canvasArray = Object.keys(canvases).map(id => canvases[id]);
+  if (!texture || isNaN(textureIndex) || !canvasArray.length) return;
 
-  const targetContexts = canvases
+  const targetContexts = canvasArray
     .map(canvas => {
       if ('CANVAS' !== canvas?.nodeName) return;
       return canvas.getContext('2d');
