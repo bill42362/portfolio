@@ -72,7 +72,7 @@ const App = ({ request }) => {
       <GlobalStyle />
       <StyledApp>
         {!window && <img src={XMenLogoSource} title="Xavier school" />}
-        <Footer />
+        <Footer branchName={process.env.BRANCH_NAME} />
       </StyledApp>
     </>
   );

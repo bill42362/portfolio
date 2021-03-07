@@ -6,12 +6,17 @@ import styled from 'styled-components';
 import EmailIcon from '../../img/email-icon.svg';
 import GithubIcon from '../../img/github-icon.svg';
 
+const githubBaseUrl = 'https://github.com/bill42362/portfolio';
+
 export class Footer extends React.PureComponent {
   render() {
-    const { email, github } = this.props;
+    const { email, branchName } = this.props;
+    const githubUrl = branchName
+      ? `${githubBaseUrl}/tree/${branchName}`
+      : githubBaseUrl;
     return (
       <StyledFooter>
-        <Link href={github} target="_blank">
+        <Link href={githubUrl} target="_blank">
           <img src={GithubIcon} alt="github" />
         </Link>
         <Link href={`mailto:${email}`} target="_blank">
@@ -24,12 +29,12 @@ export class Footer extends React.PureComponent {
 
 Footer.propTypes = {
   email: PropTypes.string,
-  github: PropTypes.string,
+  branchName: PropTypes.string,
 };
 
 Footer.defaultProps = {
   email: 'bill42362@gmail.com',
-  github: 'https://github.com/bill42362/portfolio',
+  branchName: '',
 };
 
 const StyledFooter = styled.div`
