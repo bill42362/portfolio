@@ -24,5 +24,4 @@ export const ssrJsHandler = () => {
   };
 };
 
-
 export default renderSsrJs;
