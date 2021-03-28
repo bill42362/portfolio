@@ -2,6 +2,7 @@
 
 const title = 'Portfolio';
 const description = "Bill's portfolio";
+const shortSha = process.env.SHORT_SHA;
 const htmlBase = process.env.HTML_BASE;
 
 const defaultHelmet = {
@@ -16,6 +17,7 @@ const defaultHelmet = {
     <meta data-react-helmet=true property=og:title content="${title}" />
     <meta data-react-helmet=true property=og:description content="${description}" />
     <meta data-react-helmet=true property=og:site_name content="${title}" />
+    <meta data-react-helmet=true property=webapp:short_sha content="${shortSha}"/>
   `,
   title: `<title data-react-helmet=true>${title}</title>`,
   link: '',
