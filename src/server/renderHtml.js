@@ -29,7 +29,7 @@ export const renderHtml = ({
   jsTags: inputJsTags = '',
 } = {}) => {
   const jsTags = htmlBase
-    ? inputJsTags.replace(/='\/js/gi, "='js")
+    ? inputJsTags.replace(/='\/js/gi, "='js").replace(/=\/js/gi, '=js')
     : inputJsTags;
   return `
     <!doctype html>
