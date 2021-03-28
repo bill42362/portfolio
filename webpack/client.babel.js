@@ -136,7 +136,7 @@ export default {
       maxAsyncRequests: 6,
       maxInitialRequests: 4,
       automaticNameDelimiter: '~',
-      name: true,
+      name: false,
       cacheGroups: {
         vendors: {
           test: /[\\/]node_modules[\\/]/,
