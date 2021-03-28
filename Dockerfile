@@ -50,6 +50,7 @@ RUN     yarn buildclient
 
 COPY    src/server src/server
 RUN     yarn buildhtml
+RUN     yarn buildssrjs
 
 ###
 
