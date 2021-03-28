@@ -126,10 +126,10 @@ jobs:
       - name: Deploy to github page
         uses: JamesIves/github-pages-deploy-action@4.1.0
         with:
-          ACCESS_TOKEN: ${{ secrets.GH_TOKEN }}
-          BRANCH: gh-pages
-          FOLDER: output-folder
-          TARGET_FOLDER: ${{ env.GITHUB_REF_SLUG }}
+          token: ${{ secrets.GH_TOKEN }}
+          branch: gh-pages
+          folder: output-folder
+          target-folder: ${{ env.GITHUB_REF_SLUG }}
   build-server:
     name: Build Server
     needs: build-client
