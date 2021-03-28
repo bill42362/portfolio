@@ -8,7 +8,10 @@ import { resolveJsTags } from './resolveTags.js';
 
 const buildHtml = () => {
   const webpackStats = require('../../dist/client/stats.json');
-  const jsTags = resolveJsTags({ webpackStats });
+  const jsTags = `
+    <script type=text/javascript src=/js/ssrJs.js></script>
+    ${resolveJsTags({ webpackStats })}
+  `;
 
   const html = renderHtml({ jsTags });
   const minifiedHtml = HtmlMinifier.minify(html, minifyHtmlConfig);

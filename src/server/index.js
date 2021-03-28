@@ -8,6 +8,7 @@ import HtmlMinifier from 'html-minifier';
 import morgan from 'morgan';
 
 import manifestHandler from './manifestHandler.js';
+import { ssrJsHandler } from './renderSsrJs.js';
 import renderHtml from './renderHtml.js';
 import minifyHtmlConfig from './minifyHtmlConfig.js';
 
@@ -22,6 +23,7 @@ const ONE_YEAR_MSEC = 365 * 24 * 60 * 60 * 1000;
  */
 const createProductionClientSideRender = app => {
   app.get('/manifest*.json', manifestHandler({ relativePath: '../client' }));
+  app.get('/js/ssrJs.js', ssrJsHandler());
   // this `__dirname` will be `/dist/server`.
   app.use(
     ExpressStaticGzip(`${__dirname}/../client`, {
@@ -82,10 +84,14 @@ const createDevelopClientSideRender = app => {
   app.use(webpackDevMiddleware(compiler, devOptions));
   app.use(webpackHotMiddleware(compiler, hotOptions));
 
-  const jsTags = '<script type=text/javascript src=/js/bundle.js></script>';
+  const jsTags = `
+    <script type=text/javascript src=/js/ssrJs.js></script>
+    <script type=text/javascript src=/js/bundle.js></script>
+  `;
   const html = renderHtml({ jsTags });
   const minifiedHtml = HtmlMinifier.minify(html, minifyHtmlConfig);
   app.get(/^[^.]*$/, (_, response) => response.send(minifiedHtml));
+  app.get('/js/ssrJs.js', ssrJsHandler());
 
   return app;
 };

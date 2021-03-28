@@ -42,8 +42,12 @@ const GlobalStyle = createGlobalStyle`
   a:hover { opacity: .7; }
 `;
 
+const isServer = typeof window === 'undefined';
 const title = 'Portfolio';
 const description = "Bill's portfolio";
+const branchName = isServer
+  ? process.env.BRANCH_NAME
+  : window.__SSR_ENVIRONMENT__.branchName;
 
 const App = ({ request }) => {
   // eslint-disable-next-line no-console
@@ -72,7 +76,7 @@ const App = ({ request }) => {
       <GlobalStyle />
       <StyledApp>
         {!window && <img src={XMenLogoSource} title="Xavier school" />}
-        <Footer branchName={process.env.BRANCH_NAME} />
+        <Footer branchName={branchName} />
       </StyledApp>
     </>
   );
