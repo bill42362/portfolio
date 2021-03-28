@@ -77,15 +77,8 @@ const App = ({ request }) => {
       </Helmet>
       <GlobalStyle />
       <StyledApp>
-        <Main>
-          {!window && <img src={XMenLogoSource} title="Xavier school" />}
-          <ModuleWrapper>
-            <MediaStreamHandler onChange={({ value }) => setMediaStream(value)} />
-          </ModuleWrapper>
-          <ModuleWrapper>
-            <MediaStreamMonitor mediaStream={mediaStream} />
-          </ModuleWrapper>
-        </Main>
+        {!window && <img src={XMenLogoSource} title="Xavier school" />}
+        <Main />
         <Footer branchName={branchName} />
       </StyledApp>
     </>
