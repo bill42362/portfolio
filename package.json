@@ -17,8 +17,8 @@
     "buildclient": "NODE_OPTIONS='--max-old-space-size=8192' webpack --config webpack/client.babel.js",
     "buildserver": "NODE_OPTIONS='--max-old-space-size=8192' webpack --config webpack/server.babel.js",
     "buildhtml": "babel-node src/server/buildHtml.js",
-    "buildSsrJs": "babel-node src/server/buildSsrJs.js",
-    "build": "yarn clean && yarn buildclient && yarn buildserver && yarn buildhtml && yarn buildSsrJs",
+    "buildssrjs": "babel-node src/server/buildSsrJs.js",
+    "build": "yarn clean && yarn buildclient && yarn buildserver && yarn buildhtml && yarn buildssrjs",
     "start": "yarn build && yarn mkcert; node dist/server",
     "dockerrun": "docker buildx build . -t local && docker run -p 3000:3000 local",
     "test": "jest --coverage --config jest/jest.config.js"
