@@ -38,12 +38,12 @@
     "redux": "^4.0.5",
     "redux-thunk": "^2.3.0",
     "serialize-javascript": "^5.0.1",
-    "styled-components": "^5.2.1",
+    "styled-components": "^5.2.3",
     "styled-normalize": "^8.0.7"
   },
   "devDependencies": {
     "@babel/core": "^7.13.14",
-    "@babel/node": "^7.12.10",
+    "@babel/node": "^7.13.13",
     "@babel/plugin-proposal-class-properties": "^7.13.0",
     "@babel/plugin-proposal-object-rest-spread": "^7.12.1",
     "@babel/plugin-proposal-optional-chaining": "^7.12.7",
