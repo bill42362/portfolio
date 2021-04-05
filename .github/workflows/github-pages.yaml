@@ -124,7 +124,7 @@ jobs:
         run: |
           cp output-folder/html/index.html output-folder
       - name: Deploy to github page
-        uses: JamesIves/github-pages-deploy-action@4.1.0
+        uses: JamesIves/github-pages-deploy-action@4.1.1
         with:
           token: ${{ secrets.GH_TOKEN }}
           branch: gh-pages
