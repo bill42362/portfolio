@@ -1,7 +1,7 @@
 // greenBlueChannelFragment.js
 
 const greenBlueChannelFragment = `#version 300 es
-precision highp float;
+precision lowp float;
 
 uniform sampler2D uSource;
 in vec2 vTextCoord;

@@ -1,7 +1,7 @@
 // mirrorFragment.js
 
 const mirrorFragment = `#version 300 es
-precision highp float;
+precision lowp float;
 
 uniform sampler2D uSource;
 in vec2 vTextCoord;

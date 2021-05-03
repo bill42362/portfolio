@@ -1,7 +1,7 @@
 // toneCurveFragment.js
 
 const toneCurveFragment = `#version 300 es
-precision highp float;
+precision lowp float;
 
 uniform float uStrength;
 uniform sampler2D uSource;

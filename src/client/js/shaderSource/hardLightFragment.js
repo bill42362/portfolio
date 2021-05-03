@@ -2,7 +2,7 @@
 // https://github.com/YuAo/YUGPUImageHighPassSkinSmoothing/blob/master/Sources/YUGPUImageHighPassSkinSmoothingFilter.m#L19
 
 const hardLightFragment = `#version 300 es
-precision highp float;
+precision lowp float;
 
 uniform int uCycles;
 uniform sampler2D uSource;

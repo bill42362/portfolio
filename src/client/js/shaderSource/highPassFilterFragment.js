@@ -1,7 +1,7 @@
 // highPassFilterFragment.js
 
 const highPassFilterFragment = `#version 300 es
-precision highp float;
+precision lowp float;
 
 uniform sampler2D uSource;
 uniform sampler2D uBlurredSource;
