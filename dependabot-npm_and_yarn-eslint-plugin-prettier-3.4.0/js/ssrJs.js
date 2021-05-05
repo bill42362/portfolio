@@ -1,0 +1,1 @@
+window.__SSR_ENVIRONMENT__={"branchName":"dependabot\u002Fnpm_and_yarn\u002Feslint-plugin-prettier-3.4.0"}
