@@ -2,8 +2,8 @@
 import React from 'react';
 import styled from 'styled-components';
 import throttle from 'lodash/throttle';
-import { Scene, WebGLRenderer, Clock, PerspectiveCamera, AxesHelper } from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { Scene, WebGLRenderer, PerspectiveCamera, AxesHelper } from 'three';
+import { OrbitControls } from 'three/examples/js/controls/OrbitControls.js';
 
 export class Main extends React.PureComponent {
   canvas = React.createRef();
