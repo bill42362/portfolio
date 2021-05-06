@@ -2,7 +2,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import throttle from 'lodash/throttle';
-import { Scene, WebGLRenderer, Color, Clock, PerspectiveCamera, AxesHelper } from 'three';
+import { Scene, WebGLRenderer, Clock, PerspectiveCamera, AxesHelper } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 export class Main extends React.PureComponent {
