@@ -22,6 +22,7 @@ const plugins = [
   '@babel/plugin-transform-spread',
   ['@babel/plugin-proposal-class-properties', { loose: true }],
   ['@babel/plugin-proposal-optional-chaining', { loose: false }],
+  ['@babel/plugin-proposal-private-methods', { loose: true }],
 ];
 
 const overrides = [
