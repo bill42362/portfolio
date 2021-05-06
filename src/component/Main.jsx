@@ -15,6 +15,8 @@ import {
   DirectionalLightHelper,
   LoadingManager,
 } from 'three';
+import Horkeukamui160 from '../../model/Horkeukamui-160.pmx';
+import '../../model/tex/Penis.dds';
 
 const loadingManager = new LoadingManager();
 loadingManager.addHandler(/\.dds$/i, new DDSLoader());
@@ -148,9 +150,31 @@ export class Main extends React.PureComponent {
 
   loadModels = () => {
     // eslint-disable-next-line no-console
-    console.log('mmdLoader:', mmdLoader);
-    // eslint-disable-next-line no-console
     console.log('MMDAnimationHelper:', MMDAnimationHelper);
+    mmdLoader.load(Horkeukamui160, mmd => {
+      mmd.scale.set(0.3, 0.3, 0.3);
+      mmd.position.set(0, -4, 0);
+      mmd.rotation.y = Math.PI * 0.6;
+      this.scene.add(mmd);
+      mmd.material.forEach(material => {
+        if ('屁股兜' === material.name) {
+          material.visible = false;
+          material.opacity = 1;
+        }
+        if ('丁毛' === material.name) {
+          material.visible = true;
+          material.opacity = 1;
+        }
+        if ('小丁丁' === material.name) {
+          material.visible = true;
+          material.opacity = 1;
+        }
+        if ('大丁丁' === material.name) {
+          //material.visible = true;
+          //material.opacity = 1;
+        }
+      });
+    });
   };
 
   async componentDidMount() {
