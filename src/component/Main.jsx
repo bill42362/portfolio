@@ -2,14 +2,17 @@
 import React from 'react';
 import styled from 'styled-components';
 import throttle from 'lodash/throttle';
+import * as dat from 'dat.gui';
 import { Scene, WebGLRenderer, PerspectiveCamera, AxesHelper } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 export class Main extends React.PureComponent {
   canvas = React.createRef();
+  gui = null;
   camera = null;
   scene = null;
   renderer = null;
+  rendererControls = null;
   controls = null;
   clock = null;
   nextTick = null;
@@ -21,7 +24,21 @@ export class Main extends React.PureComponent {
     });
     this.renderer = renderer;
     renderer.physicallyCorrectLights = true;
-    // renderer.setClearColor(0x222f3e);
+    //renderer.toneMapping = THREE.ReinhardToneMapping;
+    renderer.toneMappingExposure = 1;
+    renderer.shadowMap.enabled = true;
+    //renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.setClearColor(0x222f3e);
+    this.rendererControls = this.gui.addFolder('Renderer');
+    this.rendererControls.add(this.renderer, 'physicallyCorrectLights');
+    this.rendererControls
+      .add(this.renderer, 'toneMappingExposure')
+      .min(0)
+      .max(5)
+      .step(0.01);
+    this.rendererControls
+      .add(this.renderer.shadowMap, 'enabled')
+      .name('shadowMapEnabled');
     this.handleWindowResize();
   };
 
@@ -55,6 +72,7 @@ export class Main extends React.PureComponent {
   }, 100);
 
   componentDidMount() {
+    this.gui = new dat.GUI({ hideable: true, closed: false, closeOnTop: true });
     this.scene = new Scene();
     this.scene.add(new AxesHelper(1));
     this.initThree();
@@ -63,6 +81,9 @@ export class Main extends React.PureComponent {
   }
 
   componentWillUnmount() {
+    if (this.gui) {
+      this.gui.destory();
+    }
     window.cancelAnimationFrame(this.nextTick);
     window.removeEventListener('resize', this.handleWindowResize);
   }
