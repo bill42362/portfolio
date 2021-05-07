@@ -81,6 +81,7 @@ export class Main extends React.PureComponent {
         return;
       }
       this.animationToogleUI.setValue(true);
+      window.clearTimeout(this.stopAnimationTimeout);
       this.stopAnimationTimeout = setTimeout(() => {
         this.animationToogleUI.setValue(false);
       }, 5000);
