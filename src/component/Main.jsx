@@ -3,7 +3,14 @@ import React from 'react';
 import styled from 'styled-components';
 import throttle from 'lodash/throttle';
 import * as dat from 'dat.gui';
-import { Scene, WebGLRenderer, PerspectiveCamera, AxesHelper } from 'three';
+import {
+  Scene,
+  WebGLRenderer,
+  PerspectiveCamera,
+  AxesHelper,
+  DirectionalLight,
+  DirectionalLightHelper,
+} from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 export class Main extends React.PureComponent {
@@ -12,6 +19,8 @@ export class Main extends React.PureComponent {
   camera = null;
   cameraControls = null;
   scene = null;
+  light = null;
+  lightControlUI = null;
   renderer = null;
   rendererControlFolder = null;
   clock = null;
@@ -22,6 +31,28 @@ export class Main extends React.PureComponent {
   };
   animationToogleUI = null;
   stopAnimationTimeout = null;
+
+  initScene = () => {
+    this.scene = new Scene();
+    this.scene.add(new AxesHelper(1));
+
+    const light = new DirectionalLight('#ffffff', 2);
+    this.light = light;
+    light.castShadow = false;
+    light.shadow.camera.far = 15;
+    light.shadow.mapSize.set(1024, 1024);
+    light.shadow.normalBias = 0.05;
+    light.position.set(-2, 3, 1);
+    this.scene.add(light);
+    this.scene.add(new DirectionalLightHelper(light, 1));
+
+    this.lightControlUI = this.gui.addFolder('Light');
+    this.lightControlUI.add(light, 'intensity').min(0).max(5).step(0.001);
+    this.lightControlUI.add(light.position, 'x').min(-5).max(5).step(0.001);
+    this.lightControlUI.add(light.position, 'y').min(-5).max(5).step(0.001);
+    this.lightControlUI.add(light.position, 'z').min(-5).max(5).step(0.001);
+    this.lightControlUI.add(light, 'castShadow');
+  };
 
   initRenderer = () => {
     const renderer = new WebGLRenderer({
@@ -67,7 +98,7 @@ export class Main extends React.PureComponent {
     const height = canvas.clientHeight;
 
     this.camera = new PerspectiveCamera(75, width / height, 0.1, 100);
-    this.camera.position.set(0, 0, -4);
+    this.camera.position.set(1, 2, 4);
 
     this.cameraControls = new OrbitControls(this.camera, canvas);
     this.cameraControls.enableDamping = true;
@@ -108,8 +139,7 @@ export class Main extends React.PureComponent {
 
   componentDidMount() {
     this.gui = new dat.GUI({ hideable: true, closed: false, closeOnTop: true });
-    this.scene = new Scene();
-    this.scene.add(new AxesHelper(1));
+    this.initScene();
     this.initRenderer();
     this.animationToogleUI = this.gui
       .add(this.animationControls, 'shouldAnimate')
