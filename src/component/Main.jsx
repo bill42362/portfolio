@@ -14,8 +14,10 @@ import {
   DirectionalLight,
   DirectionalLightHelper,
   LoadingManager,
+  Clock,
 } from 'three';
 import Horkeukamui160 from '../../model/Horkeukamui/Horkeukamui-160.pmx';
+import WaveMotion from '../../motion/wavefile_v2.vmd';
 
 import '../../model/Horkeukamui/tex/body_N.png';
 import '../../model/Horkeukamui/tex/body.dds';
@@ -56,6 +58,8 @@ export class Main extends React.PureComponent {
   };
   animationToogleUI = null;
   stopAnimationTimeout = null;
+  mmdPhysics = null;
+  mmdAnimationHelper = new MMDAnimationHelper({ afterglow: 2.0 });
 
   initScene = () => {
     this.scene = new Scene();
@@ -111,6 +115,7 @@ export class Main extends React.PureComponent {
 
   tick = () => {
     this.cameraControls.update();
+    this.mmdAnimationHelper.update(this.clock.getDelta());
     this.renderNextFrame();
     if (this.animationControls.shouldAnimate) {
       this.animationFrame = window.requestAnimationFrame(this.tick);
@@ -126,21 +131,10 @@ export class Main extends React.PureComponent {
     this.camera.position.set(1, 2, 4);
 
     this.cameraControls = new OrbitControls(this.camera, canvas);
-    this.cameraControls.enableDamping = true;
     this.cameraControls.addEventListener('change', () => {
       if (!this.animationControls.shouldAnimate) {
         this.renderNextFrame();
       }
-    });
-    this.cameraControls.addEventListener('end', () => {
-      if (this.animationControls.shouldAnimate) {
-        return;
-      }
-      this.animationToogleUI.setValue(true);
-      window.clearTimeout(this.stopAnimationTimeout);
-      this.stopAnimationTimeout = setTimeout(() => {
-        this.animationToogleUI.setValue(false);
-      }, 5000);
     });
   };
 
@@ -163,50 +157,62 @@ export class Main extends React.PureComponent {
   }, 100);
 
   loadModels = () => {
-    // eslint-disable-next-line no-console
-    console.log('MMDAnimationHelper:', MMDAnimationHelper);
-    mmdLoader.load(Horkeukamui160, mmd => {
-      mmd.scale.set(0.2, 0.2, 0.2);
-      mmd.position.set(0, 0, 0);
-      this.scene.add(mmd);
-      window.Horkeukamui = mmd;
-      mmd.material.forEach(material => {
-        if ('屁股兜' === material.name) {
-          material.visible = false;
-          material.opacity = 1;
-        }
-        if ('丁毛' === material.name) {
-          material.visible = true;
-          material.opacity = 1;
-        }
-        if ('小丁丁' === material.name) {
-          material.visible = true;
-          material.opacity = 1;
-        }
-        if ('大丁丁' === material.name) {
-          //material.visible = true;
-          //material.opacity = 1;
-        }
-      });
+    mmdLoader.loadWithAnimation(
+      Horkeukamui160,
+      [WaveMotion],
+      ({ mesh, animation }) => {
+        mesh.scale.set(0.2, 0.2, 0.2);
+        mesh.position.set(0, 0, 0);
+        this.scene.add(mesh);
+        window.Horkeukamui = mesh;
+        mesh.material.forEach(material => {
+          if ('屁股兜' === material.name) {
+            material.visible = false;
+            material.opacity = 1;
+          }
+          if ('丁毛' === material.name) {
+            material.visible = true;
+            material.opacity = 1;
+          }
+          if ('小丁丁' === material.name) {
+            material.visible = true;
+            material.opacity = 1;
+          }
+          if ('大丁丁' === material.name) {
+            //material.visible = true;
+            //material.opacity = 1;
+          }
+        });
 
-      window.clearTimeout(this.stopAnimationTimeout);
-      this.animationToogleUI.setValue(true);
-      this.stopAnimationTimeout = setTimeout(() => {
-        this.animationToogleUI.setValue(false);
-      }, 5000);
-    });
+        this.mmdAnimationHelper.add(mesh, { animation, physics: false });
+        this.mmdAnimationHelper.enable('animation', false);
+
+        // TODO: draw just one frame instead of animation.
+        window.clearTimeout(this.stopAnimationTimeout);
+        this.animationToogleUI.setValue(true);
+        this.stopAnimationTimeout = setTimeout(() => {
+          this.animationToogleUI.setValue(false);
+        }, 5000);
+      }
+    );
   };
 
   async componentDidMount() {
     dat = await import('dat.gui');
     this.gui = new dat.GUI({ hideable: true, closed: false, closeOnTop: true });
+    this.clock = new Clock();
     this.initScene();
     this.initRenderer();
     this.animationToogleUI = this.gui
       .add(this.animationControls, 'shouldAnimate')
       .onChange(() => {
         if (this.animationControls.shouldAnimate) {
+          this.mmdAnimationHelper.enable('animation', true);
+          this.clock.start();
           this.tick();
+        } else {
+          this.clock.stop();
+          this.mmdAnimationHelper.enable('animation', false);
         }
       });
     window.addEventListener('resize', this.handleWindowResize);
