@@ -45,15 +45,46 @@ export class Main extends React.PureComponent {
     this.rendererControlFolder
       .add(this.renderer.shadowMap, 'enabled')
       .name('shadowMapEnabled');
+    this.initCamera();
     this.handleWindowResize();
+  };
+
+  renderNextFrame = () => {
+    this.renderer.render(this.scene, this.camera);
   };
 
   tick = () => {
     this.cameraControls.update();
-    this.renderer.render(this.scene, this.camera);
+    this.renderNextFrame();
     if (this.animationControls.shouldAnimate) {
       this.animationFrame = window.requestAnimationFrame(this.tick);
     }
+  };
+
+  initCamera = () => {
+    const canvas = this.canvas.current;
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+
+    this.camera = new PerspectiveCamera(75, width / height, 0.1, 100);
+    this.camera.position.set(0, 0, -4);
+
+    this.cameraControls = new OrbitControls(this.camera, canvas);
+    this.cameraControls.enableDamping = true;
+    this.cameraControls.addEventListener('change', () => {
+      if (!this.animationControls.shouldAnimate) {
+        this.renderNextFrame();
+      }
+    });
+    this.cameraControls.addEventListener('end', () => {
+      if (this.animationControls.shouldAnimate) {
+        return;
+      }
+      this.animationToogleUI.setValue(true);
+      this.stopAnimationTimeout = setTimeout(() => {
+        this.animationToogleUI.setValue(false);
+      }, 5000);
+    });
   };
 
   handleWindowResize = throttle(() => {
@@ -67,30 +98,10 @@ export class Main extends React.PureComponent {
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    if (!this.camera) {
-      this.camera = new PerspectiveCamera(75, width / height, 0.1, 100);
-      this.camera.position.set(0, 0, -4);
-
-      this.cameraControls = new OrbitControls(this.camera, canvas);
-      this.cameraControls.enableDamping = true;
-      this.cameraControls.addEventListener('change', () => {
-        if (!this.animationControls.shouldAnimate) {
-          // rerender without animation frame
-          this.renderer.render(this.scene, this.camera);
-        }
-      });
-      this.cameraControls.addEventListener('end', () => {
-        if (this.animationControls.shouldAnimate) {
-          return;
-        }
-        this.animationToogleUI.setValue(true);
-        this.stopAnimationTimeout = setTimeout(() => {
-          this.animationToogleUI.setValue(false);
-        }, 5000);
-      });
-    } else {
-      this.camera.aspect = width / height;
-      this.camera.updateProjectionMatrix();
+    this.camera.aspect = width / height;
+    this.camera.updateProjectionMatrix();
+    if (!this.animationControls.shouldAnimate) {
+      this.renderNextFrame();
     }
   }, 100);
 
