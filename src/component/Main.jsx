@@ -166,11 +166,10 @@ export class Main extends React.PureComponent {
     // eslint-disable-next-line no-console
     console.log('MMDAnimationHelper:', MMDAnimationHelper);
     mmdLoader.load(Horkeukamui160, mmd => {
-      mmd.scale.set(0.3, 0.3, 0.3);
-      mmd.position.set(0, -4, 0);
-      mmd.rotation.y = Math.PI * 0.6;
-      window.Horkeukamui = mmd;
+      mmd.scale.set(0.2, 0.2, 0.2);
+      mmd.position.set(0, 0, 0);
       this.scene.add(mmd);
+      window.Horkeukamui = mmd;
       mmd.material.forEach(material => {
         if ('屁股兜' === material.name) {
           material.visible = false;
@@ -189,7 +188,12 @@ export class Main extends React.PureComponent {
           //material.opacity = 1;
         }
       });
-      this.renderNextFrame();
+
+      window.clearTimeout(this.stopAnimationTimeout);
+      this.animationToogleUI.setValue(true);
+      this.stopAnimationTimeout = setTimeout(() => {
+        this.animationToogleUI.setValue(false);
+      }, 5000);
     });
   };
 
