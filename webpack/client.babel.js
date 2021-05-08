@@ -90,6 +90,32 @@ export default {
         use: [{ loader: 'babel-loader', options: { cacheDirectory: true } }],
       },
       {
+        test: /human\/models\/.*\.json$/i,
+        type: 'javascript/auto',
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              name: isProd
+                ? 'model/[name].[contenthash:8].[ext]'
+                : 'model/[name].[ext]',
+            },
+          },
+        ],
+      },
+      {
+        test: /human\/models\/.*\.bin$/i,
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              // can't use hash, relative path in model json file
+              name: 'model/[name].[ext]',
+            },
+          },
+        ],
+      },
+      {
         test: /\.(png|jpe?g|gif|svg|ico|ttf|eof|otf)$/i,
         use: [
           {

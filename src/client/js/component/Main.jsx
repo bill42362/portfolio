@@ -9,6 +9,27 @@ const captureContraints = {
   audio: true,
   video: { width: 1280, height: 720, facingMode: 'user' },
 };
+const humanConfig = {
+  backend: 'humangl',
+  async: true,
+  warmup: 'face',
+  filter: { enabled: false },
+  gesture: { enabled: false },
+  face: {
+    maxDetected: 3,
+    description: { enabled: false },
+    iris: { enabled: false },
+    emotion: { enabled: false },
+    mesh: { enabled: false },
+  },
+  mesh: { enabled: false },
+  iris: { enabled: false },
+  description: { enabled: false },
+  emotion: { enabled: false },
+  body: { enabled: false },
+  hand: { enabled: false },
+  object: { enabled: false },
+};
 
 export class Main extends React.PureComponent {
   canvas = React.createRef();
@@ -25,8 +46,11 @@ export class Main extends React.PureComponent {
   captureImage = async () => {
     try {
       const imageBitmap = await this.captureObject?.grabFrame();
-      // eslint-disable-next-line no-console
-      console.log('captureImage() imageBitmap:', imageBitmap);
+      this.worker.postMessage({
+        imageBitmap,
+        action: 'detect',
+        config: humanConfig,
+      });
     } catch (error) {
       // eslint-disable-next-line no-console
       console.log('captureImage() error:', error);
