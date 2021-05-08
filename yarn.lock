@@ -1081,6 +1081,11 @@
   resolved "https://registry.yarnpkg.com/@types/q/-/q-1.5.4.tgz#15925414e0ad2cd765bfef58842f7e26a7accb24"
   integrity sha512-1HcDas8SEj4z1Wc696tH56G8OlRaH/sqZOynNNB+HF0WOeXPaxTtbYzJY2oEfiUxjSKjhCKr+MvR7dCHcEelug==
 
+"@vladmandic/human@^1.8.3":
+  version "1.8.3"
+  resolved "https://registry.yarnpkg.com/@vladmandic/human/-/human-1.8.3.tgz#263c6104503a0ce0930fe10b7c2db7a34d2cbf95"
+  integrity sha512-LTdkLB20XAsjE0ubLk0X/BcJD4Dlv8zXxC/CWBlMCj1polmdmZ4LsD7g9+64u4EDFzglCHyC2DDpqIrEBBcsQQ==
+
 "@webassemblyjs/ast@1.9.0":
   version "1.9.0"
   resolved "https://registry.yarnpkg.com/@webassemblyjs/ast/-/ast-1.9.0.tgz#bd850604b4042459a5a41cd7d338cbed695ed964"
