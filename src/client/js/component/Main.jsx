@@ -3,7 +3,8 @@ import React from 'react';
 import styled from 'styled-components';
 import * as dat from 'dat.gui';
 
-const workerFile = '../js/deformWorker.js';
+const deformWorkerFileName =
+  window.deformWorkerFileName || '../js/deformWorker.js';
 const captureContraints = {
   audio: true,
   video: { width: 1280, height: 720, facingMode: 'user' },
@@ -56,7 +57,7 @@ export class Main extends React.PureComponent {
 
   componentDidMount() {
     this.gui = new dat.GUI({ hideable: true, closed: false, closeOnTop: true });
-    this.worker = new Worker(workerFile, { type: 'module' });
+    this.worker = new Worker(deformWorkerFileName, { type: 'module' });
     this.worker.addEventListener('message', this.workerMessageHandler);
 
     this.controlUIObject.shouldCapture = this.gui

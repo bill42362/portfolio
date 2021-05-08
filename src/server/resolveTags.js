@@ -31,8 +31,16 @@ export const resolveStaticTags = ({ webpackStats }) => {
       .replace('black-translucent', 'black');
   }
 
+  const [deformWorkerAsset] = assets.filter(asset =>
+    asset.name.match(/deformWorker.*\.js$/gi)
+  );
+  const deformWorkerVariableTag = deformWorkerAsset
+    ? `<script>window.deformWorkerFileName = '${deformWorkerAsset.name}'</script>`
+    : '';
+
   return {
     pwaManifestTag,
     faviconTags,
+    deformWorkerVariableTag,
   };
 };

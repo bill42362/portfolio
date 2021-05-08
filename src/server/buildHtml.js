@@ -4,16 +4,17 @@ import HtmlMinifier from 'html-minifier';
 
 import minifyHtmlConfig from './minifyHtmlConfig.js';
 import renderHtml from './renderHtml.js';
-import { resolveJsTags } from './resolveTags.js';
+import { resolveJsTags, resolveStaticTags } from './resolveTags.js';
 
 const buildHtml = () => {
   const webpackStats = require('../../dist/client/stats.json');
+  const { deformWorkerVariableTag } = resolveStaticTags({ webpackStats });
   const jsTags = `
     <script type=text/javascript src=/js/ssrJs.js></script>
     ${resolveJsTags({ webpackStats })}
   `;
 
-  const html = renderHtml({ jsTags });
+  const html = renderHtml({ jsTags, deformWorkerVariableTag });
   const minifiedHtml = HtmlMinifier.minify(html, minifyHtmlConfig);
 
   const path = `${__dirname}/../../dist/client/html`;
