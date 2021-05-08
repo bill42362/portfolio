@@ -2,6 +2,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import * as dat from 'dat.gui';
+import throttle from 'lodash/throttle';
 
 const deformWorkerFileName =
   window.deformWorkerFileName || '../js/deformWorker.js';
@@ -32,7 +33,9 @@ const humanConfig = {
 };
 
 export class Main extends React.PureComponent {
+  state = { canvasHeight: '100%' };
   canvas = React.createRef();
+  canvasContext = null;
   mediaStream = null;
   captureObject = null;
   worker = null;
@@ -60,9 +63,14 @@ export class Main extends React.PureComponent {
     }
   };
 
-  workerMessageHandler = message => {
-    // eslint-disable-next-line no-console
-    console.log('message:', message);
+  workerMessageHandler = ({ data }) => {
+    switch (data.type) {
+      case 'deformed-bitmap':
+        this.canvasContext?.transferFromImageBitmap(data.imageBitmap);
+        break;
+      default:
+        break;
+    }
   };
 
   startCapturing = async () => {
@@ -79,10 +87,24 @@ export class Main extends React.PureComponent {
     }
   };
 
+  handleWindowResize = throttle(() => {
+    if (!this.canvas.current) {
+      return;
+    }
+    const canvas = this.canvas.current;
+    const width = canvas.clientWidth;
+    const { video } = captureContraints;
+    this.setState({
+      canvasHeight: `${(video.height * width) / video.width}px`,
+    });
+  }, 100);
+
   componentDidMount() {
     this.gui = new dat.GUI({ hideable: true, closed: false, closeOnTop: true });
     this.worker = new Worker(deformWorkerFileName, { type: 'module' });
     this.worker.addEventListener('message', this.workerMessageHandler);
+
+    this.canvasContext = this.canvas.current.getContext('bitmaprenderer');
 
     this.controlUIObject.shouldCapture = this.gui
       .add(this.controlObject, 'shouldCapture')
@@ -93,6 +115,8 @@ export class Main extends React.PureComponent {
           this.mediaStream?.getTracks().forEach(t => t.stop());
         }
       });
+    this.handleWindowResize();
+    window.addEventListener('resize', this.handleWindowResize);
   }
 
   componentWillUnmount() {
@@ -101,12 +125,14 @@ export class Main extends React.PureComponent {
     this.worker.removeEventListener('message', this.workerMessageHandler);
     this.worker.terminate();
     window.cancelAnimationFrame(this.captureTick);
+    window.removeEventListener('resize', this.handleWindowResize);
   }
 
   render() {
+    const { canvasHeight } = this.state;
     return (
       <StyledMain>
-        <Canvas ref={this.canvas} />
+        <Canvas height={canvasHeight} ref={this.canvas} />
       </StyledMain>
     );
   }
@@ -116,9 +142,10 @@ const StyledMain = styled.div`
   flex: auto;
 `;
 
-const Canvas = styled.canvas`
+const Canvas = styled.canvas.attrs(({ height }) => ({
+  style: { height },
+}))`
   width: 100%;
-  height: 100%;
   background-color: #222f3e;
 `;
 

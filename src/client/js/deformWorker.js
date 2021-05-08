@@ -44,8 +44,11 @@ onmessage = async ({ data: { imageBitmap, action, config } }) => {
       }
       // must strip canvas from return value as it cannot be transfered from worker thread
       if (result.canvas) result.canvas = null;
-      // eslint-disable-next-line no-console
-      console.log('result:', result);
+      if (!result) {
+        // eslint-disable-next-line no-console
+        console.log('onmessage() no result');
+      }
+
       postMessage({ type: 'deformed-bitmap', imageBitmap });
       break;
     }
