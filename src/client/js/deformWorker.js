@@ -8,6 +8,8 @@ import faceMeshModlePath from '@vladmandic/human/models/facemesh.json';
 const isProd = 'production' === process.env.NODE_ENV;
 
 let busy = true;
+let frameCount = 0;
+let humanDetectResult = {};
 const humanConfig = {
   warmup: 'face',
   face: {
@@ -46,11 +48,19 @@ const log = (...message) => {
 };
 
 onmessage = async ({ data: { imageBitmap, action, config } }) => {
-  if (busy) return;
-  busy = true;
-
   switch (action) {
     case 'detect': {
+      postMessage({ type: 'deformed-bitmap', imageBitmap });
+      ++frameCount;
+
+      if (busy) break;
+      busy = true;
+      const skipFrame = config.face?.detector?.skipFrame || 21;
+      if (skipFrame > frameCount) {
+        busy = false;
+        break;
+      }
+      frameCount = 0;
       let result = {};
       try {
         result = await human.detect(imageBitmap, config);
@@ -60,20 +70,18 @@ onmessage = async ({ data: { imageBitmap, action, config } }) => {
       }
       // must strip canvas from return value as it cannot be transfered from worker thread
       if (result.canvas) result.canvas = null;
-      if (!result) {
+      humanDetectResult = result;
+      if (!humanDetectResult) {
         // eslint-disable-next-line no-console
         console.log('onmessage() no result');
       }
-
-      postMessage({ type: 'deformed-bitmap', imageBitmap });
+      busy = false;
       break;
     }
     case 'warmup':
     default:
       break;
   }
-
-  busy = false;
 };
 
 human.load(humanConfig);

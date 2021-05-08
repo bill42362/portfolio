@@ -17,6 +17,9 @@ const humanConfig = {
   face: {
     enabled: true,
     maxDetected: 3,
+    detector: {
+      skipFrame: 21,
+    },
     description: { enabled: false },
     iris: { enabled: false },
     emotion: { enabled: false },
@@ -119,6 +122,12 @@ export class Main extends React.PureComponent {
     this.controlUIObject.shouldDetectMesh = this.gui
       .add(humanConfig.face.mesh, 'enabled')
       .name('shouldDetectMesh');
+    this.controlUIObject.faceSkipFrame = this.gui
+      .add(humanConfig.face.detector, 'skipFrame')
+      .min(0)
+      .max(60)
+      .step(1)
+      .name('faceSkipFrame');
     this.handleWindowResize();
     window.addEventListener('resize', this.handleWindowResize);
   }
