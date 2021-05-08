@@ -2,6 +2,8 @@
 import Human from '@vladmandic/human/dist/human.esm.js';
 import '@vladmandic/human/models/blazeface.bin';
 import faceDetectorModlePath from '@vladmandic/human/models/blazeface.json';
+import '@vladmandic/human/models/facemesh.bin';
+import faceMeshModlePath from '@vladmandic/human/models/facemesh.json';
 
 const isProd = 'production' === process.env.NODE_ENV;
 
@@ -11,13 +13,14 @@ const human = new Human({
     detector: {
       modelPath: faceDetectorModlePath.replace(/^.*model\//, 'model/'),
     },
+    mesh: {
+      modelPath: faceMeshModlePath.replace(/^.*model\//, 'model/'),
+    },
   },
   modelBasePath: isProd ? '../' : '',
 });
 // eslint-disable-next-line no-console
-console.log('human:', human);
-// eslint-disable-next-line no-console
-console.log('faceDetectorModlePath:', faceDetectorModlePath);
+// console.log('human:', human);
 
 const log = (...message) => {
   //const dt = new Date();

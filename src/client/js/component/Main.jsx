@@ -20,7 +20,7 @@ const humanConfig = {
     description: { enabled: false },
     iris: { enabled: false },
     emotion: { enabled: false },
-    mesh: { enabled: false },
+    mesh: { enabled: true },
   },
   mesh: { enabled: false },
   iris: { enabled: false },
