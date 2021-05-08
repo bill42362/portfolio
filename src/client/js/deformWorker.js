@@ -7,18 +7,34 @@ import faceMeshModlePath from '@vladmandic/human/models/facemesh.json';
 
 const isProd = 'production' === process.env.NODE_ENV;
 
-let busy = false;
-const human = new Human({
+let busy = true;
+const humanConfig = {
+  warmup: 'face',
   face: {
+    enabled: true,
     detector: {
       modelPath: faceDetectorModlePath.replace(/^.*model\//, 'model/'),
     },
     mesh: {
+      enabled: true,
       modelPath: faceMeshModlePath.replace(/^.*model\//, 'model/'),
     },
+    description: { enabled: false },
+    iris: { enabled: false },
+    emotion: { enabled: false },
   },
+  filter: { enabled: false },
+  gesture: { enabled: false },
+  mesh: { enabled: false },
+  iris: { enabled: false },
+  description: { enabled: false },
+  emotion: { enabled: false },
+  body: { enabled: false },
+  hand: { enabled: false },
+  object: { enabled: false },
   modelBasePath: isProd ? '../' : '',
-});
+};
+const human = new Human(humanConfig);
 // eslint-disable-next-line no-console
 // console.log('human:', human);
 
@@ -59,3 +75,7 @@ onmessage = async ({ data: { imageBitmap, action, config } }) => {
 
   busy = false;
 };
+
+human.load(humanConfig);
+// human.warmup(humanConfig); // don't know why break :(
+busy = false;

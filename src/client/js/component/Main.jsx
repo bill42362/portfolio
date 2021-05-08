@@ -14,15 +14,16 @@ const humanConfig = {
   backend: 'humangl',
   async: true,
   warmup: 'face',
-  filter: { enabled: false },
-  gesture: { enabled: false },
   face: {
+    enabled: true,
     maxDetected: 3,
     description: { enabled: false },
     iris: { enabled: false },
     emotion: { enabled: false },
     mesh: { enabled: true },
   },
+  filter: { enabled: false },
+  gesture: { enabled: false },
   mesh: { enabled: false },
   iris: { enabled: false },
   description: { enabled: false },
@@ -115,6 +116,9 @@ export class Main extends React.PureComponent {
           this.mediaStream?.getTracks().forEach(t => t.stop());
         }
       });
+    this.controlUIObject.shouldDetectMesh = this.gui
+      .add(humanConfig.face.mesh, 'enabled')
+      .name('shouldDetectMesh');
     this.handleWindowResize();
     window.addEventListener('resize', this.handleWindowResize);
   }
