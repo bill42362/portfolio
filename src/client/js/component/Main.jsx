@@ -55,7 +55,7 @@ export class Main extends React.PureComponent {
       const imageBitmap = await this.captureObject?.grabFrame();
       this.worker.postMessage({
         imageBitmap,
-        action: 'detect',
+        action: 'input-frame',
         config: humanConfig,
       });
     } catch (error) {
@@ -69,7 +69,7 @@ export class Main extends React.PureComponent {
 
   workerMessageHandler = ({ data }) => {
     switch (data.type) {
-      case 'deformed-bitmap':
+      case 'output-frame':
         this.canvasContext?.transferFromImageBitmap(data.imageBitmap);
         break;
       default:

@@ -7,9 +7,7 @@ import faceMeshModlePath from '@vladmandic/human/models/facemesh.json';
 
 const isProd = 'production' === process.env.NODE_ENV;
 
-let busy = true;
-let frameCount = 0;
-let humanDetectResult = {};
+let humanDetectedResult = {};
 const humanConfig = {
   warmup: 'face',
   face: {
@@ -47,35 +45,39 @@ const log = (...message) => {
   if (message) console.log('Human:', ...message);
 };
 
-onmessage = async ({ data: { imageBitmap, action, config } }) => {
-  switch (action) {
-    case 'detect': {
-      postMessage({ type: 'deformed-bitmap', imageBitmap });
-      ++frameCount;
+let busy = true;
+const detectFace = async ({ imageBitmap, config }) => {
+  if (busy) return;
+  busy = true;
+  let result = {};
+  try {
+    result = await human.detect(imageBitmap, config);
+  } catch (error) {
+    result.error = error.message;
+    log('worker thread error:', error.message);
+  }
+  // must strip canvas from return value as it cannot be transfered from worker thread
+  if (result.canvas) result.canvas = null;
+  humanDetectedResult = result;
+  if (!humanDetectedResult) {
+    // eslint-disable-next-line no-console
+    console.log('onmessage() no result');
+  }
+  busy = false;
+};
 
-      if (busy) break;
-      busy = true;
-      const skipFrame = config.face?.detector?.skipFrame || 21;
-      if (skipFrame > frameCount) {
-        busy = false;
-        break;
+let frameCount = 0;
+onmessage = ({ data: { imageBitmap, action, config } }) => {
+  switch (action) {
+    case 'input-frame': {
+      postMessage({ type: 'output-frame', imageBitmap });
+
+      ++frameCount;
+      const skipFrame = Math.max(config.face?.detector?.skipFrame ?? 21, 0);
+      if (skipFrame < frameCount) {
+        setTimeout(() => detectFace({ imageBitmap, config }));
+        frameCount = 0;
       }
-      frameCount = 0;
-      let result = {};
-      try {
-        result = await human.detect(imageBitmap, config);
-      } catch (error) {
-        result.error = error.message;
-        log('worker thread error:', error.message);
-      }
-      // must strip canvas from return value as it cannot be transfered from worker thread
-      if (result.canvas) result.canvas = null;
-      humanDetectResult = result;
-      if (!humanDetectResult) {
-        // eslint-disable-next-line no-console
-        console.log('onmessage() no result');
-      }
-      busy = false;
       break;
     }
     case 'warmup':
