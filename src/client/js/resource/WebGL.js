@@ -79,6 +79,26 @@ export const createBuffer = ({ context, attribute }) => {
   };
 };
 
+export const updateBuffer = ({ context, buffer, attribute }) => {
+  context.bindBuffer(context.ARRAY_BUFFER, buffer.buffer);
+  context.bufferData(
+    context.ARRAY_BUFFER,
+    new Float32Array(attribute.array),
+    context.STATIC_DRAW
+  );
+  return {
+    buffer: buffer.buffer,
+    numComponents: attribute.numComponents,
+    count: Math.floor(attribute.array.length / attribute.numComponents),
+    type: context.FLOAT,
+    normalize: false,
+    offset: 0,
+    // how many bytes to get from one set of values to the next
+    // 0 = use type and numComponents above
+    stride: 0,
+  };
+};
+
 export const createTexture = ({ context, index = 0 }) => {
   const ctx = context;
   const texture = ctx.createTexture();

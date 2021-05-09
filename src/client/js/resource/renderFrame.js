@@ -1,6 +1,7 @@
 // renderFrame.js
 import { createBuffer, createTexture } from '../resource/WebGL.js';
 import CopyTexture from '../resource/CopyTexture.js';
+import DrawDots from '../resource/DrawDots.js';
 
 const textureNames = ['source'];
 const textureIndex = textureNames.reduce(
@@ -16,6 +17,14 @@ const positionAttribute = {
 const textCoordAttribute = {
   array: [0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0],
   numComponents: 2,
+};
+const dotsPositionAttribute = {
+  array: [-0.5, 0.5, 0, 0.5, 0.5, 0, 0, -0.5, 0],
+  numComponents: 3,
+};
+const dotsColorAttribute = {
+  array: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+  numComponents: 3,
 };
 
 const Renderer = function ({ sizes }) {
@@ -42,6 +51,14 @@ const Renderer = function ({ sizes }) {
     context,
     attribute: textCoordAttribute,
   });
+  this.buffer.aDotsPosition = createBuffer({
+    context,
+    attribute: dotsPositionAttribute,
+  });
+  this.buffer.aDotsColor = createBuffer({
+    context,
+    attribute: dotsColorAttribute,
+  });
 
   this.texture = {};
   textureNames.forEach(name => {
@@ -56,6 +73,16 @@ const Renderer = function ({ sizes }) {
   this.copyTexture.dockBuffer({
     key: 'aTextCoord',
     buffer: this.buffer.aTextCoord,
+  });
+
+  this.drawDots = new DrawDots({ context: this.context });
+  this.drawDots.dockBuffer({
+    key: 'aPosition',
+    buffer: this.buffer.aDotsPosition,
+  });
+  this.drawDots.dockBuffer({
+    key: 'aColor',
+    buffer: this.buffer.aDotsColor,
   });
 };
 
@@ -78,9 +105,30 @@ Renderer.prototype.draw = async function ({ pixelSource }) {
     pixelSource
   );
 
+  this.copyTexture.dockBuffer({
+    key: 'aPosition',
+    buffer: this.buffer.aPosition,
+  });
+  this.copyTexture.dockBuffer({
+    key: 'aTextCoord',
+    buffer: this.buffer.aTextCoord,
+  });
   this.copyTexture.draw({
     sourceTexture: this.texture.source,
     sourceTextureIndex: textureIndex.source,
+  });
+
+  this.drawDots.dockBuffer({
+    key: 'aPosition',
+    buffer: this.buffer.aDotsPosition,
+  });
+  this.drawDots.dockBuffer({
+    key: 'aColor',
+    buffer: this.buffer.aDotsColor,
+  });
+  this.drawDots.draw({
+    positionAttribute: dotsPositionAttribute,
+    colorAttribute: dotsColorAttribute,
   });
 
   return createImageBitmap(this.canvas);
