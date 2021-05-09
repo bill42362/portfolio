@@ -1,7 +1,7 @@
 // deform-worker.js
 import Human from '@vladmandic/human/dist/human.esm.js';
 
-import { humanConfig } from './resource/humanVariables.js';
+import { humanConfig, shrinkFactor } from './resource/humanVariables.js';
 import renderFrame, { initRenderer } from './resource/renderFrame.js';
 
 let humanDetectedResult = {};
@@ -59,7 +59,10 @@ onmessage = async ({ data: { type, payload } }) => {
       const shouldDetect = skipFrame < frameCount;
       let imageBitmapForHuman = null;
       if (shouldDetect) {
-        imageBitmapForHuman = await createImageBitmap(imageBitmap);
+        imageBitmapForHuman = await createImageBitmap(imageBitmap, {
+          resizeWidth: imageBitmap.width / shrinkFactor,
+          resizeHeight: imageBitmap.height / shrinkFactor,
+        });
       }
 
       const outputBitmap = await renderFrame({

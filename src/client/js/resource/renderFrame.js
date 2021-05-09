@@ -2,7 +2,7 @@
 import { createBuffer, createTexture } from '../resource/WebGL.js';
 import CopyTexture from '../resource/CopyTexture.js';
 import DrawDots from '../resource/DrawDots.js';
-import { annotationShape } from '../resource/humanVariables.js';
+import { annotationShape, shrinkFactor } from '../resource/humanVariables.js';
 
 const textureNames = ['source'];
 const textureIndex = textureNames.reduce(
@@ -174,8 +174,8 @@ const renderFrame = async ({
       positions.push(
         ...landmarks.map(([x, y]) => {
           return [
-            (2 * x) / imageBitmap.width - 1,
-            (-2 * y) / imageBitmap.height + 1,
+            (2 * shrinkFactor * x) / imageBitmap.width - 1,
+            (-2 * shrinkFactor * y) / imageBitmap.height + 1,
             0,
           ];
         })

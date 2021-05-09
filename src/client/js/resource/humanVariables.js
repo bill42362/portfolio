@@ -6,6 +6,8 @@ import faceMeshModlePath from '@vladmandic/human/models/facemesh.json';
 
 const isProd = 'production' === process.env.NODE_ENV;
 
+export const shrinkFactor = 4;
+
 export const humanConfig = {
   backend: 'humangl',
   async: true,
