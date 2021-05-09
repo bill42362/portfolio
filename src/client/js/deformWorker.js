@@ -5,7 +5,7 @@ import faceDetectorModlePath from '@vladmandic/human/models/blazeface.json';
 import '@vladmandic/human/models/facemesh.bin';
 import faceMeshModlePath from '@vladmandic/human/models/facemesh.json';
 
-import renderFrame from './resource/renderFrame.js';
+import renderFrame, { initRenderer } from './resource/renderFrame.js';
 
 const isProd = 'production' === process.env.NODE_ENV;
 
@@ -78,6 +78,7 @@ onmessage = async ({ data: { type, payload } }) => {
       const { canvas, sizes } = payload;
       canvas.width = sizes.width;
       canvas.height = sizes.height;
+      initRenderer({ sizes });
       bitmaprenderer = canvas.getContext('bitmaprenderer');
       break;
     }
@@ -91,7 +92,10 @@ onmessage = async ({ data: { type, payload } }) => {
         imageBitmapForHuman = await createImageBitmap(imageBitmap);
       }
 
-      const outputBitmap = renderFrame({ imageBitmap, humanDetectedResult });
+      const outputBitmap = await renderFrame({
+        imageBitmap,
+        humanDetectedResult,
+      });
       bitmaprenderer.transferFromImageBitmap(outputBitmap);
 
       if (shouldDetect) {
