@@ -119,18 +119,20 @@ Renderer.prototype.draw = async function ({ pixelSource, dots }) {
     sourceTextureIndex: textureIndex.source,
   });
 
-  this.drawDots.dockBuffer({
-    key: 'aPosition',
-    buffer: this.buffer.aDotsPosition,
-  });
-  this.drawDots.dockBuffer({
-    key: 'aColor',
-    buffer: this.buffer.aDotsColor,
-  });
-  this.drawDots.draw({
-    positionAttribute: dots.positionAttribute,
-    colorAttribute: dots.colorAttribute,
-  });
+  if (dots) {
+    this.drawDots.dockBuffer({
+      key: 'aPosition',
+      buffer: this.buffer.aDotsPosition,
+    });
+    this.drawDots.dockBuffer({
+      key: 'aColor',
+      buffer: this.buffer.aDotsColor,
+    });
+    this.drawDots.draw({
+      positionAttribute: dots.positionAttribute,
+      colorAttribute: dots.colorAttribute,
+    });
+  }
 
   return createImageBitmap(this.canvas);
 };
@@ -154,15 +156,13 @@ const renderFrame = async ({ imageBitmap, humanDetectedResult }) => {
     return outputBitmap;
   }
 
-  const dots = {
-    positionAttribute: dotsPositionAttribute,
-    colorAttribute: dotsColorAttribute,
-  };
+  let dots = null;
   const mesh = humanDetectedResult.face?.[0]?.meshRaw;
   if (mesh) {
     const position = mesh.map(a => {
       return [a[0] * 2 - 1, -a[1] * 2 + 1, 0];
     });
+    dots = {};
     dots.positionAttribute = {
       array: position.flatMap(a => a),
       numComponents: 3,
