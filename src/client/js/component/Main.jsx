@@ -54,9 +54,8 @@ export class Main extends React.PureComponent {
     try {
       const imageBitmap = await this.captureObject?.grabFrame();
       this.worker.postMessage({
-        imageBitmap,
-        action: 'input-frame',
-        config: humanConfig,
+        type: 'input-frame',
+        payload: { imageBitmap, config: humanConfig },
       });
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -64,16 +63,6 @@ export class Main extends React.PureComponent {
     }
     if (this.controlObject.shouldCapture) {
       this.captureTick = window.requestAnimationFrame(this.captureImage);
-    }
-  };
-
-  workerMessageHandler = ({ data }) => {
-    switch (data.type) {
-      case 'output-frame':
-        this.canvasContext?.transferFromImageBitmap(data.imageBitmap);
-        break;
-      default:
-        break;
     }
   };
 
@@ -98,17 +87,27 @@ export class Main extends React.PureComponent {
     const canvas = this.canvas.current;
     const width = canvas.clientWidth;
     const { video } = captureContraints;
+    const height = (video.height * width) / video.width;
     this.setState({
-      canvasHeight: `${(video.height * width) / video.width}px`,
+      canvasHeight: `${height}px`,
     });
   }, 100);
 
   componentDidMount() {
     this.gui = new dat.GUI({ hideable: true, closed: false, closeOnTop: true });
     this.worker = new Worker(deformWorkerFileName, { type: 'module' });
-    this.worker.addEventListener('message', this.workerMessageHandler);
 
-    this.canvasContext = this.canvas.current.getContext('bitmaprenderer');
+    const offscreenCanvas = this.canvas.current.transferControlToOffscreen();
+    this.worker.postMessage(
+      {
+        type: 'canvas',
+        payload: {
+          canvas: offscreenCanvas,
+          sizes: captureContraints.video,
+        },
+      },
+      [offscreenCanvas]
+    );
 
     this.controlUIObject.shouldCapture = this.gui
       .add(this.controlObject, 'shouldCapture')

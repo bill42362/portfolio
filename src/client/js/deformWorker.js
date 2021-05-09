@@ -49,7 +49,9 @@ const log = (...message) => {
 
 let isDetectorBusy = true;
 const detectFace = async ({ imageBitmap, config }) => {
-  if (isDetectorBusy) return;
+  if (isDetectorBusy) {
+    return;
+  }
   isDetectorBusy = true;
   let result = {};
   try {
@@ -63,24 +65,39 @@ const detectFace = async ({ imageBitmap, config }) => {
   humanDetectedResult = result;
   if (!humanDetectedResult) {
     // eslint-disable-next-line no-console
-    console.log('onmessage() no result');
+    console.log('detectFace() no result');
   }
   isDetectorBusy = false;
 };
 
 let frameCount = 0;
-onmessage = ({ data: { imageBitmap, action, config } }) => {
-  switch (action) {
+let bitmaprenderer = null;
+onmessage = async ({ data: { type, payload } }) => {
+  switch (type) {
+    case 'canvas': {
+      const { canvas, sizes } = payload;
+      canvas.width = sizes.width;
+      canvas.height = sizes.height;
+      bitmaprenderer = canvas.getContext('bitmaprenderer');
+      break;
+    }
     case 'input-frame': {
-      postMessage({
-        type: 'output-frame',
-        imageBitmap: renderFrame({ imageBitmap, humanDetectedResult }),
-      });
-
+      const { imageBitmap, config } = payload;
       ++frameCount;
       const skipFrame = Math.max(config.face?.detector?.skipFrame ?? 21, 0);
-      if (skipFrame < frameCount) {
-        setTimeout(() => detectFace({ imageBitmap, config }));
+      const shouldDetect = skipFrame < frameCount;
+      let imageBitmapForHuman = null;
+      if (shouldDetect) {
+        imageBitmapForHuman = await createImageBitmap(imageBitmap);
+      }
+
+      const outputBitmap = renderFrame({ imageBitmap, humanDetectedResult });
+      bitmaprenderer.transferFromImageBitmap(outputBitmap);
+
+      if (shouldDetect) {
+        setTimeout(() =>
+          detectFace({ imageBitmap: imageBitmapForHuman, config })
+        );
         frameCount = 0;
       }
       break;
