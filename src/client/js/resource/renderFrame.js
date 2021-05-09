@@ -19,13 +19,14 @@ const textCoordAttribute = {
   numComponents: 2,
 };
 const dotsPositionAttribute = {
-  array: [-0.5, 0.5, 0, 0.5, 0.5, 0, 0, -0.5, 0],
+  array: [],
   numComponents: 3,
 };
 const dotsColorAttribute = {
-  array: [1, 0, 0, 0, 1, 0, 0, 0, 1],
+  array: [],
   numComponents: 3,
 };
+const dotsColor = [84 / 255, 160 / 255, 255 / 255];
 
 const Renderer = function ({ sizes }) {
   const canvas = new OffscreenCanvas(sizes.width, sizes.height);
@@ -86,7 +87,7 @@ const Renderer = function ({ sizes }) {
   });
 };
 
-Renderer.prototype.draw = async function ({ pixelSource }) {
+Renderer.prototype.draw = async function ({ pixelSource, dots }) {
   if (!pixelSource || !this.context) {
     return;
   }
@@ -127,8 +128,8 @@ Renderer.prototype.draw = async function ({ pixelSource }) {
     buffer: this.buffer.aDotsColor,
   });
   this.drawDots.draw({
-    positionAttribute: dotsPositionAttribute,
-    colorAttribute: dotsColorAttribute,
+    positionAttribute: dots.positionAttribute,
+    colorAttribute: dots.colorAttribute,
   });
 
   return createImageBitmap(this.canvas);
@@ -153,7 +154,25 @@ const renderFrame = async ({ imageBitmap, humanDetectedResult }) => {
     return outputBitmap;
   }
 
-  outputBitmap = await renderer.draw({ pixelSource: imageBitmap });
+  const dots = {
+    positionAttribute: dotsPositionAttribute,
+    colorAttribute: dotsColorAttribute,
+  };
+  const mesh = humanDetectedResult.face?.[0]?.meshRaw;
+  if (mesh) {
+    const position = mesh.map(a => {
+      return [a[0] * 2 - 1, -a[1] * 2 + 1, 0];
+    });
+    dots.positionAttribute = {
+      array: position.flatMap(a => a),
+      numComponents: 3,
+    };
+    dots.colorAttribute = {
+      array: mesh.map(() => dotsColor).flatMap(a => a),
+      numComponents: 3,
+    };
+  }
+  outputBitmap = await renderer.draw({ pixelSource: imageBitmap, dots });
   isRendererBusy = false;
   return outputBitmap;
 };
