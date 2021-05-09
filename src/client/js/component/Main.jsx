@@ -4,36 +4,13 @@ import styled from 'styled-components';
 import * as dat from 'dat.gui';
 import throttle from 'lodash/throttle';
 
+import { humanConfig } from '../resource/humanVariables.js';
+
 const deformWorkerFileName =
   window.deformWorkerFileName || '../js/deformWorker.js';
 const captureContraints = {
   audio: true,
   video: { width: 1280, height: 720, facingMode: 'user' },
-};
-const humanConfig = {
-  backend: 'humangl',
-  async: true,
-  warmup: 'face',
-  face: {
-    enabled: true,
-    maxDetected: 3,
-    detector: {
-      skipFrame: 21,
-    },
-    description: { enabled: false },
-    iris: { enabled: false },
-    emotion: { enabled: false },
-    mesh: { enabled: true },
-  },
-  filter: { enabled: false },
-  gesture: { enabled: false },
-  mesh: { enabled: false },
-  iris: { enabled: false },
-  description: { enabled: false },
-  emotion: { enabled: false },
-  body: { enabled: false },
-  hand: { enabled: false },
-  object: { enabled: false },
 };
 
 export class Main extends React.PureComponent {
