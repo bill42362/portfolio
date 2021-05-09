@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import * as dat from 'dat.gui';
 import throttle from 'lodash/throttle';
 
-import { humanConfig } from '../resource/humanVariables.js';
+import { humanConfig, annotationShape } from '../resource/humanVariables.js';
 
 const deformWorkerFileName =
   window.deformWorkerFileName || '../js/deformWorker.js';
@@ -22,8 +22,13 @@ export class Main extends React.PureComponent {
   worker = null;
   controlObject = {
     shouldCapture: false,
+    landmarkToggles: {},
   };
-  controlUIObject = {};
+  controlUIObject = {
+    shouldCapture: null,
+    Landmarks: null,
+    landmarkToggles: {},
+  };
   gui = null;
   captureTick = null;
 
@@ -32,7 +37,11 @@ export class Main extends React.PureComponent {
       const imageBitmap = await this.captureObject?.grabFrame();
       this.worker.postMessage({
         type: 'input-frame',
-        payload: { imageBitmap, config: humanConfig },
+        payload: {
+          imageBitmap,
+          config: humanConfig,
+          landmarkToggles: this.controlObject.landmarkToggles,
+        },
       });
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -104,6 +113,16 @@ export class Main extends React.PureComponent {
       .max(60)
       .step(1)
       .name('faceSkipFrame');
+    this.controlUIObject.Landmarks = this.gui.addFolder('Landmarks');
+    Object.keys(annotationShape).forEach(landmarkKey => {
+      this.controlObject.landmarkToggles[landmarkKey] = false;
+      this.controlUIObject.landmarkToggles[
+        landmarkKey
+      ] = this.controlUIObject.Landmarks.add(
+        this.controlObject.landmarkToggles,
+        landmarkKey
+      );
+    });
     this.handleWindowResize();
     window.addEventListener('resize', this.handleWindowResize);
   }

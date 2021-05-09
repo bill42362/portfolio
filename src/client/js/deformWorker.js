@@ -53,7 +53,7 @@ onmessage = async ({ data: { type, payload } }) => {
       break;
     }
     case 'input-frame': {
-      const { imageBitmap, config } = payload;
+      const { imageBitmap, config, landmarkToggles } = payload;
       ++frameCount;
       const skipFrame = Math.max(config.face?.detector?.skipFrame ?? 21, 0);
       const shouldDetect = skipFrame < frameCount;
@@ -65,6 +65,7 @@ onmessage = async ({ data: { type, payload } }) => {
       const outputBitmap = await renderFrame({
         imageBitmap,
         humanDetectedResult,
+        landmarkToggles,
       });
       bitmaprenderer.transferFromImageBitmap(outputBitmap);
 

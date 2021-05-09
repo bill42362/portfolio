@@ -2,6 +2,7 @@
 import { createBuffer, createTexture } from '../resource/WebGL.js';
 import CopyTexture from '../resource/CopyTexture.js';
 import DrawDots from '../resource/DrawDots.js';
+import { annotationShape } from '../resource/humanVariables.js';
 
 const textureNames = ['source'];
 const textureIndex = textureNames.reduce(
@@ -27,6 +28,7 @@ const dotsColorAttribute = {
   numComponents: 3,
 };
 const dotsColor = [84 / 255, 160 / 255, 255 / 255];
+const dotsColorHighlight = [238 / 255, 82 / 255, 83 / 255];
 
 const Renderer = function ({ sizes }) {
   const canvas = new OffscreenCanvas(sizes.width, sizes.height);
@@ -144,7 +146,12 @@ export const initRenderer = ({ sizes }) => {
 
 let isRendererBusy = false;
 let outputBitmap = null;
-const renderFrame = async ({ imageBitmap, humanDetectedResult }) => {
+const landmarkKeys = Object.keys(annotationShape);
+const renderFrame = async ({
+  imageBitmap,
+  humanDetectedResult,
+  landmarkToggles,
+}) => {
   if (isRendererBusy || !imageBitmap || !humanDetectedResult) {
     return outputBitmap;
   }
@@ -158,18 +165,34 @@ const renderFrame = async ({ imageBitmap, humanDetectedResult }) => {
   }
 
   let dots = null;
-  const mesh = humanDetectedResult.face?.[0]?.meshRaw;
-  if (mesh) {
-    const position = mesh.map(a => {
-      return [a[0] * 2 - 1, -a[1] * 2 + 1, 0];
+  const annotations = humanDetectedResult.face?.[0]?.annotations;
+  if (annotations) {
+    const positions = [];
+    const colors = [];
+    landmarkKeys.forEach(landmarkKey => {
+      const landmarks = annotations[landmarkKey];
+      positions.push(
+        ...landmarks.map(([x, y]) => {
+          return [
+            (2 * x) / imageBitmap.width - 1,
+            (-2 * y) / imageBitmap.height + 1,
+            0,
+          ];
+        })
+      );
+      colors.push(
+        ...landmarks.map(() =>
+          landmarkToggles[landmarkKey] ? dotsColorHighlight : dotsColor
+        )
+      );
     });
     dots = {};
     dots.positionAttribute = {
-      array: position.flatMap(a => a),
+      array: positions.flatMap(a => a),
       numComponents: 3,
     };
     dots.colorAttribute = {
-      array: mesh.map(() => dotsColor).flatMap(a => a),
+      array: colors.flatMap(a => a),
       numComponents: 3,
     };
   }
