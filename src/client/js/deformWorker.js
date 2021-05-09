@@ -56,6 +56,7 @@ const detectFace = async ({ imageBitmap, config }) => {
   let result = {};
   try {
     result = await human.detect(imageBitmap, config);
+    imageBitmap.close();
   } catch (error) {
     result.error = error.message;
     log('worker thread error:', error.message);

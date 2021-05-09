@@ -151,6 +151,7 @@ const renderFrame = async ({ imageBitmap, humanDetectedResult }) => {
   isRendererBusy = true;
 
   if (!renderer) {
+    outputBitmap?.close();
     outputBitmap = imageBitmap;
     isRendererBusy = false;
     return outputBitmap;
@@ -172,7 +173,9 @@ const renderFrame = async ({ imageBitmap, humanDetectedResult }) => {
       numComponents: 3,
     };
   }
-  outputBitmap = await renderer.draw({ pixelSource: imageBitmap, dots });
+  const newBitmap = await renderer.draw({ pixelSource: imageBitmap, dots });
+  outputBitmap?.close();
+  outputBitmap = newBitmap;
   isRendererBusy = false;
   return outputBitmap;
 };
