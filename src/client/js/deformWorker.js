@@ -5,6 +5,8 @@ import faceDetectorModlePath from '@vladmandic/human/models/blazeface.json';
 import '@vladmandic/human/models/facemesh.bin';
 import faceMeshModlePath from '@vladmandic/human/models/facemesh.json';
 
+import renderFrame from './resource/renderFrame.js';
+
 const isProd = 'production' === process.env.NODE_ENV;
 
 let humanDetectedResult = {};
@@ -45,10 +47,10 @@ const log = (...message) => {
   if (message) console.log('Human:', ...message);
 };
 
-let busy = true;
+let isDetectorBusy = true;
 const detectFace = async ({ imageBitmap, config }) => {
-  if (busy) return;
-  busy = true;
+  if (isDetectorBusy) return;
+  isDetectorBusy = true;
   let result = {};
   try {
     result = await human.detect(imageBitmap, config);
@@ -63,14 +65,17 @@ const detectFace = async ({ imageBitmap, config }) => {
     // eslint-disable-next-line no-console
     console.log('onmessage() no result');
   }
-  busy = false;
+  isDetectorBusy = false;
 };
 
 let frameCount = 0;
 onmessage = ({ data: { imageBitmap, action, config } }) => {
   switch (action) {
     case 'input-frame': {
-      postMessage({ type: 'output-frame', imageBitmap });
+      postMessage({
+        type: 'output-frame',
+        imageBitmap: renderFrame({ imageBitmap, humanDetectedResult }),
+      });
 
       ++frameCount;
       const skipFrame = Math.max(config.face?.detector?.skipFrame ?? 21, 0);
@@ -88,4 +93,4 @@ onmessage = ({ data: { imageBitmap, action, config } }) => {
 
 human.load(humanConfig);
 // human.warmup(humanConfig); // don't know why break :(
-busy = false;
+isDetectorBusy = false;
