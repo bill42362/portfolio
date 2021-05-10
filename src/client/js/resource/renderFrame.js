@@ -181,9 +181,12 @@ const renderFrame = async ({
         })
       );
       colors.push(
-        ...landmarks.map(() =>
-          landmarkToggles[landmarkKey] ? dotsColorHighlight : dotsColor
-        )
+        ...landmarks.map((_, index) => {
+          const color = landmarkToggles[landmarkKey]
+            ? dotsColorHighlight
+            : dotsColor;
+          return [(index + 1) / landmarks.length, color[1], color[2]];
+        })
       );
     });
     dots = {};
