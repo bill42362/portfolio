@@ -27,6 +27,7 @@
   "dependencies": {
     "@vladmandic/human": "^1.8.3",
     "dat.gui": "^0.7.7",
+    "delaunator": "^5.0.0",
     "express": "^4.16.3",
     "express-static-gzip": "^2.1.1",
     "helmet": "^4.6.0",

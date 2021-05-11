@@ -1,8 +1,11 @@
 // renderFrame.js
+import Delaunator from 'delaunator';
+
 import { createBuffer, createTexture } from '../resource/WebGL.js';
 import CopyTexture from '../resource/CopyTexture.js';
 import DrawColorTriangles from '../resource/DrawColorTriangles.js';
-import { annotationShape, shrinkFactor } from '../resource/humanVariables.js';
+import { shrinkFactor } from '../resource/humanVariables.js';
+// import { annotationShape, shrinkFactor } from '../resource/humanVariables.js';
 
 const textureNames = ['source'];
 const textureIndex = textureNames.reduce(
@@ -28,7 +31,7 @@ const dotsColorAttribute = {
   numComponents: 3,
 };
 const dotsColor = [84 / 255, 160 / 255, 255 / 255];
-const dotsColorHighlight = [238 / 255, 82 / 255, 83 / 255];
+// const dotsColorHighlight = [238 / 255, 82 / 255, 83 / 255];
 
 const Renderer = function ({ sizes }) {
   const canvas = new OffscreenCanvas(sizes.width, sizes.height);
@@ -144,13 +147,21 @@ export const initRenderer = ({ sizes }) => {
   renderer = new Renderer({ sizes });
 };
 
+const translateLandmark = ({ width, height, shrinkFactor }) => ([x, y]) => {
+  return [
+    (2 * shrinkFactor * x) / width - 1,
+    (-2 * shrinkFactor * y) / height + 1,
+    0,
+  ];
+};
+
 let isRendererBusy = false;
 let outputBitmap = null;
-const landmarkKeys = Object.keys(annotationShape);
+//const landmarkKeys = Object.keys(annotationShape);
 const renderFrame = async ({
   imageBitmap,
   humanDetectedResult,
-  landmarkToggles,
+  // landmarkToggles,
 }) => {
   if (isRendererBusy || !imageBitmap || !humanDetectedResult) {
     return outputBitmap;
@@ -165,37 +176,39 @@ const renderFrame = async ({
   }
 
   let dots = null;
-  const annotations = humanDetectedResult.face?.[0]?.annotations;
-  if (annotations) {
-    const positions = [];
-    const colors = [];
-    landmarkKeys.forEach(landmarkKey => {
-      const landmarks = annotations[landmarkKey];
-      positions.push(
-        ...landmarks.map(([x, y]) => {
-          return [
-            (2 * shrinkFactor * x) / imageBitmap.width - 1,
-            (-2 * shrinkFactor * y) / imageBitmap.height + 1,
-            0,
-          ];
-        })
-      );
-      colors.push(
-        ...landmarks.map((_, index) => {
-          const color = landmarkToggles[landmarkKey]
-            ? dotsColorHighlight
-            : dotsColor;
-          return [(index + 1) / landmarks.length, color[1], color[2]];
-        })
-      );
+  const mesh = humanDetectedResult.face?.[0]?.mesh;
+  if (mesh) {
+    const translator = translateLandmark({
+      width: imageBitmap.width,
+      height: imageBitmap.height,
+      shrinkFactor,
     });
+    const dotPositions = mesh.map(translator);
+    const dotColors = dotPositions.map(() => dotsColor);
+
+    // transform list of points [[x, y], [x, y], ...]
+    // into triangles composed with point indexes
+    // [[1, 2, 3], [2, 3, 4], [3, 4, 5], ...]
+    const { triangles } = Delaunator.from(dotPositions);
+    let dotsIndexGroups = [];
+    for (let i = 0; i < triangles.length; i += 3) {
+      dotsIndexGroups.push([triangles[i], triangles[i + 1], triangles[i + 2]]);
+    }
+
+    // transform triangles composed with point indexes
+    // into point array
+    // [[x, y], [x, y], ...]
+    const triangleChunks = dotsIndexGroups.flatMap(a => a);
+    const trianglePositions = triangleChunks.map(a => dotPositions[a]);
+    const triangleColors = triangleChunks.map(a => dotColors[a]);
+
     dots = {};
     dots.positionAttribute = {
-      array: positions.flatMap(a => a),
+      array: trianglePositions.flatMap(a => a),
       numComponents: 3,
     };
     dots.colorAttribute = {
-      array: colors.flatMap(a => a),
+      array: triangleColors.flatMap(a => a),
       numComponents: 3,
     };
   }
