@@ -39,15 +39,34 @@ export const humanConfig = {
   modelBasePath: isProd ? '../' : '',
 };
 
+// coords are based on img/face-1024.png
 export const annotationShape = {
   leftCheek: 1,
   leftEyeLower0: 9,
   leftEyeLower1: 9,
-  leftEyeLower2: 9,
+  leftEyeLower2: [
+    [574, 375],
+    [594, 392],
+    [624, 400],
+    [650, 409],
+    [682, 417],
+    [719, 417],
+    [749, 408],
+    [770, 391],
+    [776, 365],
+  ],
   leftEyeLower3: 9,
   leftEyeUpper0: 7,
   leftEyeUpper1: 7,
-  leftEyeUpper2: 7,
+  leftEyeUpper2: [
+    [760, 336],
+    [736, 315],
+    [703, 302],
+    [672, 300],
+    [638, 303],
+    [600, 315],
+    [577, 342],
+  ],
   leftEyebrowLower: 6,
   leftEyebrowUpper: 8,
   lipsLowerInner: 11,

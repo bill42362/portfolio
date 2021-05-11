@@ -6,6 +6,8 @@ import throttle from 'lodash/throttle';
 
 import { humanConfig, annotationShape } from '../resource/humanVariables.js';
 
+import FaceNormalSource from '../../img/face-1024.png';
+
 const deformWorkerFileName =
   window.deformWorkerFileName || '../js/deformWorker.js';
 const captureContraints = {
@@ -31,6 +33,27 @@ export class Main extends React.PureComponent {
   };
   gui = null;
   captureTick = null;
+
+  initWorkerRenderer = () => {
+    const offscreenCanvas = this.canvas.current.transferControlToOffscreen();
+    const faceNormalImage = new Image(1024, 1024);
+    faceNormalImage.src = FaceNormalSource;
+
+    faceNormalImage.onload = async () => {
+      const faceNormalImageBitmap = await createImageBitmap(faceNormalImage);
+      this.worker.postMessage(
+        {
+          type: 'canvas',
+          payload: {
+            canvas: offscreenCanvas,
+            sizes: captureContraints.video,
+            faceNormalImageBitmap,
+          },
+        },
+        [offscreenCanvas]
+      );
+    };
+  };
 
   captureImage = async () => {
     try {
@@ -81,19 +104,9 @@ export class Main extends React.PureComponent {
 
   componentDidMount() {
     this.gui = new dat.GUI({ hideable: true, closed: false, closeOnTop: true });
-    this.worker = new Worker(deformWorkerFileName, { type: 'module' });
 
-    const offscreenCanvas = this.canvas.current.transferControlToOffscreen();
-    this.worker.postMessage(
-      {
-        type: 'canvas',
-        payload: {
-          canvas: offscreenCanvas,
-          sizes: captureContraints.video,
-        },
-      },
-      [offscreenCanvas]
-    );
+    this.worker = new Worker(deformWorkerFileName, { type: 'module' });
+    this.initWorkerRenderer();
 
     this.controlUIObject.shouldCapture = this.gui
       .add(this.controlObject, 'shouldCapture')

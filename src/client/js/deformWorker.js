@@ -45,10 +45,10 @@ let bitmaprenderer = null;
 onmessage = async ({ data: { type, payload } }) => {
   switch (type) {
     case 'canvas': {
-      const { canvas, sizes } = payload;
+      const { canvas, sizes, faceNormalImageBitmap } = payload;
       canvas.width = sizes.width;
       canvas.height = sizes.height;
-      initRenderer({ sizes });
+      initRenderer({ sizes, faceNormalImageBitmap });
       bitmaprenderer = canvas.getContext('bitmaprenderer');
       break;
     }

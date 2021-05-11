@@ -1,18 +1,25 @@
 // DrawTexturedTriandleFans.js
 import { createProgram, dockBuffer, updateBuffer } from '../resource/WebGL.js';
-import passColorVertexShaderSource from '../shaderSource/passColorVertex.js';
-import passColorFragmentShaderSource from '../shaderSource/passColorFragment.js';
+import passTextureCoordVertexShaderSource from '../shaderSource/passTextureCoordVertex.js';
+import passTextureCoordFragmentShaderSource from '../shaderSource/passTextureCoordFragment.js';
 
-const DrawTexturedTriandleFans = function ({ context } = {}) {
+const DrawTexturedTriandleFans = function ({
+  context,
+  inputeImage,
+  inputTexture,
+  inputTextureIndex,
+} = {}) {
   if (!context) {
     throw new Error('need context arg');
   }
   this.context = context;
+  this.inputTexture = inputTexture;
+  this.inputTextureIndex = inputTextureIndex;
 
   this.core = createProgram({
     context,
-    vertexShaderSource: passColorVertexShaderSource,
-    fragmentShaderSource: passColorFragmentShaderSource,
+    vertexShaderSource: passTextureCoordVertexShaderSource,
+    fragmentShaderSource: passTextureCoordFragmentShaderSource,
   });
   this.buffer = {};
 
@@ -21,18 +28,37 @@ const DrawTexturedTriandleFans = function ({ context } = {}) {
     this.core.program,
     'aPosition'
   );
-  this.location.aColor = context.getAttribLocation(this.core.program, 'aColor');
+  this.location.aTextCoord = context.getAttribLocation(
+    this.core.program,
+    'aTextCoord'
+  );
   context.enableVertexAttribArray(this.location.aPosition);
-  context.enableVertexAttribArray(this.location.aColor);
+  context.enableVertexAttribArray(this.location.aTextCoord);
 
   this.location.uIsFrameBuffer = context.getUniformLocation(
     this.core.program,
     'uIsFrameBuffer'
   );
+  this.location.uTexture = context.getUniformLocation(
+    this.core.program,
+    'uTexture'
+  );
+
+  context.useProgram(this.core.program);
+  context.uniform1i(this.location.uTexture, this.inputTextureIndex);
+  context.bindTexture(context.TEXTURE_2D, this.inputTexture);
+  context.texImage2D(
+    context.TEXTURE_2D,
+    0, // mip level
+    context.RGBA, // internam format
+    context.RGBA, // src format
+    context.UNSIGNED_BYTE, // src type
+    inputeImage
+  );
 };
 
 DrawTexturedTriandleFans.prototype.dockBuffer = function ({ key, buffer }) {
-  if (!['aPosition', 'aColor'].includes(key)) {
+  if (!['aPosition', 'aTextCoord'].includes(key)) {
     throw new Error('invalid buffer name');
   }
   this.buffer[key] = buffer;
@@ -43,7 +69,7 @@ DrawTexturedTriandleFans.prototype.updateBuffer = function ({
   key,
   attribute,
 }) {
-  if (!['aPosition', 'aColor'].includes(key)) {
+  if (!['aPosition', 'aTextCoord'].includes(key)) {
     throw new Error('invalid buffer name');
   }
   const buffer = this.buffer[key];
@@ -52,14 +78,16 @@ DrawTexturedTriandleFans.prototype.updateBuffer = function ({
 
 DrawTexturedTriandleFans.prototype.draw = function ({
   positionAttribute,
-  colorAttribute,
+  textureCoordAttribute,
   targetFrameBuffer,
 }) {
   const context = this.context;
   context.useProgram(this.core.program);
 
   this.updateBuffer({ key: 'aPosition', attribute: positionAttribute });
-  this.updateBuffer({ key: 'aColor', attribute: colorAttribute });
+  this.updateBuffer({ key: 'aTextCoord', attribute: textureCoordAttribute });
+  context.bindTexture(context.TEXTURE_2D, this.inputTexture);
+  context.uniform1i(this.location.uTexture, this.inputTextureIndex);
 
   if (targetFrameBuffer) {
     context.bindFramebuffer(context.FRAMEBUFFER, targetFrameBuffer);

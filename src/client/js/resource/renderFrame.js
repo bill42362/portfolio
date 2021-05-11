@@ -2,10 +2,9 @@
 import { createBuffer, createTexture } from '../resource/WebGL.js';
 import CopyTexture from '../resource/CopyTexture.js';
 import DrawTexturedTriangleFans from '../resource/DrawTexturedTriangleFans.js';
-import { shrinkFactor } from '../resource/humanVariables.js';
-// import { annotationShape, shrinkFactor } from '../resource/humanVariables.js';
+import { annotationShape, shrinkFactor } from '../resource/humanVariables.js';
 
-const textureNames = ['source'];
+const textureNames = ['source', 'faceNormal'];
 const textureIndex = textureNames.reduce(
   (current, textureName, index) => ({ ...current, [textureName]: index }),
   {}
@@ -24,14 +23,23 @@ const dotsPositionAttribute = {
   array: [],
   numComponents: 3,
 };
-const dotsColorAttribute = {
-  array: [],
-  numComponents: 3,
+const textCoordLeftEyeUpper23 = annotationShape.leftEyeUpper2[3];
+const textCoordLeftEyeLower24 = annotationShape.leftEyeLower2[4];
+const dotsTextCoordArray = [
+  [
+    (textCoordLeftEyeUpper23[0] + textCoordLeftEyeLower24[0]) / 2,
+    (textCoordLeftEyeUpper23[1] + textCoordLeftEyeLower24[1]) / 2,
+  ],
+  ...annotationShape.leftEyeUpper2,
+  ...annotationShape.leftEyeLower2,
+  annotationShape.leftEyeUpper2[0],
+];
+const dotsTextCoordAttribute = {
+  array: dotsTextCoordArray.flatMap(a => a).map(a => a / 1024),
+  numComponents: 2,
 };
-const dotsColor = [84 / 255, 160 / 255, 255 / 255];
-const dotsColorHighlight = [238 / 255, 82 / 255, 83 / 255];
 
-const Renderer = function ({ sizes }) {
+const Renderer = function ({ sizes, faceNormalImageBitmap }) {
   const canvas = new OffscreenCanvas(sizes.width, sizes.height);
   this.canvas = canvas;
 
@@ -59,9 +67,9 @@ const Renderer = function ({ sizes }) {
     context,
     attribute: dotsPositionAttribute,
   });
-  this.buffer.aDotsColor = createBuffer({
+  this.buffer.aDotsTextCoord = createBuffer({
     context,
-    attribute: dotsColorAttribute,
+    attribute: dotsTextCoordAttribute,
   });
 
   this.texture = {};
@@ -81,14 +89,17 @@ const Renderer = function ({ sizes }) {
 
   this.drawTexturedTriangleFans = new DrawTexturedTriangleFans({
     context: this.context,
+    inputeImage: faceNormalImageBitmap,
+    inputTexture: this.texture.faceNormal,
+    inputTextureIndex: textureIndex.faceNormal,
   });
   this.drawTexturedTriangleFans.dockBuffer({
     key: 'aPosition',
     buffer: this.buffer.aDotsPosition,
   });
   this.drawTexturedTriangleFans.dockBuffer({
-    key: 'aColor',
-    buffer: this.buffer.aDotsColor,
+    key: 'aTextCoord',
+    buffer: this.buffer.aDotsTextCoord,
   });
 };
 
@@ -130,12 +141,12 @@ Renderer.prototype.draw = async function ({ pixelSource, dots }) {
       buffer: this.buffer.aDotsPosition,
     });
     this.drawTexturedTriangleFans.dockBuffer({
-      key: 'aColor',
-      buffer: this.buffer.aDotsColor,
+      key: 'aTextCoord',
+      buffer: this.buffer.aDotsTextCoord,
     });
     this.drawTexturedTriangleFans.draw({
       positionAttribute: dots.positionAttribute,
-      colorAttribute: dots.colorAttribute,
+      textureCoordAttribute: dotsTextCoordAttribute,
     });
   }
 
@@ -143,8 +154,8 @@ Renderer.prototype.draw = async function ({ pixelSource, dots }) {
 };
 
 let renderer = null;
-export const initRenderer = ({ sizes }) => {
-  renderer = new Renderer({ sizes });
+export const initRenderer = ({ sizes, faceNormalImageBitmap }) => {
+  renderer = new Renderer({ sizes, faceNormalImageBitmap });
 };
 
 const translateLandmark = ({ width, height, shrinkFactor }) => ([x, y]) => {
@@ -162,7 +173,7 @@ const landmarkKeys = ['leftEyeUpper2', 'leftEyeLower2'];
 const renderFrame = async ({
   imageBitmap,
   humanDetectedResult,
-  landmarkToggles,
+  // landmarkToggles,
 }) => {
   if (isRendererBusy || !imageBitmap || !humanDetectedResult) {
     return outputBitmap;
@@ -184,7 +195,7 @@ const renderFrame = async ({
       height: imageBitmap.height,
       shrinkFactor,
     });
-    const leftEyeUpper03 = annotations['leftEyeLower0'][3];
+    const leftEyeUpper03 = annotations['leftEyeUpper0'][3];
     const leftEyeLower04 = annotations['leftEyeLower0'][4];
     const leftEyeCenter = [
       (leftEyeUpper03[0] + leftEyeLower04[0]) / 2,
@@ -192,7 +203,6 @@ const renderFrame = async ({
       (leftEyeUpper03[2] + leftEyeLower04[2]) / 2,
     ];
     const positions = [translator(leftEyeCenter)];
-    const colors = [[1, 1, 1]];
     landmarkKeys.forEach((landmarkKey, index) => {
       const shouldReverse = index % 2;
       const landmarks = annotations[landmarkKey];
@@ -201,24 +211,11 @@ const renderFrame = async ({
         landmarkPositions = landmarkPositions.reverse();
       }
       positions.push(...landmarkPositions);
-      colors.push(
-        ...landmarks.map((_, index) => {
-          const color = landmarkToggles[landmarkKey]
-            ? dotsColorHighlight
-            : dotsColor;
-          return [(index + 1) / landmarks.length, color[1], color[2]];
-        })
-      );
     });
     positions.push(positions[1]);
-    colors.push(colors[1]);
     dots = {};
     dots.positionAttribute = {
       array: positions.flatMap(a => a),
-      numComponents: 3,
-    };
-    dots.colorAttribute = {
-      array: colors.flatMap(a => a),
       numComponents: 3,
     };
   }
