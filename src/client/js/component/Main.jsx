@@ -6,8 +6,6 @@ import throttle from 'lodash/throttle';
 
 import { humanConfig, annotationShape } from '../resource/humanVariables.js';
 
-import FaceNormalSource from '../../img/face-1024.png';
-
 const deformWorkerFileName =
   window.deformWorkerFileName || '../js/deformWorker.js';
 const captureContraints = {
@@ -36,23 +34,16 @@ export class Main extends React.PureComponent {
 
   initWorkerRenderer = () => {
     const offscreenCanvas = this.canvas.current.transferControlToOffscreen();
-    const faceNormalImage = new Image(1024, 1024);
-    faceNormalImage.src = FaceNormalSource;
-
-    faceNormalImage.onload = async () => {
-      const faceNormalImageBitmap = await createImageBitmap(faceNormalImage);
-      this.worker.postMessage(
-        {
-          type: 'canvas',
-          payload: {
-            canvas: offscreenCanvas,
-            sizes: captureContraints.video,
-            faceNormalImageBitmap,
-          },
+    this.worker.postMessage(
+      {
+        type: 'canvas',
+        payload: {
+          canvas: offscreenCanvas,
+          sizes: captureContraints.video,
         },
-        [offscreenCanvas]
-      );
-    };
+      },
+      [offscreenCanvas]
+    );
   };
 
   captureImage = async () => {
