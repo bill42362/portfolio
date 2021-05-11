@@ -1,8 +1,9 @@
 // renderFrame.js
 import { createBuffer, createTexture } from '../resource/WebGL.js';
 import CopyTexture from '../resource/CopyTexture.js';
-import DrawDots from '../resource/DrawDots.js';
-import { annotationShape, shrinkFactor } from '../resource/humanVariables.js';
+import DrawTexturedTriangleFans from '../resource/DrawTexturedTriangleFans.js';
+import { shrinkFactor } from '../resource/humanVariables.js';
+// import { annotationShape, shrinkFactor } from '../resource/humanVariables.js';
 
 const textureNames = ['source'];
 const textureIndex = textureNames.reduce(
@@ -78,12 +79,14 @@ const Renderer = function ({ sizes }) {
     buffer: this.buffer.aTextCoord,
   });
 
-  this.drawDots = new DrawDots({ context: this.context });
-  this.drawDots.dockBuffer({
+  this.drawTexturedTriangleFans = new DrawTexturedTriangleFans({
+    context: this.context,
+  });
+  this.drawTexturedTriangleFans.dockBuffer({
     key: 'aPosition',
     buffer: this.buffer.aDotsPosition,
   });
-  this.drawDots.dockBuffer({
+  this.drawTexturedTriangleFans.dockBuffer({
     key: 'aColor',
     buffer: this.buffer.aDotsColor,
   });
@@ -122,15 +125,15 @@ Renderer.prototype.draw = async function ({ pixelSource, dots }) {
   });
 
   if (dots) {
-    this.drawDots.dockBuffer({
+    this.drawTexturedTriangleFans.dockBuffer({
       key: 'aPosition',
       buffer: this.buffer.aDotsPosition,
     });
-    this.drawDots.dockBuffer({
+    this.drawTexturedTriangleFans.dockBuffer({
       key: 'aColor',
       buffer: this.buffer.aDotsColor,
     });
-    this.drawDots.draw({
+    this.drawTexturedTriangleFans.draw({
       positionAttribute: dots.positionAttribute,
       colorAttribute: dots.colorAttribute,
     });
@@ -144,9 +147,18 @@ export const initRenderer = ({ sizes }) => {
   renderer = new Renderer({ sizes });
 };
 
+const translateLandmark = ({ width, height, shrinkFactor }) => ([x, y]) => {
+  return [
+    (2 * shrinkFactor * x) / width - 1,
+    (-2 * shrinkFactor * y) / height + 1,
+    0,
+  ];
+};
+
 let isRendererBusy = false;
 let outputBitmap = null;
-const landmarkKeys = Object.keys(annotationShape);
+// const landmarkKeys = Object.keys(annotationShape);
+const landmarkKeys = ['leftEyeUpper2', 'leftEyeLower2'];
 const renderFrame = async ({
   imageBitmap,
   humanDetectedResult,
@@ -167,19 +179,28 @@ const renderFrame = async ({
   let dots = null;
   const annotations = humanDetectedResult.face?.[0]?.annotations;
   if (annotations) {
-    const positions = [];
-    const colors = [];
-    landmarkKeys.forEach(landmarkKey => {
+    const translator = translateLandmark({
+      width: imageBitmap.width,
+      height: imageBitmap.height,
+      shrinkFactor,
+    });
+    const leftEyeUpper03 = annotations['leftEyeLower0'][3];
+    const leftEyeLower04 = annotations['leftEyeLower0'][4];
+    const leftEyeCenter = [
+      (leftEyeUpper03[0] + leftEyeLower04[0]) / 2,
+      (leftEyeUpper03[1] + leftEyeLower04[1]) / 2,
+      (leftEyeUpper03[2] + leftEyeLower04[2]) / 2,
+    ];
+    const positions = [translator(leftEyeCenter)];
+    const colors = [[1, 1, 1]];
+    landmarkKeys.forEach((landmarkKey, index) => {
+      const shouldReverse = index % 2;
       const landmarks = annotations[landmarkKey];
-      positions.push(
-        ...landmarks.map(([x, y]) => {
-          return [
-            (2 * shrinkFactor * x) / imageBitmap.width - 1,
-            (-2 * shrinkFactor * y) / imageBitmap.height + 1,
-            0,
-          ];
-        })
-      );
+      let landmarkPositions = landmarks.map(translator);
+      if (shouldReverse) {
+        landmarkPositions = landmarkPositions.reverse();
+      }
+      positions.push(...landmarkPositions);
       colors.push(
         ...landmarks.map((_, index) => {
           const color = landmarkToggles[landmarkKey]
@@ -189,6 +210,8 @@ const renderFrame = async ({
         })
       );
     });
+    positions.push(positions[1]);
+    colors.push(colors[1]);
     dots = {};
     dots.positionAttribute = {
       array: positions.flatMap(a => a),
