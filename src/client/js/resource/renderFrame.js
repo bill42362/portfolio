@@ -5,7 +5,7 @@ import { createBuffer, createTexture } from '../resource/WebGL.js';
 import CopyTexture from '../resource/CopyTexture.js';
 import DrawColorTriangles from '../resource/DrawColorTriangles.js';
 import { shrinkFactor } from '../resource/humanVariables.js';
-// import { annotationShape, shrinkFactor } from '../resource/humanVariables.js';
+import getFaceMeshDotColor from '../resource/getFaceMeshDotColor.js';
 
 const textureNames = ['source'];
 const textureIndex = textureNames.reduce(
@@ -30,8 +30,6 @@ const dotsColorAttribute = {
   array: [],
   numComponents: 3,
 };
-const dotsColor = [84 / 255, 160 / 255, 255 / 255];
-// const dotsColorHighlight = [238 / 255, 82 / 255, 83 / 255];
 
 const Renderer = function ({ sizes }) {
   const canvas = new OffscreenCanvas(sizes.width, sizes.height);
@@ -157,11 +155,10 @@ const translateLandmark = ({ width, height, shrinkFactor }) => ([x, y]) => {
 
 let isRendererBusy = false;
 let outputBitmap = null;
-//const landmarkKeys = Object.keys(annotationShape);
 const renderFrame = async ({
   imageBitmap,
   humanDetectedResult,
-  // landmarkToggles,
+  deformConfig,
 }) => {
   if (isRendererBusy || !imageBitmap || !humanDetectedResult) {
     return outputBitmap;
@@ -184,7 +181,7 @@ const renderFrame = async ({
       shrinkFactor,
     });
     const dotPositions = mesh.map(translator);
-    const dotColors = dotPositions.map(() => dotsColor);
+    const dotColors = getFaceMeshDotColor({ dotPositions, deformConfig });
 
     // transform list of points [[x, y], [x, y], ...]
     // into triangles composed with point indexes

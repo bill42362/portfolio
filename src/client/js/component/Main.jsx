@@ -23,11 +23,16 @@ export class Main extends React.PureComponent {
   controlObject = {
     shouldCapture: false,
     landmarkToggles: {},
+    deformConfig: {
+      eyesEnlarge: 1,
+    },
   };
   controlUIObject = {
     shouldCapture: null,
     Landmarks: null,
     landmarkToggles: {},
+    DeformConfig: null,
+    deformConfig: {},
   };
   gui = null;
   captureTick = null;
@@ -53,8 +58,9 @@ export class Main extends React.PureComponent {
         type: 'input-frame',
         payload: {
           imageBitmap,
-          config: humanConfig,
+          humanConfig,
           landmarkToggles: this.controlObject.landmarkToggles,
+          deformConfig: this.controlObject.deformConfig,
         },
       });
     } catch (error) {
@@ -127,6 +133,14 @@ export class Main extends React.PureComponent {
         landmarkKey
       );
     });
+    this.controlUIObject.DeformConfig = this.gui.addFolder('DeformConfig');
+    this.controlUIObject.DeformConfig.add(
+      this.controlObject.deformConfig,
+      'eyesEnlarge'
+    )
+      .min(0)
+      .max(2)
+      .step(0.01);
     this.handleWindowResize();
     window.addEventListener('resize', this.handleWindowResize);
   }

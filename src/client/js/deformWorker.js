@@ -17,14 +17,14 @@ const log = (...message) => {
 };
 
 let isDetectorBusy = true;
-const detectFace = async ({ imageBitmap, config }) => {
+const detectFace = async ({ imageBitmap, humanConfig }) => {
   if (isDetectorBusy) {
     return;
   }
   isDetectorBusy = true;
   let result = {};
   try {
-    result = await human.detect(imageBitmap, config);
+    result = await human.detect(imageBitmap, humanConfig);
     imageBitmap.close();
   } catch (error) {
     result.error = error.message;
@@ -53,9 +53,17 @@ onmessage = async ({ data: { type, payload } }) => {
       break;
     }
     case 'input-frame': {
-      const { imageBitmap, config, landmarkToggles } = payload;
+      const {
+        imageBitmap,
+        humanConfig,
+        landmarkToggles,
+        deformConfig,
+      } = payload;
       ++frameCount;
-      const skipFrame = Math.max(config.face?.detector?.skipFrame ?? 21, 0);
+      const skipFrame = Math.max(
+        humanConfig.face?.detector?.skipFrame ?? 21,
+        0
+      );
       const shouldDetect = skipFrame < frameCount;
       let imageBitmapForHuman = null;
       if (shouldDetect) {
@@ -69,12 +77,13 @@ onmessage = async ({ data: { type, payload } }) => {
         imageBitmap,
         humanDetectedResult,
         landmarkToggles,
+        deformConfig,
       });
       bitmaprenderer.transferFromImageBitmap(outputBitmap);
 
       if (shouldDetect) {
         setTimeout(() =>
-          detectFace({ imageBitmap: imageBitmapForHuman, config })
+          detectFace({ imageBitmap: imageBitmapForHuman, humanConfig })
         );
         frameCount = 0;
       }
