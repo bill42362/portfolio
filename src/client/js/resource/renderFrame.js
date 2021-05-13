@@ -150,6 +150,8 @@ Renderer.prototype.draw = async function ({ pixelSource, dots }) {
       sourceTextureIndex: textureIndex.source,
     });
   } else {
+    context.bindFramebuffer(context.FRAMEBUFFER, this.frameBuffer.normalMap);
+    context.clearBufferfv(context.COLOR, 0, [0.5, 0.5, 0.5, 1]);
     this.drawColorTriangles.dockBuffer({
       key: 'aPosition',
       buffer: this.buffer.aDotsPosition,
