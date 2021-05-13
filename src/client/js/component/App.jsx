@@ -9,6 +9,7 @@ import styled, {
 import styledNormalize from 'styled-normalize';
 import { Helmet } from 'react-helmet';
 
+import Main from '../component/Main.jsx';
 import Footer from '../component/Footer.jsx';
 import XMenLogoSource from '../../img/x-men-school.svg';
 
@@ -76,6 +77,7 @@ const App = ({ request }) => {
       <GlobalStyle />
       <StyledApp>
         {!window && <img src={XMenLogoSource} title="Xavier school" />}
+        <Main />
         <Footer branchName={branchName} />
       </StyledApp>
     </>

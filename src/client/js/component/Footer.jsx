@@ -38,7 +38,7 @@ Footer.defaultProps = {
 };
 
 const StyledFooter = styled.div`
-  flex: auto;
+  flex: none;
   display: flex;
   justify-content: center;
   align-items: flex-end;
