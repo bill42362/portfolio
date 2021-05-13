@@ -4,10 +4,12 @@ import Delaunator from 'delaunator';
 import { createBuffer, createTexture } from '../resource/WebGL.js';
 import CopyTexture from '../resource/CopyTexture.js';
 import DrawColorTriangles from '../resource/DrawColorTriangles.js';
+import CopyTextureWithNormalMap from '../resource/CopyTextureWithNormalMap.js';
 import { shrinkFactor } from '../resource/humanVariables.js';
 import getFaceMeshDotColor from '../resource/getFaceMeshDotColor.js';
 
-const textureNames = ['source'];
+const textureNames = ['source', 'normalMap'];
+const frameBufferNames = ['normalMap'];
 const textureIndex = textureNames.reduce(
   (current, textureName, index) => ({ ...current, [textureName]: index }),
   {}
@@ -69,6 +71,19 @@ const Renderer = function ({ sizes }) {
     this.texture[name] = createTexture({ context, index: textureIndex[name] });
   });
 
+  this.frameBuffer = {};
+  frameBufferNames.forEach(name => {
+    this.frameBuffer[name] = context.createFramebuffer();
+    context.bindFramebuffer(context.FRAMEBUFFER, this.frameBuffer[name]);
+    context.framebufferTexture2D(
+      context.FRAMEBUFFER,
+      context.COLOR_ATTACHMENT0,
+      context.TEXTURE_2D,
+      this.texture[name],
+      0 // level
+    );
+  });
+
   this.copyTexture = new CopyTexture({ context: this.context });
   this.copyTexture.dockBuffer({
     key: 'aPosition',
@@ -87,6 +102,18 @@ const Renderer = function ({ sizes }) {
   this.drawColorTriangles.dockBuffer({
     key: 'aColor',
     buffer: this.buffer.aDotsColor,
+  });
+
+  this.copyTextureWithNormalMap = new CopyTextureWithNormalMap({
+    context: this.context,
+  });
+  this.copyTextureWithNormalMap.dockBuffer({
+    key: 'aPosition',
+    buffer: this.buffer.aPosition,
+  });
+  this.copyTextureWithNormalMap.dockBuffer({
+    key: 'aTextCoord',
+    buffer: this.buffer.aTextCoord,
   });
 };
 
@@ -109,20 +136,20 @@ Renderer.prototype.draw = async function ({ pixelSource, dots }) {
     pixelSource
   );
 
-  this.copyTexture.dockBuffer({
-    key: 'aPosition',
-    buffer: this.buffer.aPosition,
-  });
-  this.copyTexture.dockBuffer({
-    key: 'aTextCoord',
-    buffer: this.buffer.aTextCoord,
-  });
-  this.copyTexture.draw({
-    sourceTexture: this.texture.source,
-    sourceTextureIndex: textureIndex.source,
-  });
-
-  if (dots) {
+  if (!dots) {
+    this.copyTexture.dockBuffer({
+      key: 'aPosition',
+      buffer: this.buffer.aPosition,
+    });
+    this.copyTexture.dockBuffer({
+      key: 'aTextCoord',
+      buffer: this.buffer.aTextCoord,
+    });
+    this.copyTexture.draw({
+      sourceTexture: this.texture.source,
+      sourceTextureIndex: textureIndex.source,
+    });
+  } else {
     this.drawColorTriangles.dockBuffer({
       key: 'aPosition',
       buffer: this.buffer.aDotsPosition,
@@ -134,6 +161,22 @@ Renderer.prototype.draw = async function ({ pixelSource, dots }) {
     this.drawColorTriangles.draw({
       positionAttribute: dots.positionAttribute,
       colorAttribute: dots.colorAttribute,
+      targetFrameBuffer: this.frameBuffer.normalMap,
+    });
+
+    this.copyTextureWithNormalMap.dockBuffer({
+      key: 'aPosition',
+      buffer: this.buffer.aPosition,
+    });
+    this.copyTextureWithNormalMap.dockBuffer({
+      key: 'aTextCoord',
+      buffer: this.buffer.aTextCoord,
+    });
+    this.copyTextureWithNormalMap.draw({
+      positionAttribute: dots.positionAttribute,
+      colorAttribute: dots.colorAttribute,
+      normalMapTexture: this.texture.normalMap,
+      normalMapTextureIndex: textureIndex.normalMap,
     });
   }
 
