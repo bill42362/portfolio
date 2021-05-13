@@ -1,5 +1,5 @@
 // App.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { hot } from 'react-hot-loader/root';
 import styled, {
@@ -9,8 +9,9 @@ import styled, {
 import styledNormalize from 'styled-normalize';
 import { Helmet } from 'react-helmet';
 
-import Main from '../component/Main.jsx';
+import MediaStreamHandler from '../component/MediaStreamHandler.jsx';
 import Footer from '../component/Footer.jsx';
+
 import XMenLogoSource from '../../img/x-men-school.svg';
 
 const GlobalStyle = createGlobalStyle`
@@ -51,6 +52,7 @@ const branchName = isServer
   : window.__SSR_ENVIRONMENT__.branchName;
 
 const App = ({ request }) => {
+  const [mediaStream, setMediaStream] = useState(null);
   // eslint-disable-next-line no-console
   console.log('App() request:', request);
   return (
@@ -76,8 +78,11 @@ const App = ({ request }) => {
       </Helmet>
       <GlobalStyle />
       <StyledApp>
-        {!window && <img src={XMenLogoSource} title="Xavier school" />}
-        <Main />
+        <Main>
+          {!window && <img src={XMenLogoSource} title="Xavier school" />}
+          <MediaStreamHandler onChange={({ value }) => setMediaStream(value)} />
+          {mediaStream?.id}
+        </Main>
         <Footer branchName={branchName} />
       </StyledApp>
     </>
@@ -98,6 +103,13 @@ const StyledApp = styled.div`
   justify-content: center;
   height: 100vh;
   background-color: #222f3e;
+`;
+
+const Main = styled.div`
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 8px;
 `;
 
 const Body = ({ sheet, ...props }) => {
