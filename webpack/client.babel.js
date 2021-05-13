@@ -60,6 +60,7 @@ export default {
   name: 'client',
   entry: {
     bundle: isProd ? bundle : [...bundle, ...devBundle],
+    deformWorker: ['./src/client/js/deformWorker.js'],
   },
   output: {
     filename: () => (isProd ? 'js/[name].[chunkhash:8].js' : 'js/[name].js'),
@@ -69,6 +70,7 @@ export default {
     publicPath: htmlBase ? './' : '/',
     globalObject: "(typeof self !== 'undefined' ? self : this)",
   },
+  externals: ['fs', 'buffer', 'util', 'os'],
   module: {
     rules: [
       {
