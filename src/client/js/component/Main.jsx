@@ -2,10 +2,12 @@
 import React from 'react';
 import styled from 'styled-components';
 import * as dat from 'dat.gui';
+import throttle from 'lodash/throttle';
 
 import loadScriptTag from '../resource/loadScriptTag.js';
 
 export class Main extends React.PureComponent {
+  state = { canvasHeight: `${(window.innerWidth * 9) / 16}px` };
   canvas = React.createRef();
   gui = null;
   controlObject = {
@@ -19,6 +21,7 @@ export class Main extends React.PureComponent {
   };
 
   handleDeepARInited = () => {
+    this.handleWindowResize();
     this.controlUIObject.enableVideo = this.gui
       .add(this.controlObject, 'enableVideo')
       .onChange(() => {
@@ -35,6 +38,19 @@ export class Main extends React.PureComponent {
     });
     */
   };
+
+  handleWindowResize = throttle(() => {
+    if (!this.canvas.current) {
+      return;
+    }
+    const canvas = this.canvas.current;
+    const width = canvas.clientWidth;
+    const height = (9 * width) / 16;
+    this.setState({
+      canvasHeight: `${height}px`,
+    });
+    this.deepAR.setCanvasSize(width, height);
+  }, 100);
 
   async componentDidMount() {
     this.gui = new dat.GUI({ hideable: true, closed: false, closeOnTop: true });
@@ -54,12 +70,19 @@ export class Main extends React.PureComponent {
       onInitialize: this.handleDeepARInited,
     });
     this.deepAR.downloadFaceTrackingModel('model/models-68-extreme.bin');
+    window.addEventListener('resize', this.handleWindowResize);
+  }
+
+  componentWillUnmount() {
+    this.gui.destory();
+    window.removeEventListener('resize', this.handleWindowResize);
   }
 
   render() {
+    const { canvasHeight } = this.state;
     return (
       <StyledMain>
-        <Canvas ref={this.canvas} />
+        <Canvas height={canvasHeight} ref={this.canvas} />
       </StyledMain>
     );
   }
@@ -69,9 +92,10 @@ const StyledMain = styled.div`
   flex: auto;
 `;
 
-const Canvas = styled.canvas`
+const Canvas = styled.canvas.attrs(({ height }) => ({
+  style: { height },
+}))`
   width: 100%;
-  height: 100%;
   background-color: #222f3e;
 `;
 
