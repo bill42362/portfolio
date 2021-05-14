@@ -24,14 +24,13 @@ export class Main extends React.PureComponent {
       id: 'deepar-js',
       src: 'lib/deepar.js',
     });
-    // eslint-disable-next-line no-console
-    console.log('DEEPAR_KEY', process.env.DEEPAR_KEY);
     // eslint-disable-next-line no-undef
     this.deepAR = DeepAR({
       licenseKey: process.env.DEEPAR_KEY,
       canvasWidth: canvas.clientWidth,
       canvasHeight: canvas.clientHeight,
       canvas,
+      segmentationInfoZip: 'lib/segmentation.zip',
       numberOfFaces: 1, // how many faces we want to track min 1, max 4
       onInitialize: this.startDeepAR,
     });
