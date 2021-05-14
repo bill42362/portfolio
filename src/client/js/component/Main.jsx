@@ -89,6 +89,7 @@ export class Main extends React.PureComponent {
   }
 
   componentWillUnmount() {
+    this.deepAR.shutdown();
     this.gui.destory();
     window.removeEventListener('resize', this.handleWindowResize);
   }
