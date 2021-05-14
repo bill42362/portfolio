@@ -1,4 +1,5 @@
 {
   "SERVER_SIDE_RENDER": true,
-  "SERVICE_WORKER_FILENAME": "portfolio-service-worker"
+  "SERVICE_WORKER_FILENAME": "portfolio-service-worker",
+  "DEEPAR_KEY": "860a1e4ef872182c0c768f113e51304bbe0495a4bd0d2077c77b7df767347cb4e31b94687f31499e"
 }

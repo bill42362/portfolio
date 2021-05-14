@@ -5,6 +5,7 @@ import {
   HotModuleReplacementPlugin,
   NoEmitOnErrorsPlugin,
 } from 'webpack';
+import CopyPlugin from 'copy-webpack-plugin';
 import StatsPlugin from 'stats-webpack-plugin';
 import TerserWebpackPlugin from 'terser-webpack-plugin';
 import gifsicle from 'imagemin-gifsicle';
@@ -26,6 +27,18 @@ const plugins = [
   new EnvironmentPlugin({
     ...EnvConfig,
     NODE_ENV: nodeEnv,
+  }),
+  new CopyPlugin({
+    patterns: [
+      {
+        from: path.resolve(__dirname, '../src/client', 'lib'),
+        to: 'lib',
+      },
+      {
+        from: path.resolve(__dirname, '../src/client', 'model'),
+        to: 'model',
+      },
+    ],
   }),
 ];
 
@@ -74,7 +87,7 @@ export default {
       {
         enforce: 'pre',
         test: /\.jsx?$/,
-        exclude: /node_modules/,
+        exclude: /(node_modules|lib\/)/,
         use: [
           {
             loader: 'eslint-loader',
@@ -84,9 +97,39 @@ export default {
       },
       {
         test: /\.jsx?$/,
-        exclude: /node_modules/,
+        exclude: /(node_modules|lib\/)/,
         use: [{ loader: 'babel-loader', options: { cacheDirectory: true } }],
       },
+      /*
+      {
+        test: /\/(lib|model)\/.*\.(js|bin)$/i,
+        exclude: /(node_modules|js)\//,
+        use: [
+          {
+            loader: 'url-loader',
+            options: {
+              limit: 0,
+              fallback: 'file-loader',
+              name: '[path][name].[ext]',
+            },
+          },
+        ],
+      },
+      {
+        test: /\/lib\/.*\.wasm$/i,
+        exclude: /(node_modules|js)\//,
+        use: [
+          {
+            loader: 'url-loader',
+            options: {
+              limit: 0,
+              fallback: 'file-loader',
+              name: '[path][name].[ext]',
+            },
+          },
+        ],
+      },
+      */
       {
         test: /\.(png|jpe?g|gif|svg|ico|ttf|eof|otf)$/i,
         use: [
