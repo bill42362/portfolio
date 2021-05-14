@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import * as dat from 'dat.gui';
 import throttle from 'lodash/throttle';
 
+import { maskConfigs } from '../resource/deepARVariables.js';
 import loadScriptTag from '../resource/loadScriptTag.js';
 
 export class Main extends React.PureComponent {
@@ -31,12 +32,26 @@ export class Main extends React.PureComponent {
           this.deepAR.stopVideo();
         }
       });
-    /*
-    // load the aviators effect on the first face into slot 'slot'
-    this.deepAR.switchEffect(0, 'slot', './aviators', function() {
-      // effect loaded
+    this.controlUIObject.Effects = this.gui.addFolder('Effects');
+    Object.keys(maskConfigs).forEach(maskKey => {
+      this.controlObject.effects[maskKey] = false;
+      this.controlUIObject.effects[maskKey] = this.controlUIObject.Effects.add(
+        this.controlObject.effects,
+        maskKey
+      ).onChange(() => {
+        if (this.controlObject.effects[maskKey]) {
+          const maskName = maskKey.replace(/\W/g, '_');
+          this.deepAR.switchEffect(
+            0,
+            maskKey,
+            `mask/${maskName}/${maskName.toLowerCase()}`,
+            () => {}
+          );
+        } else {
+          this.deepAR.clearEffect(maskKey);
+        }
+      });
     });
-    */
   };
 
   handleWindowResize = throttle(() => {

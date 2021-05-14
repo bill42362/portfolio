@@ -38,6 +38,10 @@ const plugins = [
         from: path.resolve(__dirname, '../src/client', 'model'),
         to: 'model',
       },
+      {
+        from: path.resolve(__dirname, '../src/client', 'mask'),
+        to: 'mask',
+      },
     ],
   }),
 ];
