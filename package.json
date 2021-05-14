@@ -25,6 +25,7 @@
   },
   "homepage": "https://github.com/bill42362/portfolio",
   "dependencies": {
+    "dat.gui": "^0.7.7",
     "express": "^4.16.3",
     "express-static-gzip": "^2.1.1",
     "helmet": "^4.6.0",
