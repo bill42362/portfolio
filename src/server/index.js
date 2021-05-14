@@ -102,14 +102,16 @@ async function createServer() {
     app.use(morgan(process.env.MORGAN));
   }
   if ('false' !== process.env.HELMET) {
-    app.use(Helmet({
-      contentSecurityPolicy: {
-        useDefaults: true,
-        directives: {
-          connectSrc: ["'self'", 'https://api.developer.deepar.ai'],
+    app.use(
+      Helmet({
+        contentSecurityPolicy: {
+          useDefaults: true,
+          directives: {
+            connectSrc: ["'self'", 'https://api.developer.deepar.ai'],
+          },
         },
-      },
-    }));
+      })
+    );
   }
 
   let server = null;
