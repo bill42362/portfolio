@@ -54,15 +54,30 @@ export class Main extends React.PureComponent {
   renderer = null;
   rendererControlFolder = null;
   clock = null;
+  loadingTimeout = null;
   animationFrame = null;
   animationControls = {
     shouldAnimate: false,
     fps: 60, // todo
   };
   animationToogleUI = null;
-  stopAnimationTimeout = null;
+  horkeukamui = null;
   mmdPhysics = null;
   mmdAnimationHelper = new MMDAnimationHelper({ afterglow: 2.0 });
+  controlObject = {
+    horkeukamui: {
+      fundoshiBack: true,
+      fundoshiFront: true,
+      penis: true,
+      bigFundoshiFront: false,
+      bigPenis: false,
+      erection: 0,
+    },
+  };
+  controlUIObject = {
+    Horkeukamui: null,
+    horkeukamui: {},
+  };
 
   initScene = () => {
     this.scene = new Scene();
@@ -159,6 +174,34 @@ export class Main extends React.PureComponent {
     }
   }, 100);
 
+  getMaterial = ({ name }) => {
+    return this.horkeukamui.material.find(m => name === m.name);
+  };
+
+  addKamuiControlllers = () => {
+    this.controlUIObject.Horkeukamui = this.gui.addFolder('Horkeukamui');
+    const kamuiControl = this.controlUIObject.Horkeukamui;
+    this.controlUIObject.horkeukamui.fundoshiBack = kamuiControl
+      .add(this.controlObject.horkeukamui, 'fundoshiBack')
+      .onChange(() => {
+        const material = this.getMaterial({ name: '屁股兜' });
+        const visible = this.controlObject.horkeukamui.fundoshiBack;
+        material.visible = visible;
+        material.opacity = +visible;
+        window.requestAnimationFrame(this.renderNextFrame);
+      });
+    this.controlUIObject.horkeukamui.fundoshiFront = kamuiControl
+      .add(this.controlObject.horkeukamui, 'fundoshiFront')
+      .onChange(() => {
+        const material = this.getMaterial({ name: '肚兜' });
+        const visible = this.controlObject.horkeukamui.fundoshiFront;
+        material.visible = visible;
+        material.opacity = +visible;
+        this.horkeukamui.morphTargetInfluences[77] = 0.2 * +visible;
+        window.requestAnimationFrame(this.renderNextFrame);
+      });
+  };
+
   loadModels = () => {
     mmdLoader.loadWithAnimation(
       Horkeukamui160,
@@ -168,34 +211,42 @@ export class Main extends React.PureComponent {
         mesh.position.set(0, 0, 0);
         this.scene.add(mesh);
         window.Horkeukamui = mesh;
-        mesh.material.forEach(material => {
-          if ('屁股兜' === material.name) {
-            material.visible = false;
-            material.opacity = 1;
-          }
-          if ('丁毛' === material.name) {
-            material.visible = true;
-            material.opacity = 1;
-          }
-          if ('小丁丁' === material.name) {
-            material.visible = true;
-            material.opacity = 1;
-          }
-          if ('大丁丁' === material.name) {
-            //material.visible = true;
-            //material.opacity = 1;
-          }
-        });
+        this.horkeukamui = mesh;
+
+        // prevent penis penetrate fundoshi.
+        mesh.morphTargetInfluences[77] = 0.2;
+
+        const kamuiObject = this.controlObject.horkeukamui;
+        const penisHair = this.getMaterial({ name: '丁毛' });
+        penisHair.visible = true;
+        penisHair.opacity = 1;
+
+        const needPenis = kamuiObject.penis;
+        const penis = this.getMaterial({ name: '小丁丁' });
+        penis.visible = needPenis;
+        penis.opacity = +needPenis;
+
+        const needFundoshiFront = kamuiObject.fundoshiFront;
+        const fundoshiFront = this.getMaterial({ name: '肚兜' });
+        fundoshiFront.visible = needFundoshiFront;
+        fundoshiFront.opacity = +needFundoshiFront;
+
+        const needBigPenis = kamuiObject.bigPenis;
+        const bigPenis = this.getMaterial({ name: '大丁丁' });
+        bigPenis.visible = needBigPenis;
+        bigPenis.opacity = +needPenis;
+
+        const needBigFundoshiFront = kamuiObject.bigFundoshiFront;
+        const bigFundoshiFront = this.getMaterial({ name: '大丁丁肚兜' });
+        bigFundoshiFront.visible = needBigFundoshiFront;
+        bigFundoshiFront.opacity = +needBigFundoshiFront;
+
+        this.addKamuiControlllers();
 
         this.mmdAnimationHelper.add(mesh, { animation, physics: true });
         this.mmdAnimationHelper.enable('animation', false);
 
-        // TODO: draw just one frame instead of animation.
-        window.clearTimeout(this.stopAnimationTimeout);
-        this.animationToogleUI.setValue(true);
-        this.stopAnimationTimeout = setTimeout(() => {
-          this.animationToogleUI.setValue(false);
-        }, 5000);
+        this.loadingTimeout = window.setTimeout(this.renderNextFrame, 500);
       }
     );
   };
@@ -239,7 +290,7 @@ export class Main extends React.PureComponent {
     }
     window.cancelAnimationFrame(this.animationFrame);
     window.removeEventListener('resize', this.handleWindowResize);
-    window.clearTimeout(this.stopAnimationTimeout);
+    window.clearTimeout(this.loadingTimeout);
   }
 
   render() {
