@@ -20,26 +20,22 @@ import {
 import isWebAssemblySupported from '../resource/isWebAssemblySupported.js';
 import loadScriptTag from '../resource/loadScriptTag.js';
 
-import Horkeukamui160 from '../../model/Horkeukamui/Horkeukamui-160.pmx';
+import {
+  Horkeukamui160 as Horkeukamui,
+  englishMap,
+} from '../resource/horkeukamuiVariables.js';
 import WaveMotion from '../../motion/wavefile_v2.vmd';
-import '../../model/Horkeukamui/tex/body_N.png';
-import '../../model/Horkeukamui/tex/body.dds';
-import '../../model/Horkeukamui/tex/body2_N.png';
-import '../../model/Horkeukamui/tex/body2.dds';
-import '../../model/Horkeukamui/tex/cloth_N.png';
-import '../../model/Horkeukamui/tex/cloth.dds';
-import '../../model/Horkeukamui/tex/cloth2.dds';
-import '../../model/Horkeukamui/tex/cloth3.dds';
-import '../../model/Horkeukamui/tex/cloth4.dds';
-import '../../model/Horkeukamui/tex/cloth23_N.png';
-import '../../model/Horkeukamui/tex/head.dds';
-import '../../model/Horkeukamui/tex/nose.dds';
-import '../../model/Horkeukamui/tex/Penis.dds';
-import '../../model/Horkeukamui/tex/toon.dds';
 
 const loadingManager = new LoadingManager();
 loadingManager.addHandler(/\.dds$/i, new DDSLoader());
 const mmdLoader = new MMDLoader(loadingManager);
+const initControlKeys = [
+  'fundoshiBack',
+  'fundoshiFront',
+  'penis',
+  'bigFundoshiFront',
+  'bigPenis',
+];
 
 let dat = null;
 
@@ -146,9 +142,11 @@ export class Main extends React.PureComponent {
     const height = canvas.clientHeight;
 
     this.camera = new PerspectiveCamera(75, width / height, 0.1, 100);
-    this.camera.position.set(1, 2, 4);
+    this.camera.position.set(1, 2, 3);
 
     this.cameraControls = new OrbitControls(this.camera, canvas);
+    this.cameraControls.target.set(0, 2, 0);
+    this.cameraControls.update();
     this.cameraControls.addEventListener('change', () => {
       if (!this.animationControls.shouldAnimate) {
         this.renderNextFrame();
@@ -184,7 +182,7 @@ export class Main extends React.PureComponent {
     this.controlUIObject.horkeukamui.fundoshiBack = kamuiControl
       .add(this.controlObject.horkeukamui, 'fundoshiBack')
       .onChange(() => {
-        const material = this.getMaterial({ name: '屁股兜' });
+        const material = this.getMaterial({ name: englishMap.fundoshiBack });
         const visible = this.controlObject.horkeukamui.fundoshiBack;
         material.visible = visible;
         material.opacity = +visible;
@@ -193,18 +191,35 @@ export class Main extends React.PureComponent {
     this.controlUIObject.horkeukamui.fundoshiFront = kamuiControl
       .add(this.controlObject.horkeukamui, 'fundoshiFront')
       .onChange(() => {
-        const material = this.getMaterial({ name: '肚兜' });
+        const material = this.getMaterial({ name: englishMap.fundoshiFront });
         const visible = this.controlObject.horkeukamui.fundoshiFront;
         material.visible = visible;
         material.opacity = +visible;
         this.horkeukamui.morphTargetInfluences[77] = 0.2 * +visible;
+        if (visible && this.controlObject.horkeukamui.bigFundoshiFront) {
+          this.controlUIObject.horkeukamui.bigFundoshiFront.setValue(false);
+        }
+        window.requestAnimationFrame(this.renderNextFrame);
+      });
+    this.controlUIObject.horkeukamui.bigFundoshiFront = kamuiControl
+      .add(this.controlObject.horkeukamui, 'bigFundoshiFront')
+      .onChange(() => {
+        const material = this.getMaterial({
+          name: englishMap.bigFundoshiFront,
+        });
+        const visible = this.controlObject.horkeukamui.bigFundoshiFront;
+        material.visible = visible;
+        material.opacity = +visible;
+        if (visible && this.controlObject.horkeukamui.fundoshiFront) {
+          this.controlUIObject.horkeukamui.fundoshiFront.setValue(false);
+        }
         window.requestAnimationFrame(this.renderNextFrame);
       });
   };
 
   loadModels = () => {
     mmdLoader.loadWithAnimation(
-      Horkeukamui160,
+      Horkeukamui,
       [WaveMotion],
       ({ mesh, animation }) => {
         mesh.scale.set(0.2, 0.2, 0.2);
@@ -213,33 +228,19 @@ export class Main extends React.PureComponent {
         window.Horkeukamui = mesh;
         this.horkeukamui = mesh;
 
-        // prevent penis penetrate fundoshi.
+        // prevent penis penetrate fundoshiFront.
         mesh.morphTargetInfluences[77] = 0.2;
 
-        const kamuiObject = this.controlObject.horkeukamui;
-        const penisHair = this.getMaterial({ name: '丁毛' });
+        const penisHair = this.getMaterial({ name: englishMap.pubicHair });
         penisHair.visible = true;
         penisHair.opacity = 1;
 
-        const needPenis = kamuiObject.penis;
-        const penis = this.getMaterial({ name: '小丁丁' });
-        penis.visible = needPenis;
-        penis.opacity = +needPenis;
-
-        const needFundoshiFront = kamuiObject.fundoshiFront;
-        const fundoshiFront = this.getMaterial({ name: '肚兜' });
-        fundoshiFront.visible = needFundoshiFront;
-        fundoshiFront.opacity = +needFundoshiFront;
-
-        const needBigPenis = kamuiObject.bigPenis;
-        const bigPenis = this.getMaterial({ name: '大丁丁' });
-        bigPenis.visible = needBigPenis;
-        bigPenis.opacity = +needPenis;
-
-        const needBigFundoshiFront = kamuiObject.bigFundoshiFront;
-        const bigFundoshiFront = this.getMaterial({ name: '大丁丁肚兜' });
-        bigFundoshiFront.visible = needBigFundoshiFront;
-        bigFundoshiFront.opacity = +needBigFundoshiFront;
+        initControlKeys.forEach(controlKey => {
+          const needDisplay = this.controlObject.horkeukamui[controlKey];
+          const material = this.getMaterial({ name: englishMap[controlKey] });
+          material.visible = needDisplay;
+          material.opacity = +needDisplay;
+        });
 
         this.addKamuiControlllers();
 
