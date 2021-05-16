@@ -72,7 +72,10 @@ export class Main extends React.PureComponent {
   };
   controlUIObject = {
     Horkeukamui: null,
-    horkeukamui: {},
+    HorkeukamuiMorphs: null,
+    horkeukamui: {
+      morphs: {},
+    },
   };
 
   initScene = () => {
@@ -215,6 +218,34 @@ export class Main extends React.PureComponent {
         }
         window.requestAnimationFrame(this.renderNextFrame);
       });
+    this.controlUIObject.horkeukamui.bigPenis = kamuiControl
+      .add(this.controlObject.horkeukamui, 'bigPenis')
+      .onChange(() => {
+        const penisMaterial = this.getMaterial({ name: englishMap.penis });
+        const bigPenisMaterial = this.getMaterial({
+          name: englishMap.bigPenis,
+        });
+        const isBigOne = this.controlObject.horkeukamui.bigPenis;
+        penisMaterial.visible = !isBigOne;
+        penisMaterial.opacity = +!isBigOne;
+        bigPenisMaterial.visible = isBigOne;
+        bigPenisMaterial.opacity = +isBigOne;
+        window.requestAnimationFrame(this.renderNextFrame);
+      });
+    this.controlUIObject.HorkeukamuiMorphs =
+      this.controlUIObject.Horkeukamui.addFolder('Morphs');
+    Object.keys(this.horkeukamui.morphTargetDictionary).forEach(targetKey => {
+      this.controlUIObject.horkeukamui.morphs[targetKey] =
+        this.controlUIObject.HorkeukamuiMorphs.add(
+          this.horkeukamui.morphTargetInfluences,
+          this.horkeukamui.morphTargetDictionary[targetKey]
+        )
+          .min(0)
+          .max(1)
+          .step(0.01)
+          .name(targetKey)
+          .onChange(() => window.requestAnimationFrame(this.renderNextFrame));
+    });
   };
 
   loadModels = () => {
