@@ -4,10 +4,24 @@ import styled from 'styled-components';
 import * as dat from 'dat.gui';
 import throttle from 'lodash/throttle';
 
-import { Webcam, Player, Dom } from '../../../lib/banuba/bin/BanubaSDK.js';
+import {
+  Webcam,
+  Player,
+  Dom,
+  Effect,
+} from '../../../lib/banuba/bin/BanubaSDK.js';
 
 const isProd = 'production' === process.env.NODE_ENV;
-const banubaFileBase = isProd ? 'lib/banuba/bin/' : '../../../lib/banuba/bin/';
+const banubaFileBase = isProd ? 'lib/banuba/' : '../../../lib/banuba/';
+
+const banubaEffectKeys = [
+  'Makeup',
+  'test_BG',
+  'test_Hair',
+  'test_Lips',
+  'test_Lips_glitter',
+  'test_Lips_shine',
+];
 
 export class Main extends React.PureComponent {
   state = { containerHeight: `${(window.innerWidth * 9) / 16}px` };
@@ -16,6 +30,7 @@ export class Main extends React.PureComponent {
   isWebcamApplied = false;
   webcam = null;
   player = null;
+  banubaEffects = {};
   controlObject = {
     enableVideo: false,
     effects: {},
@@ -36,19 +51,7 @@ export class Main extends React.PureComponent {
     this.setState({ containerHeight: `${height}px` });
   }, 100);
 
-  async componentDidMount() {
-    this.gui = new dat.GUI({ hideable: true, closed: false, closeOnTop: true });
-    this.player = await Player.create({
-      clientToken: process.env.BANUBA_TOKEN,
-      locateFile: {
-        'BanubaSDK.data': `${banubaFileBase}BanubaSDK.data`,
-        'BanubaSDK.wasm': `${banubaFileBase}BanubaSDK.wasm`,
-        'BanubaSDK.simd.wasm': `${banubaFileBase}BanubaSDK.simd.wasm`,
-      },
-    });
-    this.webcam = new Webcam();
-    Dom.render(this.player, this.banubaContainer.current);
-
+  initBanubaControls = () => {
     this.controlUIObject.enableVideo = this.gui
       .add(this.controlObject, 'enableVideo')
       .onChange(() => {
@@ -65,6 +68,44 @@ export class Main extends React.PureComponent {
         }
       });
 
+    this.controlUIObject.Effects = this.gui.addFolder('Effects');
+    banubaEffectKeys.forEach(effectKey => {
+      this.controlObject.effects[effectKey] = false;
+      this.controlUIObject.effects[effectKey] =
+        this.controlUIObject.Effects.add(
+          this.controlObject.effects,
+          effectKey
+        ).onChange(() => {
+          this.player.clearEffect();
+          banubaEffectKeys.forEach(effectKey => {
+            if (!this.controlObject.effects[effectKey]) {
+              return;
+            }
+            if (!this.banubaEffects[effectKey]) {
+              this.banubaEffects[effectKey] = new Effect(
+                `${banubaFileBase}effects/${effectKey}.zip`
+              );
+            }
+            this.player.applyEffect(this.banubaEffects[effectKey]);
+          });
+        });
+    });
+  };
+
+  async componentDidMount() {
+    this.gui = new dat.GUI({ hideable: true, closed: false, closeOnTop: true });
+    this.player = await Player.create({
+      clientToken: process.env.BANUBA_TOKEN,
+      locateFile: {
+        'BanubaSDK.data': `${banubaFileBase}bin/BanubaSDK.data`,
+        'BanubaSDK.wasm': `${banubaFileBase}bin/BanubaSDK.wasm`,
+        'BanubaSDK.simd.wasm': `${banubaFileBase}bin/BanubaSDK.simd.wasm`,
+      },
+    });
+    this.webcam = new Webcam();
+    Dom.render(this.player, this.banubaContainer.current);
+
+    this.initBanubaControls();
     window.addEventListener('resize', this.handleWindowResize);
   }
 
@@ -92,6 +133,11 @@ const BanubaContainer = styled.div.attrs(({ height }) => ({
 }))`
   width: 100%;
   background-color: #222f3e;
+
+  > canvas {
+    width: 100%;
+    height: 100%;
+  }
 `;
 
 export default Main;
