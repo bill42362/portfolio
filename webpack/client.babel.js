@@ -5,6 +5,7 @@ import {
   HotModuleReplacementPlugin,
   NoEmitOnErrorsPlugin,
 } from 'webpack';
+import CopyPlugin from 'copy-webpack-plugin';
 import StatsPlugin from 'stats-webpack-plugin';
 import TerserWebpackPlugin from 'terser-webpack-plugin';
 import gifsicle from 'imagemin-gifsicle';
@@ -26,6 +27,14 @@ const plugins = [
   new EnvironmentPlugin({
     ...EnvConfig,
     NODE_ENV: nodeEnv,
+  }),
+  new CopyPlugin({
+    patterns: [
+      {
+        from: path.resolve(__dirname, '../src', 'lib'),
+        to: 'lib',
+      },
+    ],
   }),
 ];
 
@@ -74,7 +83,7 @@ export default {
       {
         enforce: 'pre',
         test: /\.jsx?$/,
-        exclude: /node_modules/,
+        exclude: /(node_modules|lib\/)/,
         use: [
           {
             loader: 'eslint-loader',
@@ -84,7 +93,7 @@ export default {
       },
       {
         test: /\.jsx?$/,
-        exclude: /node_modules/,
+        exclude: /(node_modules|lib\/)/,
         use: [{ loader: 'babel-loader', options: { cacheDirectory: true } }],
       },
       {

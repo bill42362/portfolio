@@ -36,6 +36,7 @@ COPY    webpack webpack
 COPY    default.config.json config.json
 COPY    package.json .
 COPY    src/client src/client
+COPY    src/lib src/lib
 
 ARG     SHORT_SHA
 ENV     SHORT_SHA $SHORT_SHA
@@ -74,6 +75,7 @@ COPY    webpack webpack
 COPY    package.json .
 COPY    default.config.json config.json
 COPY    src/server src/server
+COPY    src/lib src/lib
 
 ARG     SHORT_SHA
 ENV     SHORT_SHA $SHORT_SHA
