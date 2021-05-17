@@ -1,0 +1,11 @@
+draw_order = ["TriAndroid"]
+
+[materials.TriAndroid]
+vs = "hair_a.vert"
+fs = "hair.frag"
+blend = "off" # "alpha", "premul_alpha", "screen", "add", "multiply"
+backfaces = false
+colorwrite = true
+zwrite = false
+shadow = false
+samplers = {}
