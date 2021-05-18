@@ -126,12 +126,11 @@ export class Main extends React.PureComponent {
     this.controlUIObject.Landmarks = this.gui.addFolder('Landmarks');
     Object.keys(annotationShape).forEach(landmarkKey => {
       this.controlObject.landmarkToggles[landmarkKey] = false;
-      this.controlUIObject.landmarkToggles[
-        landmarkKey
-      ] = this.controlUIObject.Landmarks.add(
-        this.controlObject.landmarkToggles,
-        landmarkKey
-      );
+      this.controlUIObject.landmarkToggles[landmarkKey] =
+        this.controlUIObject.Landmarks.add(
+          this.controlObject.landmarkToggles,
+          landmarkKey
+        );
     });
     this.controlUIObject.DeformConfig = this.gui.addFolder('DeformConfig');
     this.controlUIObject.DeformConfig.add(

@@ -190,13 +190,15 @@ export const initRenderer = ({ sizes }) => {
   renderer = new Renderer({ sizes });
 };
 
-const translateLandmark = ({ width, height, shrinkFactor }) => ([x, y]) => {
-  return [
-    (2 * shrinkFactor * x) / width - 1,
-    (-2 * shrinkFactor * y) / height + 1,
-    0,
-  ];
-};
+const translateLandmark =
+  ({ width, height, shrinkFactor }) =>
+  ([x, y]) => {
+    return [
+      (2 * shrinkFactor * x) / width - 1,
+      (-2 * shrinkFactor * y) / height + 1,
+      0,
+    ];
+  };
 
 let isRendererBusy = false;
 let outputBitmap = null;

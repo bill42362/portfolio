@@ -53,12 +53,8 @@ onmessage = async ({ data: { type, payload } }) => {
       break;
     }
     case 'input-frame': {
-      const {
-        imageBitmap,
-        humanConfig,
-        landmarkToggles,
-        deformConfig,
-      } = payload;
+      const { imageBitmap, humanConfig, landmarkToggles, deformConfig } =
+        payload;
       ++frameCount;
       const skipFrame = Math.max(
         humanConfig.face?.detector?.skipFrame ?? 21,

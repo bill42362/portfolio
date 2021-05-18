@@ -9,26 +9,24 @@ const getPointDistance = ({ origin, target }) => {
   return [target[0] - origin[0], target[1] - origin[1], target[2] - target[2]];
 };
 
-const mapEyeIndexesWithCenterCoords = ({ eyesEnlargeRatio, dotPositions }) => ({
-  eyeIndexes,
-  centerCoords,
-  centerCoordsOffset,
-}) => {
-  return eyeIndexes.map((dotIndex, index) => {
-    const distance = getPointDistance({
-      origin: dotPositions[dotIndex],
-      target: centerCoords[index + centerCoordsOffset],
+const mapEyeIndexesWithCenterCoords =
+  ({ eyesEnlargeRatio, dotPositions }) =>
+  ({ eyeIndexes, centerCoords, centerCoordsOffset }) => {
+    return eyeIndexes.map((dotIndex, index) => {
+      const distance = getPointDistance({
+        origin: dotPositions[dotIndex],
+        target: centerCoords[index + centerCoordsOffset],
+      });
+      return {
+        dotIndex,
+        color: [
+          0.5 + distance[0] * eyesEnlargeRatio,
+          0.5 + distance[1] * eyesEnlargeRatio,
+          0.5 + distance[2] * eyesEnlargeRatio,
+        ],
+      };
     });
-    return {
-      dotIndex,
-      color: [
-        0.5 + distance[0] * eyesEnlargeRatio,
-        0.5 + distance[1] * eyesEnlargeRatio,
-        0.5 + distance[2] * eyesEnlargeRatio,
-      ],
-    };
-  });
-};
+  };
 
 const getFaceMashDotColor = ({ dotPositions, deformConfig }) => {
   const result = dotPositions.map(() => dotsDefaultColor);
