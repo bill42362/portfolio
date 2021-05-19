@@ -20,9 +20,10 @@ const mapEyeIndexesWithCenterCoords =
       return {
         dotIndex,
         color: [
-          0.5 + distance[0] * eyesEnlargeRatio,
-          0.5 + distance[1] * eyesEnlargeRatio,
-          0.5 + distance[2] * eyesEnlargeRatio,
+          // *10 is for increase precision
+          0.5 + 10 * distance[0] * eyesEnlargeRatio,
+          0.5 + 10 * distance[1] * eyesEnlargeRatio,
+          0.5 + 10 * distance[2] * eyesEnlargeRatio,
         ],
       };
     });

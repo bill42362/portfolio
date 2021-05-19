@@ -9,8 +9,9 @@ in vec2 vTextCoord;
 out vec4 outColor;
 
 void main() {
-  vec4 normal = texture(uNormalMap, vTextCoord) - vec4(0.5);
-  outColor = texture(uSource, vTextCoord - normal.xy);
+  vec4 textureNormal = texture(uNormalMap, vTextCoord) - vec4(0.5);
+  vec2 normal = vec2(textureNormal.x, -textureNormal.y);
+  outColor = texture(uSource, vTextCoord + 0.1 * normal);
 }
 `;
 
