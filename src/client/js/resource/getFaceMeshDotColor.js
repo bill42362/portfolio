@@ -49,7 +49,7 @@ const getFaceMashDotColor = ({ dotPositions, deformConfig }) => {
   // enlarge face
   const leftEyeCenterCoords = [];
   leftEyeCenterCoords.push(
-    averageThreeDots(dotPositions[398], dotPositions[382], dotPositions[362])
+    averageThreeDots(dotPositions[384], dotPositions[381], dotPositions[362])
   );
   leftEyeUpper0Indexes.forEach((upperIndex, index) => {
     const upperCoord = dotPositions[upperIndex];
@@ -57,12 +57,12 @@ const getFaceMashDotColor = ({ dotPositions, deformConfig }) => {
     leftEyeCenterCoords.push(averageTwoDots(upperCoord, lowerCoord));
   });
   leftEyeCenterCoords.push(
-    averageThreeDots(dotPositions[466], dotPositions[249], dotPositions[263])
+    averageThreeDots(dotPositions[388], dotPositions[390], dotPositions[263])
   );
 
   const rightEyeCenterCoords = [];
   rightEyeCenterCoords.push(
-    averageThreeDots(dotPositions[173], dotPositions[155], dotPositions[133])
+    averageThreeDots(dotPositions[157], dotPositions[154], dotPositions[133])
   );
   rightEyeUpper0Indexes.forEach((upperIndex, index) => {
     const upperCoord = dotPositions[upperIndex];
@@ -70,7 +70,7 @@ const getFaceMashDotColor = ({ dotPositions, deformConfig }) => {
     rightEyeCenterCoords.push(averageTwoDots(upperCoord, lowerCoord));
   });
   rightEyeCenterCoords.push(
-    averageThreeDots(dotPositions[246], dotPositions[7], dotPositions[33])
+    averageThreeDots(dotPositions[161], dotPositions[163], dotPositions[33])
   );
 
   const eyesEnlargeRatio = deformConfig.eyesEnlarge - 1;
