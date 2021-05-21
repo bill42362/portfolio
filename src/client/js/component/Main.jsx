@@ -34,11 +34,32 @@ export class Main extends React.PureComponent {
   controlObject = {
     enableVideo: false,
     effects: {},
+    makeupConfigs: {
+      ['Eyebrows.color']: [0.8, 0.4, 0.2],
+      ['Eyebrows.alpha']: 0.2,
+      ['Eyeshadow.color']: [0.6, 0.5, 1],
+      ['Eyeshadow.alpha']: 0.6,
+      ['Eyeliner.color']: [0, 0, 0, 1],
+      ['Eyelashes.color']: [0, 0, 0.2],
+      ['Foundation.strength']: 0.8,
+      ['Contour.color']: [0.3, 0.1, 0.1],
+      ['Contour.alpha']: 0.3,
+      ['Highlighter.color']: [1, 1, 0.6],
+      ['Highlighter.alpha']: 0.2,
+      ['Blush.color']: [0.7, 0.1, 0.2],
+      ['Blush.alpha']: 0.4,
+      ['TeethWhitening.strength']: 1,
+      ['FaceMorph.eyes']: 0.4,
+      ['FaceMorph.face']: 0.2,
+      ['FaceMorph.nose']: 0.6,
+    },
   };
   controlUIObject = {
     enableVideo: null,
     Effects: null,
     effects: {},
+    MakeupConfigs: null,
+    makeupConfigs: {},
   };
 
   handleWindowResize = throttle(() => {
@@ -89,6 +110,52 @@ export class Main extends React.PureComponent {
             this.player.applyEffect(this.banubaEffects[effectKey]);
           });
         });
+    });
+
+    this.controlUIObject.MakeupConfigs = this.gui.addFolder('MakeupConfigs');
+    Object.keys(this.controlObject.makeupConfigs).forEach(configKey => {
+      const makeupConfigs = this.controlObject.makeupConfigs;
+      if (configKey.endsWith('.color')) {
+        const configKeyRoot = configKey.replace(/\.color/, '');
+        this.controlUIObject.makeupConfigs =
+          this.controlUIObject.MakeupConfigs.addColor(makeupConfigs, configKey)
+            .name(configKeyRoot)
+            .onChange(() => {
+              let value = makeupConfigs[configKey].map(c => c / 255).join(' ');
+              const alpha = makeupConfigs[`${configKeyRoot}.alpha`];
+              if (alpha) {
+                value = `${value} ${alpha}`;
+              }
+              this.player.callJsMethod(configKey, value);
+            });
+        return;
+      } else if (configKey.endsWith('.alpha')) {
+        this.controlUIObject.makeupConfigs =
+          this.controlUIObject.MakeupConfigs.add(makeupConfigs, configKey)
+            .min(0)
+            .max(1)
+            .step(0.01)
+            .onChange(() => {
+              const makeupConfigs = this.controlObject.makeupConfigs;
+              const configKeyRoot = configKey.replace(/\.alpha/, '');
+              const colorConfigKey = `${configKeyRoot}.color`;
+              const color = makeupConfigs[colorConfigKey];
+              const value = [
+                ...color.map(c => c / 255),
+                makeupConfigs[configKey],
+              ].join(' ');
+              this.player.callJsMethod(colorConfigKey, value);
+            });
+        return;
+      }
+      this.controlUIObject.makeupConfigs =
+        this.controlUIObject.MakeupConfigs.add(makeupConfigs, configKey)
+          .min(-2)
+          .max(4)
+          .step(0.01)
+          .onChange(() => {
+            this.player.callJsMethod(configKey, `${makeupConfigs[configKey]}`);
+          });
     });
   };
 
