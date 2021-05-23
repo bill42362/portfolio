@@ -15,6 +15,9 @@ import {
   DirectionalLightHelper,
   LoadingManager,
   Clock,
+  // ReinhardToneMapping,
+  PCFSoftShadowMap,
+  CameraHelper,
 } from 'three';
 
 import isWebAssemblySupported from '../resource/isWebAssemblySupported.js';
@@ -36,6 +39,15 @@ const initControlKeys = [
   'bigFundoshiFront',
   'bigPenis',
 ];
+const lightControlsConfigs = {
+  intensity: { min: 0, max: 5, step: 0.001 },
+  shadowIntensity: { min: 0, max: 1, step: 0.001 },
+  shadowBoundry: { min: 0, max: 10, step: 0.01 },
+  needShadowHelper: {},
+  positionX: { min: -5, max: 5, step: 0.01 },
+  positionY: { min: -5, max: 5, step: 0.01 },
+  positionZ: { min: -5, max: 5, step: 0.01 },
+};
 
 let dat = null;
 
@@ -46,7 +58,7 @@ export class Main extends React.PureComponent {
   cameraControls = null;
   scene = null;
   light = null;
-  lightControlUI = null;
+  lightWithShadow = null;
   renderer = null;
   rendererControlFolder = null;
   clock = null;
@@ -61,6 +73,15 @@ export class Main extends React.PureComponent {
   mmdPhysics = null;
   mmdAnimationHelper = new MMDAnimationHelper({ afterglow: 2.0 });
   controlObject = {
+    light: {
+      intensity: 2,
+      shadowIntensity: 0.5,
+      shadowBoundry: 4,
+      needShadowHelper: false,
+      positionX: -3,
+      positionY: 4,
+      positionZ: 2,
+    },
     horkeukamui: {
       fundoshiBack: true,
       fundoshiFront: true,
@@ -71,6 +92,8 @@ export class Main extends React.PureComponent {
     },
   };
   controlUIObject = {
+    Light: null,
+    light: {},
     Horkeukamui: null,
     HorkeukamuiMorphs: null,
     horkeukamui: {
@@ -78,26 +101,82 @@ export class Main extends React.PureComponent {
     },
   };
 
+  updateLights = () => {
+    const {
+      intensity,
+      shadowIntensity,
+      shadowBoundry,
+      needShadowHelper,
+      positionX,
+      positionY,
+      positionZ,
+    } = this.controlObject.light;
+    this.light.intensity = intensity * (1 - shadowIntensity);
+    this.light.position.set(positionX, positionY, positionZ);
+    this.lightHelper.update();
+
+    this.lightWithShadow.intensity = intensity * shadowIntensity;
+    this.lightWithShadow.position.set(positionX, positionY, positionZ);
+    this.lightWithShadow.castShadow = !!shadowIntensity;
+    this.shadowHelper.visible = needShadowHelper && !!shadowIntensity;
+
+    const camera = this.lightWithShadow.shadow.camera;
+    camera.left = -shadowBoundry;
+    camera.right = shadowBoundry;
+    camera.top = shadowBoundry;
+    camera.bottom = -shadowBoundry;
+    camera.updateProjectionMatrix();
+    this.shadowHelper.update();
+    window.requestAnimationFrame(this.renderNextFrame);
+  };
+
   initScene = () => {
     this.scene = new Scene();
     this.scene.add(new AxesHelper(1));
 
     const light = new DirectionalLight('#ffffff', 2);
-    this.light = light;
     light.castShadow = false;
-    light.shadow.camera.far = 15;
-    light.shadow.mapSize.set(1024, 1024);
-    light.shadow.normalBias = 0.05;
-    light.position.set(-2, 3, 1);
-    this.scene.add(light);
-    this.scene.add(new DirectionalLightHelper(light, 1));
+    this.light = light;
 
-    this.lightControlUI = this.gui.addFolder('Light');
-    this.lightControlUI.add(light, 'intensity').min(0).max(5).step(0.001);
-    this.lightControlUI.add(light.position, 'x').min(-5).max(5).step(0.001);
-    this.lightControlUI.add(light.position, 'y').min(-5).max(5).step(0.001);
-    this.lightControlUI.add(light.position, 'z').min(-5).max(5).step(0.001);
-    this.lightControlUI.add(light, 'castShadow');
+    // need to set position before setup light helper.
+    // otherwise the light plane position will off.
+    const { positionX, positionY, positionZ } = this.controlObject.light;
+    this.light.position.set(positionX, positionY, positionZ);
+    this.lightHelper = new DirectionalLightHelper(light, 1);
+
+    const lightWithShadow = light.clone();
+    lightWithShadow.shadow.camera.far = 7;
+    lightWithShadow.shadow.mapSize.set(1024, 1024);
+    lightWithShadow.shadow.normalBias = 0.05;
+    this.lightWithShadow = lightWithShadow;
+    this.shadowHelper = new CameraHelper(lightWithShadow.shadow.camera);
+
+    this.scene.add(light);
+    this.scene.add(this.lightHelper);
+    this.scene.add(lightWithShadow);
+    this.scene.add(this.shadowHelper);
+
+    this.controlUIObject.Light = this.gui.addFolder('Light');
+    const lightControl = this.controlObject.light;
+    const lightControlUI = this.controlUIObject.Light;
+    Object.keys(lightControlsConfigs).forEach(configKey => {
+      const config = lightControlsConfigs[configKey];
+      this.controlUIObject.light[configKey] = lightControlUI.add(
+        lightControl,
+        configKey
+      );
+      if (config.step) {
+        this.controlUIObject.light[configKey] = this.controlUIObject.light[
+          configKey
+        ]
+          .min(config.min)
+          .max(config.max)
+          .step(config.step);
+      }
+      this.controlUIObject.light[configKey] = this.controlUIObject.light[
+        configKey
+      ].onChange(this.updateLights);
+    });
   };
 
   initRenderer = () => {
@@ -107,10 +186,10 @@ export class Main extends React.PureComponent {
     });
     this.renderer = renderer;
     renderer.physicallyCorrectLights = true;
-    //renderer.toneMapping = THREE.ReinhardToneMapping;
+    // renderer.toneMapping = ReinhardToneMapping;
     renderer.toneMappingExposure = 1;
     renderer.shadowMap.enabled = true;
-    //renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = PCFSoftShadowMap;
     renderer.setClearColor(0x222f3e);
     this.rendererControlFolder = this.gui.addFolder('Renderer');
     this.rendererControlFolder.add(this.renderer, 'physicallyCorrectLights');
@@ -255,6 +334,8 @@ export class Main extends React.PureComponent {
       ({ mesh, animation }) => {
         mesh.scale.set(0.2, 0.2, 0.2);
         mesh.position.set(0, 0, 0);
+        mesh.receiveShadow = true;
+        mesh.castShadow = true;
         this.scene.add(mesh);
         window.Horkeukamui = mesh;
         this.horkeukamui = mesh;
@@ -295,6 +376,7 @@ export class Main extends React.PureComponent {
     this.clock = new Clock();
     this.initScene();
     this.initRenderer();
+    this.updateLights();
     this.animationToogleUI = this.gui
       .add(this.animationControls, 'shouldAnimate')
       .onChange(() => {
