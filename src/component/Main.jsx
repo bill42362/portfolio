@@ -14,10 +14,14 @@ import {
   DirectionalLight,
   DirectionalLightHelper,
   LoadingManager,
+  TextureLoader,
   Clock,
-  // ReinhardToneMapping,
+  // ACESFilmicToneMapping,
   PCFSoftShadowMap,
   CameraHelper,
+  RepeatWrapping,
+  //MirroredRepeatWrapping,
+  //NearestFilter,
 } from 'three';
 
 import isWebAssemblySupported from '../resource/isWebAssemblySupported.js';
@@ -25,12 +29,17 @@ import loadScriptTag from '../resource/loadScriptTag.js';
 
 import {
   Horkeukamui160 as Horkeukamui,
+  BodyNormal,
+  Body2Normal,
+  ClothNormal,
+  Cloth23Normal,
   englishMap,
 } from '../resource/horkeukamuiVariables.js';
 import WaveMotion from '../../motion/wavefile_v2.vmd';
 
 const loadingManager = new LoadingManager();
 loadingManager.addHandler(/\.dds$/i, new DDSLoader());
+const textureLoader = new TextureLoader(loadingManager);
 const mmdLoader = new MMDLoader(loadingManager);
 const initControlKeys = [
   'fundoshiBack',
@@ -47,6 +56,13 @@ const lightControlsConfigs = {
   positionX: { min: -5, max: 5, step: 0.01 },
   positionY: { min: -5, max: 5, step: 0.01 },
   positionZ: { min: -5, max: 5, step: 0.01 },
+};
+const normalMapParing = {
+  'tex\\body.dds': BodyNormal,
+  'tex\\body2.dds': Body2Normal,
+  'tex\\cloth.dds': ClothNormal,
+  'tex\\cloth2.dds': Cloth23Normal,
+  'tex\\cloth3.dds': Cloth23Normal,
 };
 
 let dat = null;
@@ -74,7 +90,7 @@ export class Main extends React.PureComponent {
   mmdAnimationHelper = new MMDAnimationHelper({ afterglow: 2.0 });
   controlObject = {
     light: {
-      intensity: 2,
+      intensity: 3.5,
       shadowIntensity: 0.5,
       shadowBoundry: 4,
       needShadowHelper: false,
@@ -186,7 +202,7 @@ export class Main extends React.PureComponent {
     });
     this.renderer = renderer;
     renderer.physicallyCorrectLights = true;
-    // renderer.toneMapping = ReinhardToneMapping;
+    //renderer.toneMapping = ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = PCFSoftShadowMap;
@@ -339,6 +355,24 @@ export class Main extends React.PureComponent {
         this.scene.add(mesh);
         window.Horkeukamui = mesh;
         this.horkeukamui = mesh;
+
+        const anisotropy = Math.min(
+          4,
+          this.renderer.capabilities.getMaxAnisotropy()
+        );
+        mesh.material.forEach(m => {
+          m.map.anisotropy = anisotropy;
+          m.uniforms.map.value.anisotropy = anisotropy;
+          const normalMapFilename = normalMapParing[m.map.fileName];
+          if (normalMapFilename) {
+            m.normalMap = textureLoader.load(normalMapFilename);
+            m.normalMap.flipY = false;
+            m.normalMap.wrapS = RepeatWrapping;
+            m.normalMap.wrapT = RepeatWrapping;
+            m.normalMap.anisotropy = anisotropy;
+            m.uniforms.normalMap.value = m.normalMap;
+          }
+        });
 
         // prevent penis penetrate fundoshiFront.
         mesh.morphTargetInfluences[77] = 0.2;
