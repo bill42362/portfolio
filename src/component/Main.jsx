@@ -362,7 +362,6 @@ export class Main extends React.PureComponent {
         );
         mesh.material.forEach(m => {
           m.map.anisotropy = anisotropy;
-          m.uniforms.map.value.anisotropy = anisotropy;
           const normalMapFilename = normalMapParing[m.map.fileName];
           if (normalMapFilename) {
             m.normalMap = textureLoader.load(normalMapFilename);
@@ -370,6 +369,9 @@ export class Main extends React.PureComponent {
             m.normalMap.wrapS = RepeatWrapping;
             m.normalMap.wrapT = RepeatWrapping;
             m.normalMap.anisotropy = anisotropy;
+          }
+          if (m.uniforms) {
+            m.uniforms.map.value = m.map;
             m.uniforms.normalMap.value = m.normalMap;
           }
         });
