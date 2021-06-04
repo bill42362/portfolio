@@ -362,7 +362,8 @@ export class Main extends React.PureComponent {
         );
         mesh.material.forEach(m => {
           m.map.anisotropy = anisotropy;
-          const normalMapFilename = normalMapParing[m.map.fileName];
+          const normalMapFilename =
+            normalMapParing[m.userData.MMD?.mapFileName];
           if (normalMapFilename) {
             m.normalMap = textureLoader.load(normalMapFilename);
             m.normalMap.flipY = false;
