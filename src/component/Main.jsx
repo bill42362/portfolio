@@ -225,10 +225,18 @@ export class Main extends React.PureComponent {
     this.renderer.render(this.scene, this.camera);
   };
 
+  updateMorphControlValues = throttle(() => {
+    const morphControls = this.controlUIObject.horkeukamui.morphs;
+    Object.keys(morphControls).forEach(morphKey => {
+      morphControls[morphKey].updateDisplay();
+    });
+  }, 100);
+
   tick = () => {
     this.cameraControls.update();
     this.mmdAnimationHelper.update(this.clock.getDelta());
     this.renderNextFrame();
+    this.updateMorphControlValues();
     if (this.animationControls.shouldAnimate) {
       this.animationFrame = window.requestAnimationFrame(this.tick);
     }
@@ -371,10 +379,6 @@ export class Main extends React.PureComponent {
             m.normalMap.wrapT = RepeatWrapping;
             m.normalMap.anisotropy = anisotropy;
           }
-          if (m.uniforms) {
-            m.uniforms.map.value = m.map;
-            m.uniforms.normalMap.value = m.normalMap;
-          }
         });
 
         // prevent penis penetrate fundoshiFront.
@@ -391,10 +395,11 @@ export class Main extends React.PureComponent {
           material.opacity = +needDisplay;
         });
 
-        this.addKamuiControlllers();
-
         this.mmdAnimationHelper.add(mesh, { animation, physics: true });
         this.mmdAnimationHelper.enable('animation', false);
+
+        // need to be after animation since animation might change morph influences.
+        this.addKamuiControlllers();
 
         this.loadingTimeout = window.setTimeout(this.renderNextFrame, 500);
       }
