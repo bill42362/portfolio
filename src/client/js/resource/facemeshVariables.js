@@ -6,13 +6,12 @@ import wasmSource from '@tensorflow/tfjs-backend-wasm/dist/tfjs-backend-wasm.was
 import wasmSimdSource from '@tensorflow/tfjs-backend-wasm/dist/tfjs-backend-wasm-simd.wasm';
 import wasmSimdThreadedSource from '@tensorflow/tfjs-backend-wasm/dist/tfjs-backend-wasm-threaded-simd.wasm';
 
-const isProd = 'production' === process.env.NODE_ENV;
-const wasmSourceBase = isProd ? '../' : '';
+const htmlBase = process.env.HTML_BASE;
 
 setWasmPaths({
-  'tfjs-backend-wasm.wasm': `${wasmSourceBase}${wasmSource}`,
-  'tfjs-backend-wasm-simd.wasm': `${wasmSourceBase}${wasmSimdSource}`,
-  'tfjs-backend-wasm-threaded-simd.wasm': `${wasmSourceBase}${wasmSimdThreadedSource}`,
+  'tfjs-backend-wasm.wasm': `${htmlBase}${wasmSource}`,
+  'tfjs-backend-wasm-simd.wasm': `${htmlBase}${wasmSimdSource}`,
+  'tfjs-backend-wasm-threaded-simd.wasm': `${htmlBase}${wasmSimdThreadedSource}`,
 });
 
 tf.setBackend('wasm');

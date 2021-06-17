@@ -26,7 +26,7 @@ const plugins = [
   new EnvironmentPlugin({
     ...EnvConfig,
     NODE_ENV: nodeEnv,
-    HTML_BASE: htmlBase || '/',
+    HTML_BASE: htmlBase || '',
   }),
 ];
 
