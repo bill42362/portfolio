@@ -90,7 +90,21 @@ export default {
         use: [{ loader: 'babel-loader', options: { cacheDirectory: true } }],
       },
       {
-        test: /human\/models\/.*\.json$/i,
+        test: /\.wasm$/i,
+        type: 'javascript/auto',
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              name: isProd
+                ? 'wasm/[name].[contenthash:8].[ext]'
+                : 'wasm/[name].[ext]',
+            },
+          },
+        ],
+      },
+      {
+        test: /models?\/.*\.json$/i,
         type: 'javascript/auto',
         use: [
           {
@@ -104,7 +118,7 @@ export default {
         ],
       },
       {
-        test: /human\/models\/.*\.bin$/i,
+        test: /models?\/.*\.bin$/i,
         use: [
           {
             loader: 'file-loader',

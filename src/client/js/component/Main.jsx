@@ -4,7 +4,10 @@ import styled from 'styled-components';
 import * as dat from 'dat.gui';
 import throttle from 'lodash/throttle';
 
-import { humanConfig, annotationShape } from '../resource/humanVariables.js';
+import {
+  facemeshConfig,
+  annotationShape,
+} from '../resource/facemeshVariables.js';
 
 const deformWorkerFileName =
   window.deformWorkerFileName || '../js/deformWorker.js';
@@ -24,7 +27,7 @@ export class Main extends React.PureComponent {
     shouldCapture: false,
     landmarkToggles: {},
     deformConfig: {
-      eyesEnlarge: 1,
+      eyesEnlarge: 1.1,
     },
   };
   controlUIObject = {
@@ -58,7 +61,7 @@ export class Main extends React.PureComponent {
         type: 'input-frame',
         payload: {
           imageBitmap,
-          humanConfig,
+          humanConfig: facemeshConfig,
           landmarkToggles: this.controlObject.landmarkToggles,
           deformConfig: this.controlObject.deformConfig,
         },
@@ -114,11 +117,8 @@ export class Main extends React.PureComponent {
           this.mediaStream?.getTracks().forEach(t => t.stop());
         }
       });
-    this.controlUIObject.shouldDetectMesh = this.gui
-      .add(humanConfig.face.mesh, 'enabled')
-      .name('shouldDetectMesh');
     this.controlUIObject.faceSkipFrame = this.gui
-      .add(humanConfig.face.detector, 'skipFrame')
+      .add(facemeshConfig, 'skipFrame')
       .min(0)
       .max(60)
       .step(1)

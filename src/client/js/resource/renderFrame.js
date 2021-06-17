@@ -5,7 +5,7 @@ import { createBuffer, createTexture } from '../resource/WebGL.js';
 import CopyTexture from '../resource/CopyTexture.js';
 import DrawColorTriangles from '../resource/DrawColorTriangles.js';
 import CopyTextureWithNormalMap from '../resource/CopyTextureWithNormalMap.js';
-import { shrinkFactor } from '../resource/humanVariables.js';
+import { shrinkFactor } from '../resource/facemeshVariables.js';
 import getFaceMeshDotColor from '../resource/getFaceMeshDotColor.js';
 
 const textureNames = ['source', 'normalMap'];
@@ -220,7 +220,7 @@ const renderFrame = async ({
   }
 
   let dots = null;
-  const mesh = humanDetectedResult.face?.[0]?.mesh;
+  const mesh = humanDetectedResult[0]?.scaledMesh;
   if (mesh) {
     const translator = translateLandmark({
       width: imageBitmap.width,

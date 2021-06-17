@@ -1,22 +1,22 @@
 // deform-worker.js
-import Human from '@vladmandic/human/dist/human.esm.js';
+const faceLandmarksDetection = require('@tensorflow-models/face-landmarks-detection');
 
-import { humanConfig, shrinkFactor } from './resource/humanVariables.js';
+import { facemeshConfig, shrinkFactor } from './resource/facemeshVariables.js';
 import renderFrame, { initRenderer } from './resource/renderFrame.js';
 
+const canvas = new OffscreenCanvas(1280, 720);
+const contex2d = canvas.getContext('2d');
 let humanDetectedResult = {};
-const human = new Human(humanConfig);
-// eslint-disable-next-line no-console
-// console.log('human:', human);
+let facemesh = null;
 
 const log = (...message) => {
   //const dt = new Date();
   //const ts = `${dt.getHours().toString().padStart(2, '0')}:${dt.getMinutes().toString().padStart(2, '0')}:${dt.getSeconds().toString().padStart(2, '0')}.${dt.getMilliseconds().toString().padStart(3, '0')}`;
   // eslint-disable-next-line no-console
-  if (message) console.log('Human:', ...message);
+  if (message) console.log('facemesh:', ...message);
 };
 
-let isDetectorBusy = true;
+let isDetectorBusy = false;
 const detectFace = async ({ imageBitmap, humanConfig }) => {
   if (isDetectorBusy) {
     return;
@@ -24,7 +24,24 @@ const detectFace = async ({ imageBitmap, humanConfig }) => {
   isDetectorBusy = true;
   let result = {};
   try {
-    result = await human.detect(imageBitmap, humanConfig);
+    if (!facemesh) {
+      facemesh = await faceLandmarksDetection.load(
+        faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
+        facemeshConfig
+      );
+    }
+    contex2d.drawImage(
+      imageBitmap,
+      0,
+      0,
+      imageBitmap.width,
+      imageBitmap.height
+    );
+    result = await facemesh.estimateFaces({
+      ...facemeshConfig,
+      ...humanConfig,
+      input: contex2d.getImageData(0, 0, imageBitmap.width, imageBitmap.height),
+    });
     imageBitmap.close();
   } catch (error) {
     result.error = error.message;
@@ -56,10 +73,7 @@ onmessage = async ({ data: { type, payload } }) => {
       const { imageBitmap, humanConfig, landmarkToggles, deformConfig } =
         payload;
       ++frameCount;
-      const skipFrame = Math.max(
-        humanConfig.face?.detector?.skipFrame ?? 21,
-        0
-      );
+      const skipFrame = Math.max(humanConfig.skipFrame ?? 21, 0);
       const shouldDetect = skipFrame < frameCount;
       let imageBitmapForHuman = null;
       if (shouldDetect) {
@@ -90,7 +104,3 @@ onmessage = async ({ data: { type, payload } }) => {
       break;
   }
 };
-
-human.load(humanConfig);
-// human.warmup(humanConfig); // don't know why break :(
-isDetectorBusy = false;

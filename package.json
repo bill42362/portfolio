@@ -25,6 +25,10 @@
   },
   "homepage": "https://github.com/bill42362/portfolio",
   "dependencies": {
+    "@tensorflow-models/face-landmarks-detection": "^0.0.3",
+    "@tensorflow/tfjs-backend-wasm": "^3.7.0",
+    "@tensorflow/tfjs-converter": "^3.7.0",
+    "@tensorflow/tfjs-core": "^3.7.0",
     "@vladmandic/human": "^1.8.3",
     "dat.gui": "^0.7.7",
     "delaunator": "^5.0.0",
