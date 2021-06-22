@@ -171,6 +171,13 @@ export default {
         test: /\.js(\?.*)?$/i,
         parallel: true,
         sourceMap: true,
+        terserOptions: {
+          compress: {
+            // Turn off to fix tfjs-backend-wasm issue.
+            // https://github.com/tensorflow/tfjs/tree/master/tfjs-backend-wasm#js-minification
+            typeofs: false,
+          },
+        },
       }),
     ],
     splitChunks: {
