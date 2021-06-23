@@ -42,7 +42,7 @@
     "styled-normalize": "^8.0.7"
   },
   "devDependencies": {
-    "@babel/core": "^7.14.3",
+    "@babel/core": "^7.14.6",
     "@babel/node": "^7.14.7",
     "@babel/plugin-proposal-class-properties": "^7.13.0",
     "@babel/plugin-proposal-object-rest-spread": "^7.12.1",
@@ -59,7 +59,7 @@
     "eslint-config-prettier": "^8.3.0",
     "eslint-loader": "^4.0.2",
     "eslint-plugin-prettier": "^3.4.0",
-    "eslint-plugin-react": "^7.23.2",
+    "eslint-plugin-react": "^7.24.0",
     "eslint-plugin-react-hooks": "^4.2.0",
     "file-loader": "^6.2.0",
     "imagemin": "^7.0.1",
@@ -68,7 +68,7 @@
     "imagemin-pngquant": "^9.0.2",
     "imagemin-svgo": "^8.0.0",
     "img-loader": "^3.0.2",
-    "prettier": "^2.3.0",
+    "prettier": "^2.3.1",
     "rimraf": "^3.0.2",
     "stats-webpack-plugin": "^0.7.0",
     "terser-webpack-plugin": "^4.2.3",
