@@ -102,7 +102,22 @@ async function createServer() {
     app.use(morgan(process.env.MORGAN));
   }
   if ('false' !== process.env.HELMET) {
-    app.use(Helmet());
+    app.use(
+      Helmet({
+        contentSecurityPolicy: {
+          useDefaults: true,
+          directives: {
+            workerSrc: ["'self'", 'blob:'],
+            scriptSrcElem: ["'self'", 'blob:'],
+            connectSrc: [
+              "'self'",
+              'https://tfhub.dev',
+              'https://storage.googleapis.com',
+            ],
+          },
+        },
+      })
+    );
   }
 
   let server = null;
