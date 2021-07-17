@@ -1,5 +1,5 @@
 // CopyTexture.js
-import { createProgram, dockBuffer } from '../resource/WebGL.js';
+import { createProgram, dockBuffer, updateBuffer } from '../resource/WebGL.js';
 import mirrorVertexShaderSource from '../shaderSource/mirrorVertex.js';
 import mirrorFragmentShaderSource from '../shaderSource/mirrorFragment.js';
 
@@ -46,14 +46,28 @@ CopyTexture.prototype.dockBuffer = function ({ key, buffer }) {
   dockBuffer({ context: this.context, location: this.location[key], buffer });
 };
 
+CopyTexture.prototype.updateBuffer = function ({ key, attribute }) {
+  if (!['aPosition', 'aTextCoord'].includes(key)) {
+    throw new Error('invalid buffer name');
+  }
+  const buffer = this.buffer[key];
+  this.buffer[key] = updateBuffer({ context: this.context, buffer, attribute });
+};
+
 CopyTexture.prototype.draw = function ({
   sourceTexture,
   sourceTextureIndex,
+  positionAttribute,
+  textureCoordAttribute,
   targetFrameBuffer,
 }) {
   const context = this.context;
   context.useProgram(this.core.program);
 
+  positionAttribute &&
+    this.updateBuffer({ key: 'aPosition', attribute: positionAttribute });
+  textureCoordAttribute &&
+    this.updateBuffer({ key: 'aTextCoord', attribute: textureCoordAttribute });
   context.bindTexture(context.TEXTURE_2D, sourceTexture);
   context.uniform1i(this.location.uSource, sourceTextureIndex);
 

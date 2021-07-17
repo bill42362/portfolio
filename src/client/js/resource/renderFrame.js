@@ -26,6 +26,10 @@ const dotsPositionAttribute = {
   array: [],
   numComponents: 3,
 };
+const dotsTextCoordAttribute = {
+  array: [],
+  numComponents: 2,
+};
 const dotsColorAttribute = {
   array: [],
   numComponents: 3,
@@ -58,6 +62,10 @@ const Renderer = function ({ sizes }) {
   this.buffer.aDotsPosition = createBuffer({
     context,
     attribute: dotsPositionAttribute,
+  });
+  this.buffer.aDotsTextCoord = createBuffer({
+    context,
+    attribute: dotsTextCoordAttribute,
   });
   this.buffer.aDotsColor = createBuffer({
     context,
@@ -141,15 +149,18 @@ Renderer.prototype.draw = async function ({ pixelSource, dots }) {
 
     this.copyTexture.dockBuffer({
       key: 'aPosition',
-      buffer: this.buffer.aPosition,
+      buffer: this.buffer.aDotsPosition,
     });
     this.copyTexture.dockBuffer({
       key: 'aTextCoord',
-      buffer: this.buffer.aTextCoord,
+      buffer: this.buffer.aDotsTextCoord,
     });
+    //console.log('dots:', dots);
     this.copyTexture.draw({
       sourceTexture: this.texture.source,
       sourceTextureIndex: textureIndex.source,
+      positionAttribute: dots.positionAttribute,
+      textureCoordAttribute: dots.textCoordAttribute,
     });
 
     this.drawDots.dockBuffer({
@@ -212,6 +223,10 @@ const renderFrame = async ({
       shrinkFactor,
     });
     const dotPositions = mesh.map(translator);
+    const dotTextCoords = dotPositions.map(p => [
+      0.5 + p[0] / 2,
+      0.5 - p[1] / 2,
+    ]);
     const dotColors = dotPositions.map(() => [1, 1, 0]);
 
     // transform list of points [[x, y], [x, y], ...]
@@ -228,12 +243,17 @@ const renderFrame = async ({
     // [[x, y], [x, y], ...]
     const triangleChunks = dotsIndexGroups.flatMap(a => a);
     const trianglePositions = triangleChunks.map(a => dotPositions[a]);
+    const triangleTextCoords = triangleChunks.map(a => dotTextCoords[a]);
     const triangleColors = triangleChunks.map(a => dotColors[a]);
 
     dots = {};
     dots.positionAttribute = {
       array: trianglePositions.flatMap(a => a),
       numComponents: 3,
+    };
+    dots.textCoordAttribute = {
+      array: triangleTextCoords.flatMap(a => a),
+      numComponents: 2,
     };
     dots.colorAttribute = {
       array: triangleColors.flatMap(a => a),
