@@ -37,7 +37,7 @@ const getFaceMashDotColor = ({ dotPositions, deformConfig }) => {
   // const leftEyeUpper2Indexes = [413, 441, 442, 443, 444, 445, 342]; // outer
   const leftEyeLower0Indexes = [362, 382, 381, 380, 374, 373, 390, 249, 263]; // inner
   const leftEyeLower1Indexes = [463, 341, 256, 252, 253, 254, 339, 255, 359]; // middle
-  // const leftEyeLower2Indexes = [464, 453, 452, 451, 451, 449, 448, 261, 446]; // outer
+  // const leftEyeLower2Indexes = [464, 453, 452, 451, 450, 449, 448, 261, 446]; // outer
 
   const rightEyeUpper0Indexes = [173, 157, 158, 159, 160, 161, 246]; // inner
   const rightEyeUpper1Indexes = [190, 56, 28, 27, 29, 30, 247]; // middle

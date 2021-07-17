@@ -5,6 +5,7 @@ import { createBuffer, createTexture } from '../resource/WebGL.js';
 import CopyTexture from '../resource/CopyTexture.js';
 import DrawDots from '../resource/DrawDots.js';
 import { shrinkFactor } from '../resource/facemeshVariables.js';
+import { getEnlargeEyes } from '../resource/getFaceMeshTransform.js';
 
 const textureNames = ['source', 'normalMap'];
 const frameBufferNames = ['normalMap'];
@@ -155,7 +156,6 @@ Renderer.prototype.draw = async function ({ pixelSource, dots }) {
       key: 'aTextCoord',
       buffer: this.buffer.aDotsTextCoord,
     });
-    //console.log('dots:', dots);
     this.copyTexture.draw({
       sourceTexture: this.texture.source,
       sourceTextureIndex: textureIndex.source,
@@ -228,6 +228,10 @@ const renderFrame = async ({
       0.5 - p[1] / 2,
     ]);
     const dotColors = dotPositions.map(() => [1, 1, 0]);
+    const dotPositionsEyesEnlarged = getEnlargeEyes({
+      dotPositions,
+      ratio: deformConfig.eyesEnlarge,
+    });
 
     // transform list of points [[x, y], [x, y], ...]
     // into triangles composed with point indexes
@@ -242,7 +246,9 @@ const renderFrame = async ({
     // into point array
     // [[x, y], [x, y], ...]
     const triangleChunks = dotsIndexGroups.flatMap(a => a);
-    const trianglePositions = triangleChunks.map(a => dotPositions[a]);
+    const trianglePositions = triangleChunks.map(
+      a => dotPositionsEyesEnlarged[a]
+    );
     const triangleTextCoords = triangleChunks.map(a => dotTextCoords[a]);
     const triangleColors = triangleChunks.map(a => dotColors[a]);
 
