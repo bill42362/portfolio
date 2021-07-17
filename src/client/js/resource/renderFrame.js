@@ -3,10 +3,8 @@ import Delaunator from 'delaunator';
 
 import { createBuffer, createTexture } from '../resource/WebGL.js';
 import CopyTexture from '../resource/CopyTexture.js';
-import DrawColorTriangles from '../resource/DrawColorTriangles.js';
-import CopyTextureWithNormalMap from '../resource/CopyTextureWithNormalMap.js';
+import DrawDots from '../resource/DrawDots.js';
 import { shrinkFactor } from '../resource/facemeshVariables.js';
-import getFaceMeshDotColor from '../resource/getFaceMeshDotColor.js';
 
 const textureNames = ['source', 'normalMap'];
 const frameBufferNames = ['normalMap'];
@@ -94,26 +92,14 @@ const Renderer = function ({ sizes }) {
     buffer: this.buffer.aTextCoord,
   });
 
-  this.drawColorTriangles = new DrawColorTriangles({ context: this.context });
-  this.drawColorTriangles.dockBuffer({
+  this.drawDots = new DrawDots({ context: this.context });
+  this.drawDots.dockBuffer({
     key: 'aPosition',
     buffer: this.buffer.aDotsPosition,
   });
-  this.drawColorTriangles.dockBuffer({
+  this.drawDots.dockBuffer({
     key: 'aColor',
     buffer: this.buffer.aDotsColor,
-  });
-
-  this.copyTextureWithNormalMap = new CopyTextureWithNormalMap({
-    context: this.context,
-  });
-  this.copyTextureWithNormalMap.dockBuffer({
-    key: 'aPosition',
-    buffer: this.buffer.aPosition,
-  });
-  this.copyTextureWithNormalMap.dockBuffer({
-    key: 'aTextCoord',
-    buffer: this.buffer.aTextCoord,
   });
 };
 
@@ -150,35 +136,33 @@ Renderer.prototype.draw = async function ({ pixelSource, dots }) {
       sourceTextureIndex: textureIndex.source,
     });
   } else {
-    context.bindFramebuffer(context.FRAMEBUFFER, this.frameBuffer.normalMap);
-    context.clearBufferfv(context.COLOR, 0, [0.5, 0.5, 0.5, 1]);
-    this.drawColorTriangles.dockBuffer({
-      key: 'aPosition',
-      buffer: this.buffer.aDotsPosition,
-    });
-    this.drawColorTriangles.dockBuffer({
-      key: 'aColor',
-      buffer: this.buffer.aDotsColor,
-    });
-    this.drawColorTriangles.draw({
-      positionAttribute: dots.positionAttribute,
-      colorAttribute: dots.colorAttribute,
-      targetFrameBuffer: this.frameBuffer.normalMap,
-    });
+    //context.bindFramebuffer(context.FRAMEBUFFER, this.frameBuffer.normalMap);
+    //context.clearBufferfv(context.COLOR, 0, [0.5, 0.5, 0.5, 1]);
 
-    this.copyTextureWithNormalMap.dockBuffer({
+    this.copyTexture.dockBuffer({
       key: 'aPosition',
       buffer: this.buffer.aPosition,
     });
-    this.copyTextureWithNormalMap.dockBuffer({
+    this.copyTexture.dockBuffer({
       key: 'aTextCoord',
       buffer: this.buffer.aTextCoord,
     });
-    this.copyTextureWithNormalMap.draw({
+    this.copyTexture.draw({
+      sourceTexture: this.texture.source,
+      sourceTextureIndex: textureIndex.source,
+    });
+
+    this.drawDots.dockBuffer({
+      key: 'aPosition',
+      buffer: this.buffer.aDotsPosition,
+    });
+    this.drawDots.dockBuffer({
+      key: 'aColor',
+      buffer: this.buffer.aDotsColor,
+    });
+    this.drawDots.draw({
       positionAttribute: dots.positionAttribute,
       colorAttribute: dots.colorAttribute,
-      normalMapTexture: this.texture.normalMap,
-      normalMapTextureIndex: textureIndex.normalMap,
     });
   }
 
@@ -228,7 +212,7 @@ const renderFrame = async ({
       shrinkFactor,
     });
     const dotPositions = mesh.map(translator);
-    const dotColors = getFaceMeshDotColor({ dotPositions, deformConfig });
+    const dotColors = dotPositions.map(() => [1, 1, 0]);
 
     // transform list of points [[x, y], [x, y], ...]
     // into triangles composed with point indexes
