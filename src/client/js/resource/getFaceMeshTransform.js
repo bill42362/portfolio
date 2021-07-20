@@ -15,9 +15,7 @@ const moveFromPoint = ({ from, position, ratio }) => {
   ];
 };
 
-export const getEnlargeEyes = ({ dotPositions, ratio }) => {
-  const result = dotPositions.map(p => [...p]);
-
+export const getEyeCenters = ({ dotPositions }) => {
   const leftEye = faceLandmarksIndex.leftEye;
   const leftEyeCenter = averageTwoDots(
     averageTwoDots(
@@ -29,25 +27,6 @@ export const getEnlargeEyes = ({ dotPositions, ratio }) => {
       dotPositions[leftEye.lower.inner[5]]
     )
   );
-  Object.keys(leftEye.upper).forEach(layer => {
-    leftEye.upper[layer].forEach(landmarkIndex => {
-      result[landmarkIndex] = moveFromPoint({
-        from: leftEyeCenter,
-        position: result[landmarkIndex],
-        ratio,
-      });
-    });
-  });
-  Object.keys(leftEye.lower).forEach(layer => {
-    leftEye.lower[layer].forEach(landmarkIndex => {
-      result[landmarkIndex] = moveFromPoint({
-        from: leftEyeCenter,
-        position: result[landmarkIndex],
-        ratio,
-      });
-    });
-  });
-
   const rightEye = faceLandmarksIndex.rightEye;
   const rightEyeCenter = averageTwoDots(
     averageTwoDots(
@@ -59,10 +38,40 @@ export const getEnlargeEyes = ({ dotPositions, ratio }) => {
       dotPositions[rightEye.lower.inner[5]]
     )
   );
+
+  return { left: leftEyeCenter, right: rightEyeCenter };
+};
+
+export const getEnlargeEyes = ({ dotPositions, ratio }) => {
+  const result = dotPositions.map(p => [...p]);
+
+  const eyeCenters = getEyeCenters({ dotPositions });
+
+  const leftEye = faceLandmarksIndex.leftEye;
+  Object.keys(leftEye.upper).forEach(layer => {
+    leftEye.upper[layer].forEach(landmarkIndex => {
+      result[landmarkIndex] = moveFromPoint({
+        from: eyeCenters.left,
+        position: result[landmarkIndex],
+        ratio,
+      });
+    });
+  });
+  Object.keys(leftEye.lower).forEach(layer => {
+    leftEye.lower[layer].forEach(landmarkIndex => {
+      result[landmarkIndex] = moveFromPoint({
+        from: eyeCenters.left,
+        position: result[landmarkIndex],
+        ratio,
+      });
+    });
+  });
+
+  const rightEye = faceLandmarksIndex.rightEye;
   Object.keys(rightEye.upper).forEach(layer => {
     rightEye.upper[layer].forEach(landmarkIndex => {
       result[landmarkIndex] = moveFromPoint({
-        from: rightEyeCenter,
+        from: eyeCenters.right,
         position: result[landmarkIndex],
         ratio,
       });
@@ -71,7 +80,7 @@ export const getEnlargeEyes = ({ dotPositions, ratio }) => {
   Object.keys(rightEye.lower).forEach(layer => {
     rightEye.lower[layer].forEach(landmarkIndex => {
       result[landmarkIndex] = moveFromPoint({
-        from: rightEyeCenter,
+        from: eyeCenters.right,
         position: result[landmarkIndex],
         ratio,
       });

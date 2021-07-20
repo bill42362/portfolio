@@ -67,8 +67,8 @@ EnlargeEyes.prototype.draw = function ({
   sourceTextureIndex,
   positionAttribute,
   textureCoordAttribute,
-  eyesInfo = [0, 0, 0, 0],
-  enlargeConfig = [0, 1],
+  eyesInfo = [0, 0, 0, 0], // [leftCenter.x, leftCenter.y, rightCenter.x, rightCenter.y]
+  enlargeConfig = [0.0, 1.0], // [radius, ratio]
   targetFrameBuffer,
 }) {
   const context = this.context;
@@ -81,8 +81,8 @@ EnlargeEyes.prototype.draw = function ({
   context.bindTexture(context.TEXTURE_2D, sourceTexture);
   context.uniform1i(this.location.uSource, sourceTextureIndex);
 
-  context.uniform4fv(this.location.uEyesInfo, eyesInfo);
-  context.uniform2fv(this.location.uEnlargeConfig, enlargeConfig);
+  context.uniform1fv(this.location.uEyesInfo, eyesInfo);
+  context.uniform1fv(this.location.uEnlargeConfig, enlargeConfig);
 
   if (targetFrameBuffer) {
     context.bindFramebuffer(context.FRAMEBUFFER, targetFrameBuffer);

@@ -13,7 +13,7 @@ void main() {
     position.y = -aPosition.y;
   }
   gl_Position = position;
-  gl_PointSize = 4.0;
+  gl_PointSize = 1.5;
   vColor = aColor;
 }
 `;

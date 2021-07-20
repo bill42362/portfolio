@@ -6,7 +6,10 @@ import CopyTexture from '../resource/CopyTexture.js';
 import EnlargeEyes from '../resource/EnlargeEyes.js';
 import DrawDots from '../resource/DrawDots.js';
 import { shrinkFactor } from '../resource/facemeshVariables.js';
-import { getEnlargeEyes } from '../resource/getFaceMeshTransform.js';
+import {
+  getEyeCenters,
+  getEnlargeEyes,
+} from '../resource/getFaceMeshTransform.js';
 
 const textureNames = ['source', 'normalMap'];
 const frameBufferNames = ['normalMap'];
@@ -123,7 +126,7 @@ const Renderer = function ({ sizes }) {
   });
 };
 
-Renderer.prototype.draw = async function ({ pixelSource, dots }) {
+Renderer.prototype.draw = async function ({ pixelSource, configs }) {
   if (!pixelSource || !this.context) {
     return;
   }
@@ -142,7 +145,7 @@ Renderer.prototype.draw = async function ({ pixelSource, dots }) {
     pixelSource
   );
 
-  if (!dots) {
+  if (!configs) {
     this.copyTexture.dockBuffer({
       key: 'aPosition',
       buffer: this.buffer.aPosition,
@@ -170,6 +173,13 @@ Renderer.prototype.draw = async function ({ pixelSource, dots }) {
     this.enlargeEyes.draw({
       sourceTexture: this.texture.source,
       sourceTextureIndex: textureIndex.source,
+      eyesInfo: [
+        configs.eyeCentersTextCoord.left[0],
+        configs.eyeCentersTextCoord.left[1],
+        configs.eyeCentersTextCoord.right[0],
+        configs.eyeCentersTextCoord.right[1],
+      ],
+      enlargeConfig: [0.03, configs.eyesEnlargeRatio],
     });
 
     this.drawDots.dockBuffer({
@@ -181,8 +191,8 @@ Renderer.prototype.draw = async function ({ pixelSource, dots }) {
       buffer: this.buffer.aDotsColor,
     });
     this.drawDots.draw({
-      positionAttribute: dots.positionAttribute,
-      colorAttribute: dots.colorAttribute,
+      positionAttribute: configs.positionAttribute,
+      colorAttribute: configs.colorAttribute,
     });
   }
 
@@ -203,6 +213,7 @@ const translateLandmark =
       0,
     ];
   };
+const vertexToTextCoord = v => [0.5 + v[0] / 2, 0.5 - v[1] / 2];
 
 let isRendererBusy = false;
 let outputBitmap = null;
@@ -223,7 +234,7 @@ const renderFrame = async ({
     return outputBitmap;
   }
 
-  let dots = null;
+  let configs = null;
   const mesh = humanDetectedResult[0]?.scaledMesh;
   if (mesh) {
     const translator = translateLandmark({
@@ -232,10 +243,7 @@ const renderFrame = async ({
       shrinkFactor,
     });
     const dotPositions = mesh.map(translator);
-    const dotTextCoords = dotPositions.map(p => [
-      0.5 + p[0] / 2,
-      0.5 - p[1] / 2,
-    ]);
+    const dotTextCoords = dotPositions.map(vertexToTextCoord);
     const dotColors = dotPositions.map(() => [1, 1, 0]);
     const dotPositionsEyesEnlarged = getEnlargeEyes({
       dotPositions,
@@ -261,21 +269,39 @@ const renderFrame = async ({
     const triangleTextCoords = triangleChunks.map(a => dotTextCoords[a]);
     const triangleColors = triangleChunks.map(a => dotColors[a]);
 
-    dots = {};
-    dots.positionAttribute = {
+    configs = {};
+    configs.eyeCentersPosition = getEyeCenters({ dotPositions });
+    configs.eyeCentersTextCoord = {
+      left: vertexToTextCoord(configs.eyeCentersPosition.left),
+      right: vertexToTextCoord(configs.eyeCentersPosition.right),
+    };
+    configs.eyesEnlargeRatio = deformConfig.eyesEnlarge;
+    configs.positionAttribute = {
+      array: dotPositions.flatMap(a => a),
+      numComponents: 3,
+    };
+    configs.textCoordAttribute = {
+      array: dotTextCoords.flatMap(a => a),
+      numComponents: 2,
+    };
+    configs.colorAttribute = {
+      array: dotColors.flatMap(a => a),
+      numComponents: 3,
+    };
+    configs.trianglePositionAttribute = {
       array: trianglePositions.flatMap(a => a),
       numComponents: 3,
     };
-    dots.textCoordAttribute = {
+    configs.triangleTextCoordAttribute = {
       array: triangleTextCoords.flatMap(a => a),
       numComponents: 2,
     };
-    dots.colorAttribute = {
+    configs.triangleColorAttribute = {
       array: triangleColors.flatMap(a => a),
       numComponents: 3,
     };
   }
-  const newBitmap = await renderer.draw({ pixelSource: imageBitmap, dots });
+  const newBitmap = await renderer.draw({ pixelSource: imageBitmap, configs });
   outputBitmap?.close();
   outputBitmap = newBitmap;
   isRendererBusy = false;
