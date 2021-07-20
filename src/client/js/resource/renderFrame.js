@@ -3,6 +3,7 @@ import Delaunator from 'delaunator';
 
 import { createBuffer, createTexture } from '../resource/WebGL.js';
 import CopyTexture from '../resource/CopyTexture.js';
+import EnlargeEyes from '../resource/EnlargeEyes.js';
 import DrawDots from '../resource/DrawDots.js';
 import { shrinkFactor } from '../resource/facemeshVariables.js';
 import { getEnlargeEyes } from '../resource/getFaceMeshTransform.js';
@@ -101,6 +102,16 @@ const Renderer = function ({ sizes }) {
     buffer: this.buffer.aTextCoord,
   });
 
+  this.enlargeEyes = new EnlargeEyes({ context: this.context });
+  this.enlargeEyes.dockBuffer({
+    key: 'aPosition',
+    buffer: this.buffer.aPosition,
+  });
+  this.enlargeEyes.dockBuffer({
+    key: 'aTextCoord',
+    buffer: this.buffer.aTextCoord,
+  });
+
   this.drawDots = new DrawDots({ context: this.context });
   this.drawDots.dockBuffer({
     key: 'aPosition',
@@ -148,19 +159,17 @@ Renderer.prototype.draw = async function ({ pixelSource, dots }) {
     //context.bindFramebuffer(context.FRAMEBUFFER, this.frameBuffer.normalMap);
     //context.clearBufferfv(context.COLOR, 0, [0.5, 0.5, 0.5, 1]);
 
-    this.copyTexture.dockBuffer({
+    this.enlargeEyes.dockBuffer({
       key: 'aPosition',
-      buffer: this.buffer.aDotsPosition,
+      buffer: this.buffer.aPosition,
     });
-    this.copyTexture.dockBuffer({
+    this.enlargeEyes.dockBuffer({
       key: 'aTextCoord',
-      buffer: this.buffer.aDotsTextCoord,
+      buffer: this.buffer.aTextCoord,
     });
-    this.copyTexture.draw({
+    this.enlargeEyes.draw({
       sourceTexture: this.texture.source,
       sourceTextureIndex: textureIndex.source,
-      positionAttribute: dots.positionAttribute,
-      textureCoordAttribute: dots.textCoordAttribute,
     });
 
     this.drawDots.dockBuffer({
