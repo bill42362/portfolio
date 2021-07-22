@@ -10,9 +10,9 @@ in vec2 vTextCoord;
 out vec4 outColor;
 
 vec2 getOffset(vec2 origin, vec2 target, float radius, float ratio) {
-  float weight = distance(target, origin) / radius;
+  float weight = distance(target, origin) / (radius * clamp(ratio, 1.0, 3.0));
   weight = clamp(weight, 0.0, 1.0);
-  weight = (1.0 - weight * weight) * (1.0 - ratio);
+  weight = (1.0 - weight) * (1.0 - ratio);
 
   return (target - origin) * weight;
 }
