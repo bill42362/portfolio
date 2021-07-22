@@ -182,18 +182,20 @@ Renderer.prototype.draw = async function ({ pixelSource, configs }) {
       enlargeConfig: [0.03, configs.eyesEnlargeRatio],
     });
 
-    this.drawDots.dockBuffer({
-      key: 'aPosition',
-      buffer: this.buffer.aDotsPosition,
-    });
-    this.drawDots.dockBuffer({
-      key: 'aColor',
-      buffer: this.buffer.aDotsColor,
-    });
-    this.drawDots.draw({
-      positionAttribute: configs.positionAttribute,
-      colorAttribute: configs.colorAttribute,
-    });
+    if (configs.needDots) {
+      this.drawDots.dockBuffer({
+        key: 'aPosition',
+        buffer: this.buffer.aDotsPosition,
+      });
+      this.drawDots.dockBuffer({
+        key: 'aColor',
+        buffer: this.buffer.aDotsColor,
+      });
+      this.drawDots.draw({
+        positionAttribute: configs.positionAttribute,
+        colorAttribute: configs.colorAttribute,
+      });
+    }
   }
 
   return createImageBitmap(this.canvas);
@@ -269,7 +271,7 @@ const renderFrame = async ({
     const triangleTextCoords = triangleChunks.map(a => dotTextCoords[a]);
     const triangleColors = triangleChunks.map(a => dotColors[a]);
 
-    configs = {};
+    configs = { ...deformConfig };
     configs.eyeCentersPosition = getEyeCenters({ dotPositions });
     configs.eyeCentersTextCoord = {
       left: vertexToTextCoord(configs.eyeCentersPosition.left),

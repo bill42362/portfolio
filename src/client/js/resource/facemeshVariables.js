@@ -30,7 +30,7 @@ export const facemeshConfig = {
   // flipHorizontal: true, // true
   predictIrises: false, // true
 
-  skipFrame: 2, // 2
+  skipFrame: 4, // 2
 };
 
 // coords are based on img/face-1024.png

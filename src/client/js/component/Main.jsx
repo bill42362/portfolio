@@ -27,6 +27,7 @@ export class Main extends React.PureComponent {
     shouldCapture: false,
     landmarkToggles: {},
     deformConfig: {
+      needDots: false,
       eyesEnlarge: 1.1,
     },
   };
@@ -140,6 +141,10 @@ export class Main extends React.PureComponent {
       .min(0)
       .max(2)
       .step(0.01);
+    this.controlUIObject.DeformConfig.add(
+      this.controlObject.deformConfig,
+      'needDots'
+    );
     this.handleWindowResize();
     window.addEventListener('resize', this.handleWindowResize);
   }
