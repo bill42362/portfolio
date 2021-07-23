@@ -5,7 +5,7 @@ import { createBuffer, createTexture } from '../resource/WebGL.js';
 import CopyTexture from '../resource/CopyTexture.js';
 import EnlargeEyes from '../resource/EnlargeEyes.js';
 import DrawDots from '../resource/DrawDots.js';
-import { shrinkFactor } from '../resource/facemeshVariables.js';
+import { shrinkFactor } from '../resource/faceLandmarkVariables.js';
 import {
   getEyeCenters,
   getEyeRadiuses,

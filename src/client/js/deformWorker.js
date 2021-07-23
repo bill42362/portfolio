@@ -1,7 +1,10 @@
 // deform-worker.js
 const faceLandmarksDetection = require('@tensorflow-models/face-landmarks-detection');
 
-import { facemeshConfig, shrinkFactor } from './resource/facemeshVariables.js';
+import {
+  facemeshConfig,
+  shrinkFactor,
+} from './resource/faceLandmarkVariables.js';
 import renderFrame, { initRenderer } from './resource/renderFrame.js';
 
 const canvas = new OffscreenCanvas(1280, 720);

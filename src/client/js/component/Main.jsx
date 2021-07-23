@@ -7,7 +7,7 @@ import throttle from 'lodash/throttle';
 import {
   facemeshConfig,
   annotationShape,
-} from '../resource/facemeshVariables.js';
+} from '../resource/faceLandmarkVariables.js';
 
 const deformWorkerFileName =
   window.deformWorkerFileName || '../js/deformWorker.js';

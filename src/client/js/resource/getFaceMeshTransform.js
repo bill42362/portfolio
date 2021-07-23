@@ -1,5 +1,5 @@
 // getFaceMeshTransform.js
-import faceLandmarksIndex from '../resource/faceLandmarksIndex.js';
+import { faceLandmarksIndex } from '../resource/faceLandmarkVariables.js';
 
 const averageTwoDots = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, 0.5];
 const getPointsVector = ({ origin, target }) => {
