@@ -8,6 +8,7 @@ import DrawDots from '../resource/DrawDots.js';
 import { shrinkFactor } from '../resource/facemeshVariables.js';
 import {
   getEyeCenters,
+  getEyeRadiuses,
   getEnlargeEyes,
 } from '../resource/getFaceMeshTransform.js';
 
@@ -179,7 +180,7 @@ Renderer.prototype.draw = async function ({ pixelSource, configs }) {
         configs.eyeCentersTextCoord.right[0],
         configs.eyeCentersTextCoord.right[1],
       ],
-      enlargeConfig: [0.03, configs.eyesEnlargeRatio],
+      enlargeConfig: [configs.enlargeRadius, configs.eyesEnlarge],
     });
 
     if (configs.needDots) {
@@ -271,13 +272,15 @@ const renderFrame = async ({
     const triangleTextCoords = triangleChunks.map(a => dotTextCoords[a]);
     const triangleColors = triangleChunks.map(a => dotColors[a]);
 
+    const eyeRadiuses = getEyeRadiuses({ dotPositions });
+
     configs = { ...deformConfig };
+    configs.enlargeRadius = 0.5 * Math.max(eyeRadiuses.left, eyeRadiuses.right);
     configs.eyeCentersPosition = getEyeCenters({ dotPositions });
     configs.eyeCentersTextCoord = {
       left: vertexToTextCoord(configs.eyeCentersPosition.left),
       right: vertexToTextCoord(configs.eyeCentersPosition.right),
     };
-    configs.eyesEnlargeRatio = deformConfig.eyesEnlarge;
     configs.positionAttribute = {
       array: dotPositions.flatMap(a => a),
       numComponents: 3,

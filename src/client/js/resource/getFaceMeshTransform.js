@@ -2,17 +2,40 @@
 import faceLandmarksIndex from '../resource/faceLandmarksIndex.js';
 
 const averageTwoDots = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, 0.5];
-const getPointDistance = ({ origin, target }) => {
+const getPointsVector = ({ origin, target }) => {
   return [target[0] - origin[0], target[1] - origin[1], target[2] - target[2]];
+};
+const getVectorLength = ({ vector }) => {
+  return Math.sqrt(
+    vector[0] * vector[0] + vector[1] * vector[1] + vector[2] * vector[2]
+  );
 };
 
 const moveFromPoint = ({ from, position, ratio }) => {
-  const direction = getPointDistance({ origin: from, target: position });
+  const direction = getPointsVector({ origin: from, target: position });
   return [
     from[0] + direction[0] * ratio,
     from[1] + direction[1] * ratio,
     from[2] + direction[2] * ratio,
   ];
+};
+
+export const getEyeRadiuses = ({ dotPositions }) => {
+  const eyeCenters = getEyeCenters({ dotPositions });
+  const leftEye = faceLandmarksIndex.leftEye;
+  const rightEye = faceLandmarksIndex.rightEye;
+  const leftEyeVector = getPointsVector({
+    origin: eyeCenters.left,
+    target: dotPositions[leftEye.lower.outer[0]],
+  });
+  const rightEyeVector = getPointsVector({
+    origin: eyeCenters.right,
+    target: dotPositions[rightEye.lower.outer[0]],
+  });
+  return {
+    left: getVectorLength({ vector: leftEyeVector }),
+    right: getVectorLength({ vector: rightEyeVector }),
+  };
 };
 
 export const getEyeCenters = ({ dotPositions }) => {
