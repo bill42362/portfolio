@@ -11,6 +11,8 @@ import {
 
 const deformWorkerFileName =
   window.deformWorkerFileName || '../js/deformWorker.js';
+const faceDetectionWorkerFileName =
+  window.faceDetectionWorkerFileName || '../js/faceDetectionWorker.js';
 const captureContraints = {
   audio: true,
   video: { width: 1280, height: 720, facingMode: 'user' },
@@ -23,6 +25,7 @@ export class Main extends React.PureComponent {
   mediaStream = null;
   captureObject = null;
   worker = null;
+  faceDetectionWorker = null;
   controlObject = {
     shouldCapture: false,
     landmarkToggles: {},
@@ -67,6 +70,10 @@ export class Main extends React.PureComponent {
           deformConfig: this.controlObject.deformConfig,
         },
       });
+      this.faceDetectionWorker.postMessage({
+        type: 'input-frame',
+        payload: { imageBitmap, faceLandmarkConfig },
+      });
     } catch (error) {
       // eslint-disable-next-line no-console
       console.log('captureImage() error:', error);
@@ -103,11 +110,24 @@ export class Main extends React.PureComponent {
     });
   }, 100);
 
+  faceDetectionWorkerMessageHandler = ({ data }) => {
+    // eslint-disable-next-line no-console
+    console.log('faceDetectionWorkerMessageHandler() data:', data);
+  };
+
   componentDidMount() {
     this.gui = new dat.GUI({ hideable: true, closed: false, closeOnTop: true });
 
     this.worker = new Worker(deformWorkerFileName, { type: 'module' });
     this.initWorkerRenderer();
+
+    this.faceDetectionWorker = new Worker(faceDetectionWorkerFileName, {
+      type: 'module',
+    });
+    this.faceDetectionWorker.addEventListener(
+      'message',
+      this.faceDetectionWorkerMessageHandler
+    );
 
     this.controlUIObject.shouldCapture = this.gui
       .add(this.controlObject, 'shouldCapture')
@@ -152,8 +172,16 @@ export class Main extends React.PureComponent {
   componentWillUnmount() {
     this.mediaStream?.getTracks().forEach(t => t.stop());
     this.gui.destory();
+
     this.worker.removeEventListener('message', this.workerMessageHandler);
     this.worker.terminate();
+
+    this.faceDetectionWorker.removeEventListener(
+      'message',
+      this.faceDetectionWorkerMessageHandler
+    );
+    this.faceDetectionWorker.terminate();
+
     window.cancelAnimationFrame(this.captureTick);
     window.removeEventListener('resize', this.handleWindowResize);
   }

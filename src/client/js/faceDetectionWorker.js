@@ -12,15 +12,14 @@ let faceDetectedResult = {};
 let detector = null;
 
 const log = (...message) => {
-  //const dt = new Date();
-  //const ts = `${dt.getHours().toString().padStart(2, '0')}:${dt.getMinutes().toString().padStart(2, '0')}:${dt.getSeconds().toString().padStart(2, '0')}.${dt.getMilliseconds().toString().padStart(3, '0')}`;
   // eslint-disable-next-line no-console
-  if (message) console.log('detector:', ...message);
+  if (message) console.log('faceDetectionWorker:', ...message);
 };
 
 let isDetectorBusy = false;
 const detectFace = async ({ imageBitmap, faceLandmarkConfig }) => {
   if (isDetectorBusy) {
+    log('detection skipped due to busy');
     return;
   }
   isDetectorBusy = true;
@@ -52,14 +51,15 @@ const detectFace = async ({ imageBitmap, faceLandmarkConfig }) => {
     imageBitmap.close();
   } catch (error) {
     result.error = error.message;
-    log('worker thread error:', error.message);
+    log('error:', error.message);
   }
   // must strip canvas from return value as it cannot be transfered from worker thread
   if (result.canvas) result.canvas = null;
   faceDetectedResult = result;
-  if (!faceDetectedResult) {
-    // eslint-disable-next-line no-console
-    console.log('detectFace() no result');
+  if (faceDetectedResult) {
+    self.postMessage({ faces: faceDetectedResult });
+  } else {
+    log('detectFace() no result');
   }
   isDetectorBusy = false;
 };
