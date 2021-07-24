@@ -29,7 +29,7 @@ export const renderHtml = ({
   styleTags = '',
   app = '',
   jsTags: inputJsTags = '',
-  deformWorkerVariableTag = '',
+  workerVariablesTag = '',
 } = {}) => {
   const jsTags = htmlBase
     ? inputJsTags.replace(/='\/js/gi, "='js").replace(/=\/js/gi, '=js')
@@ -48,7 +48,7 @@ export const renderHtml = ({
       ${helmet.title.toString()}
       ${helmet.link.toString()}
       ${helmet.script.toString()}
-      ${deformWorkerVariableTag}
+      ${workerVariablesTag}
       ${styleTags}
     </head>
     <body>

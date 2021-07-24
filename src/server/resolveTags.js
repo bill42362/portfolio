@@ -34,13 +34,21 @@ export const resolveStaticTags = ({ webpackStats }) => {
   const [deformWorkerAsset] = assets.filter(asset =>
     asset.name.match(/deformWorker.*\.js$/gi)
   );
-  const deformWorkerVariableTag = deformWorkerAsset
-    ? `<script>window.deformWorkerFileName = '${deformWorkerAsset.name}'</script>`
+  const [faceDetectionWorkerAsset] = assets.filter(asset =>
+    asset.name.match(/faceDetectionWorker.*\.js$/gi)
+  );
+  const workerVariablesTag = (deformWorkerAsset || faceDetectionWorkerAsset)
+    ? `
+    <script>
+      window.deformWorkerFileName = '${deformWorkerAsset.name}';
+      window.faceDetectionWorkerFileName = '${faceDetectionWorkerAsset.name}';
+    </script>
+    `
     : '';
 
   return {
     pwaManifestTag,
     faviconTags,
-    deformWorkerVariableTag,
+    workerVariablesTag,
   };
 };

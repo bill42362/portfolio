@@ -8,13 +8,13 @@ import { resolveJsTags, resolveStaticTags } from './resolveTags.js';
 
 const buildHtml = () => {
   const webpackStats = require('../../dist/client/stats.json');
-  const { deformWorkerVariableTag } = resolveStaticTags({ webpackStats });
+  const { workerVariablesTag } = resolveStaticTags({ webpackStats });
   const jsTags = `
     <script type=text/javascript src=/js/ssrJs.js></script>
     ${resolveJsTags({ webpackStats })}
   `;
 
-  const html = renderHtml({ jsTags, deformWorkerVariableTag });
+  const html = renderHtml({ jsTags, workerVariablesTag });
   const minifiedHtml = HtmlMinifier.minify(html, minifyHtmlConfig);
 
   const path = `${__dirname}/../../dist/client/html`;
