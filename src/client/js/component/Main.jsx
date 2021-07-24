@@ -5,7 +5,7 @@ import * as dat from 'dat.gui';
 import throttle from 'lodash/throttle';
 
 import {
-  facemeshConfig,
+  faceLandmarkConfig,
   annotationShape,
 } from '../resource/faceLandmarkVariables.js';
 
@@ -62,7 +62,7 @@ export class Main extends React.PureComponent {
         type: 'input-frame',
         payload: {
           imageBitmap,
-          humanConfig: facemeshConfig,
+          faceLandmarkConfig,
           landmarkToggles: this.controlObject.landmarkToggles,
           deformConfig: this.controlObject.deformConfig,
         },
@@ -119,7 +119,7 @@ export class Main extends React.PureComponent {
         }
       });
     this.controlUIObject.faceSkipFrame = this.gui
-      .add(facemeshConfig, 'skipFrame')
+      .add(faceLandmarkConfig, 'skipFrame')
       .min(0)
       .max(60)
       .step(1)

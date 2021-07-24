@@ -18,7 +18,7 @@ tf.setBackend('wasm');
 
 export const shrinkFactor = 4;
 
-export const facemeshConfig = {
+export const faceLandmarkConfig = {
   shouldLoadIrisModel: false, // true
   maxContinuousChecks: 3, // 5
   // detectionConfidence: 0.9, // 0.9

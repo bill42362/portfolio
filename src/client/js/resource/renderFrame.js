@@ -222,10 +222,10 @@ let isRendererBusy = false;
 let outputBitmap = null;
 const renderFrame = async ({
   imageBitmap,
-  humanDetectedResult,
+  faceDetectedResult,
   deformConfig,
 }) => {
-  if (isRendererBusy || !imageBitmap || !humanDetectedResult) {
+  if (isRendererBusy || !imageBitmap || !faceDetectedResult) {
     return outputBitmap;
   }
   isRendererBusy = true;
@@ -238,7 +238,7 @@ const renderFrame = async ({
   }
 
   let configs = null;
-  const mesh = humanDetectedResult[0]?.scaledMesh;
+  const mesh = faceDetectedResult[0]?.scaledMesh;
   if (mesh) {
     const translator = translateLandmark({
       width: imageBitmap.width,

@@ -2,14 +2,14 @@
 const faceLandmarksDetection = require('@tensorflow-models/face-landmarks-detection');
 
 import {
-  facemeshConfig,
+  faceLandmarkConfig as defaultFaceLandmarkConfig,
   shrinkFactor,
 } from './resource/faceLandmarkVariables.js';
 import renderFrame, { initRenderer } from './resource/renderFrame.js';
 
 const canvas = new OffscreenCanvas(1280, 720);
 const contex2d = canvas.getContext('2d');
-let humanDetectedResult = {};
+let faceDetectedResult = {};
 let facemesh = null;
 
 const log = (...message) => {
@@ -20,7 +20,7 @@ const log = (...message) => {
 };
 
 let isDetectorBusy = false;
-const detectFace = async ({ imageBitmap, humanConfig }) => {
+const detectFace = async ({ imageBitmap, faceLandmarkConfig }) => {
   if (isDetectorBusy) {
     return;
   }
@@ -30,7 +30,7 @@ const detectFace = async ({ imageBitmap, humanConfig }) => {
     if (!facemesh) {
       facemesh = await faceLandmarksDetection.load(
         faceLandmarksDetection.SupportedPackages.mediapipeFacemesh,
-        facemeshConfig
+        faceLandmarkConfig
       );
     }
     contex2d.drawImage(
@@ -41,8 +41,8 @@ const detectFace = async ({ imageBitmap, humanConfig }) => {
       imageBitmap.height
     );
     result = await facemesh.estimateFaces({
-      ...facemeshConfig,
-      ...humanConfig,
+      ...defaultFaceLandmarkConfig,
+      ...faceLandmarkConfig,
       input: contex2d.getImageData(0, 0, imageBitmap.width, imageBitmap.height),
     });
     imageBitmap.close();
@@ -52,8 +52,8 @@ const detectFace = async ({ imageBitmap, humanConfig }) => {
   }
   // must strip canvas from return value as it cannot be transfered from worker thread
   if (result.canvas) result.canvas = null;
-  humanDetectedResult = result;
-  if (!humanDetectedResult) {
+  faceDetectedResult = result;
+  if (!faceDetectedResult) {
     // eslint-disable-next-line no-console
     console.log('detectFace() no result');
   }
@@ -73,10 +73,10 @@ onmessage = async ({ data: { type, payload } }) => {
       break;
     }
     case 'input-frame': {
-      const { imageBitmap, humanConfig, landmarkToggles, deformConfig } =
+      const { imageBitmap, faceLandmarkConfig, landmarkToggles, deformConfig } =
         payload;
       ++frameCount;
-      const skipFrame = Math.max(humanConfig.skipFrame ?? 21, 0);
+      const skipFrame = Math.max(faceLandmarkConfig.skipFrame ?? 21, 0);
       const shouldDetect = skipFrame < frameCount;
       let imageBitmapForHuman = null;
       if (shouldDetect) {
@@ -88,7 +88,7 @@ onmessage = async ({ data: { type, payload } }) => {
 
       const outputBitmap = await renderFrame({
         imageBitmap,
-        humanDetectedResult,
+        faceDetectedResult,
         landmarkToggles,
         deformConfig,
       });
@@ -96,7 +96,7 @@ onmessage = async ({ data: { type, payload } }) => {
 
       if (shouldDetect) {
         setTimeout(() =>
-          detectFace({ imageBitmap: imageBitmapForHuman, humanConfig })
+          detectFace({ imageBitmap: imageBitmapForHuman, faceLandmarkConfig })
         );
         frameCount = 0;
       }
