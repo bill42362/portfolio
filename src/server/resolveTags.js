@@ -37,11 +37,18 @@ export const resolveStaticTags = ({ webpackStats }) => {
   const [faceDetectionWorkerAsset] = assets.filter(asset =>
     asset.name.match(/faceDetectionWorker.*\.js$/gi)
   );
-  const workerVariablesTag = (deformWorkerAsset || faceDetectionWorkerAsset)
-    ? `
+  const [renderWorkerAsset] = assets.filter(asset =>
+    asset.name.match(/renderWorker.*\.js$/gi)
+  );
+  const workerVariablesTag = (
+    deformWorkerAsset ||
+    faceDetectionWorkerAsset ||
+    renderWorkerAsset
+  ) ? `
     <script>
       window.deformWorkerFileName = '${deformWorkerAsset.name}';
       window.faceDetectionWorkerFileName = '${faceDetectionWorkerAsset.name}';
+      window.renderWorkerFileName = '${renderWorkerAsset.name}';
     </script>
     `
     : '';

@@ -1,16 +1,9 @@
 // renderFrame.js
-import Delaunator from 'delaunator';
-
 import { createBuffer, createTexture } from '../resource/WebGL.js';
 import CopyTexture from '../resource/CopyTexture.js';
 import EnlargeEyes from '../resource/EnlargeEyes.js';
 import DrawDots from '../resource/DrawDots.js';
-import { shrinkFactor } from '../resource/faceLandmarkVariables.js';
-import {
-  getEyeCenters,
-  getEyeRadiuses,
-  getEnlargeEyes,
-} from '../resource/getFaceMeshTransform.js';
+import { getEyeRadiuses } from '../resource/getFaceMeshTransform.js';
 
 const textureNames = ['source', 'normalMap'];
 const frameBufferNames = ['normalMap'];
@@ -207,25 +200,10 @@ export const initRenderer = ({ sizes }) => {
   renderer = new Renderer({ sizes });
 };
 
-const translateLandmark =
-  ({ width, height, shrinkFactor }) =>
-  ([x, y]) => {
-    return [
-      (2 * shrinkFactor * x) / width - 1,
-      (-2 * shrinkFactor * y) / height + 1,
-      0,
-    ];
-  };
-const vertexToTextCoord = v => [0.5 + v[0] / 2, 0.5 - v[1] / 2];
-
 let isRendererBusy = false;
 let outputBitmap = null;
-const renderFrame = async ({
-  imageBitmap,
-  faceDetectedResult,
-  deformConfig,
-}) => {
-  if (isRendererBusy || !imageBitmap || !faceDetectedResult) {
+const renderFrame = async ({ imageBitmap, faceData, deformConfig }) => {
+  if (isRendererBusy || !imageBitmap || !faceData) {
     return outputBitmap;
   }
   isRendererBusy = true;
@@ -238,71 +216,28 @@ const renderFrame = async ({
   }
 
   let configs = null;
-  const mesh = faceDetectedResult[0]?.scaledMesh;
+  const mesh = faceData.faceMeshs?.[0];
   if (mesh) {
-    const translator = translateLandmark({
-      width: imageBitmap.width,
-      height: imageBitmap.height,
-      shrinkFactor,
-    });
-    const dotPositions = mesh.map(translator);
-    const dotTextCoords = dotPositions.map(vertexToTextCoord);
-    const dotColors = dotPositions.map(() => [1, 1, 0]);
-    const dotPositionsEyesEnlarged = getEnlargeEyes({
-      dotPositions,
-      ratio: deformConfig.eyesEnlarge,
-    });
-
-    // transform list of points [[x, y], [x, y], ...]
-    // into triangles composed with point indexes
-    // [[1, 2, 3], [2, 3, 4], [3, 4, 5], ...]
-    const { triangles } = Delaunator.from(dotPositions);
-    let dotsIndexGroups = [];
-    for (let i = 0; i < triangles.length; i += 3) {
-      dotsIndexGroups.push([triangles[i], triangles[i + 1], triangles[i + 2]]);
-    }
-
-    // transform triangles composed with point indexes
-    // into point array
-    // [[x, y], [x, y], ...]
-    const triangleChunks = dotsIndexGroups.flatMap(a => a);
-    const trianglePositions = triangleChunks.map(
-      a => dotPositionsEyesEnlarged[a]
-    );
-    const triangleTextCoords = triangleChunks.map(a => dotTextCoords[a]);
-    const triangleColors = triangleChunks.map(a => dotColors[a]);
-
-    const eyeRadiuses = getEyeRadiuses({ dotPositions });
+    const eyeRadiuses = getEyeRadiuses({ dotPositions: mesh.dots.positions });
 
     configs = { ...deformConfig };
+
     configs.enlargeRadius = 0.5 * Math.max(eyeRadiuses.left, eyeRadiuses.right);
-    configs.eyeCentersPosition = getEyeCenters({ dotPositions });
     configs.eyeCentersTextCoord = {
-      left: vertexToTextCoord(configs.eyeCentersPosition.left),
-      right: vertexToTextCoord(configs.eyeCentersPosition.right),
+      left: mesh.eyeCenters.left.textCoord,
+      right: mesh.eyeCenters.right.textCoord,
     };
+
     configs.positionAttribute = {
-      array: dotPositions.flatMap(a => a),
+      array: mesh.dots.positions.flatMap(a => a),
       numComponents: 3,
     };
     configs.textCoordAttribute = {
-      array: dotTextCoords.flatMap(a => a),
+      array: mesh.dots.textCoords.flatMap(a => a),
       numComponents: 2,
     };
     configs.colorAttribute = {
-      array: dotColors.flatMap(a => a),
-      numComponents: 3,
-    };
-    configs.trianglePositionAttribute = {
-      array: trianglePositions.flatMap(a => a),
-      numComponents: 3,
-    };
-    configs.triangleTextCoordAttribute = {
-      array: triangleTextCoords.flatMap(a => a),
-      numComponents: 2,
-    };
-    configs.triangleColorAttribute = {
-      array: triangleColors.flatMap(a => a),
+      array: mesh.dots.colors.flatMap(a => a),
       numComponents: 3,
     };
   }

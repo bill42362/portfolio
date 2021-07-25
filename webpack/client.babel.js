@@ -63,6 +63,7 @@ export default {
     bundle: isProd ? bundle : [...bundle, ...devBundle],
     deformWorker: ['./src/client/js/deformWorker.js'],
     faceDetectionWorker: ['./src/client/js/faceDetectionWorker.js'],
+    renderWorker: ['./src/client/js/renderWorker.js'],
   },
   output: {
     filename: () => (isProd ? 'js/[name].[chunkhash:8].js' : 'js/[name].js'),

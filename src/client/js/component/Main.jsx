@@ -9,8 +9,8 @@ import {
   annotationShape,
 } from '../resource/faceLandmarkVariables.js';
 
-const deformWorkerFileName =
-  window.deformWorkerFileName || '../js/deformWorker.js';
+const renderWorkerFileName =
+  window.renderWorkerFileName || '../js/renderWorker.js';
 const faceDetectionWorkerFileName =
   window.faceDetectionWorkerFileName || '../js/faceDetectionWorker.js';
 const captureContraints = {
@@ -24,7 +24,7 @@ export class Main extends React.PureComponent {
   canvasContext = null;
   mediaStream = null;
   captureObject = null;
-  worker = null;
+  renderWorker = null;
   faceDetectionWorker = null;
   controlObject = {
     shouldCapture: false,
@@ -43,10 +43,11 @@ export class Main extends React.PureComponent {
   };
   gui = null;
   captureTick = null;
+  faceData = null;
 
   initWorkerRenderer = () => {
     const offscreenCanvas = this.canvas.current.transferControlToOffscreen();
-    this.worker.postMessage(
+    this.renderWorker.postMessage(
       {
         type: 'canvas',
         payload: {
@@ -61,12 +62,11 @@ export class Main extends React.PureComponent {
   captureImage = async () => {
     try {
       const imageBitmap = await this.captureObject?.grabFrame();
-      this.worker.postMessage({
+      this.renderWorker.postMessage({
         type: 'input-frame',
         payload: {
           imageBitmap,
-          faceLandmarkConfig,
-          landmarkToggles: this.controlObject.landmarkToggles,
+          faceData: this.faceData,
           deformConfig: this.controlObject.deformConfig,
         },
       });
@@ -111,14 +111,13 @@ export class Main extends React.PureComponent {
   }, 100);
 
   faceDetectionWorkerMessageHandler = ({ data }) => {
-    // eslint-disable-next-line no-console
-    console.log('faceDetectionWorkerMessageHandler() data:', data);
+    this.faceData = data;
   };
 
   componentDidMount() {
     this.gui = new dat.GUI({ hideable: true, closed: false, closeOnTop: true });
 
-    this.worker = new Worker(deformWorkerFileName, { type: 'module' });
+    this.renderWorker = new Worker(renderWorkerFileName, { type: 'module' });
     this.initWorkerRenderer();
 
     this.faceDetectionWorker = new Worker(faceDetectionWorkerFileName, {
@@ -173,8 +172,8 @@ export class Main extends React.PureComponent {
     this.mediaStream?.getTracks().forEach(t => t.stop());
     this.gui.destory();
 
-    this.worker.removeEventListener('message', this.workerMessageHandler);
-    this.worker.terminate();
+    this.renderWorker.removeEventListener('message', this.workerMessageHandler);
+    this.renderWorker.terminate();
 
     this.faceDetectionWorker.removeEventListener(
       'message',
