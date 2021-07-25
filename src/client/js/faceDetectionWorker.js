@@ -5,10 +5,10 @@ import {
   faceLandmarkConfig as defaultFaceLandmarkConfig,
   shrinkFactor,
 } from './resource/faceLandmarkVariables.js';
+import makeFaceMesh from './resource/makeFaceMesh.js';
 
 const canvas = new OffscreenCanvas(1280, 720);
 const contex2d = canvas.getContext('2d');
-let faceDetectedResult = {};
 let detector = null;
 
 const log = (...message) => {
@@ -16,14 +16,8 @@ const log = (...message) => {
   if (message) console.log('faceDetectionWorker:', ...message);
 };
 
-let isDetectorBusy = false;
 const detectFace = async ({ imageBitmap, faceLandmarkConfig }) => {
-  if (isDetectorBusy) {
-    log('detection skipped due to busy');
-    return;
-  }
-  isDetectorBusy = true;
-  let result = {};
+  let result = null;
   try {
     if (!detector) {
       detector = await faceLandmarksDetection.load(
@@ -50,21 +44,16 @@ const detectFace = async ({ imageBitmap, faceLandmarkConfig }) => {
     });
     imageBitmap.close();
   } catch (error) {
-    result.error = error.message;
     log('error:', error.message);
   }
   // must strip canvas from return value as it cannot be transfered from worker thread
-  if (result.canvas) result.canvas = null;
-  faceDetectedResult = result;
-  if (faceDetectedResult) {
-    self.postMessage({ faces: faceDetectedResult });
-  } else {
-    log('detectFace() no result');
-  }
-  isDetectorBusy = false;
+  if (result?.canvas) result.canvas = null;
+  return result;
 };
 
 let frameCount = 0;
+let isDetectorBusy = false;
+let lastDetectResult = null;
 onmessage = async ({ data: { type, payload } }) => {
   switch (type) {
     case 'input-frame': {
@@ -72,10 +61,32 @@ onmessage = async ({ data: { type, payload } }) => {
       ++frameCount;
       const skipFrame = Math.max(faceLandmarkConfig.skipFrame ?? 21, 0);
       const shouldDetect = skipFrame < frameCount;
+      const bitmapSize = {
+        width: imageBitmap.width,
+        height: imageBitmap.height,
+      };
 
       if (shouldDetect) {
-        detectFace({ imageBitmap, faceLandmarkConfig });
         frameCount = 0;
+
+        if (isDetectorBusy) {
+          log('detection skipped due to busy');
+          self.postMessage(lastDetectResult);
+        } else {
+          isDetectorBusy = true;
+
+          const faces =
+            (await detectFace({ imageBitmap, faceLandmarkConfig })) || [];
+          lastDetectResult = {
+            faces,
+            faceMeshs: faces.map(face =>
+              makeFaceMesh({ landmarks: face.scaledMesh, bitmapSize })
+            ),
+          };
+          self.postMessage(lastDetectResult);
+
+          isDetectorBusy = false;
+        }
       }
       break;
     }
