@@ -4,10 +4,7 @@ import styled from 'styled-components';
 import * as dat from 'dat.gui';
 import throttle from 'lodash/throttle';
 
-import {
-  faceLandmarkConfig,
-  annotationShape,
-} from '../resource/faceLandmarkVariables.js';
+import { faceLandmarkConfig } from '../resource/faceLandmarkVariables.js';
 
 const renderWorkerFileName =
   window.renderWorkerFileName || '../js/renderWorker.js';
@@ -36,8 +33,6 @@ export class Main extends React.PureComponent {
   };
   controlUIObject = {
     shouldCapture: null,
-    Landmarks: null,
-    landmarkToggles: {},
     DeformConfig: null,
     deformConfig: {},
   };
@@ -143,16 +138,11 @@ export class Main extends React.PureComponent {
       .max(60)
       .step(1)
       .name('faceSkipFrame');
-    this.controlUIObject.Landmarks = this.gui.addFolder('Landmarks');
-    Object.keys(annotationShape).forEach(landmarkKey => {
-      this.controlObject.landmarkToggles[landmarkKey] = false;
-      this.controlUIObject.landmarkToggles[landmarkKey] =
-        this.controlUIObject.Landmarks.add(
-          this.controlObject.landmarkToggles,
-          landmarkKey
-        );
-    });
     this.controlUIObject.DeformConfig = this.gui.addFolder('DeformConfig');
+    this.controlUIObject.DeformConfig.add(
+      this.controlObject.deformConfig,
+      'needDots'
+    );
     this.controlUIObject.DeformConfig.add(
       this.controlObject.deformConfig,
       'eyesEnlarge'
@@ -160,10 +150,6 @@ export class Main extends React.PureComponent {
       .min(0)
       .max(2)
       .step(0.01);
-    this.controlUIObject.DeformConfig.add(
-      this.controlObject.deformConfig,
-      'needDots'
-    );
     this.handleWindowResize();
     window.addEventListener('resize', this.handleWindowResize);
   }
