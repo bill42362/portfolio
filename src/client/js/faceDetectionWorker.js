@@ -1,6 +1,7 @@
 // faceDetectionWorker.js
 const faceLandmarksDetection = require('@tensorflow-models/face-landmarks-detection');
 
+import './resource/faceLandmarkCore.js';
 import {
   faceLandmarkConfig as defaultFaceLandmarkConfig,
   shrinkFactor,
