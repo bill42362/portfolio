@@ -12,6 +12,7 @@ import {
   getEyeRadiuses,
   getPointsVector2D,
   getVectorLength2D,
+  averageTwoDots2D,
 } from '../resource/getFaceMeshTransform.js';
 
 const renderWorkerFileName =
@@ -166,7 +167,7 @@ export class Main extends React.PureComponent {
       });
       circularDeforms.push({
         origin,
-        target,
+        target: averageTwoDots2D(origin, target),
         radius: 0.5 * radius,
         ratio: deformConfig.cheekSize,
       });
