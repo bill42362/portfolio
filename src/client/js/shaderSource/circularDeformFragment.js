@@ -3,7 +3,7 @@
 const circularDeformFragment = `#version 300 es
 precision lowp float;
 
-#define CIRCLE_COUNT 2
+#define CIRCLE_COUNT 20
 
 uniform sampler2D uSource;
 

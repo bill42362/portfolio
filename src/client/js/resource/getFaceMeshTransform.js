@@ -13,15 +13,15 @@ const getVectorLength = ({ vector }) => {
   );
 };
 
-/*
-const averageTwoDots2D = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
-const getPointsVector2D = ({ origin, target }) => {
+export const averageTwoDots2D = (a, b) => {
+  return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+};
+export const getPointsVector2D = ({ origin, target }) => {
   return [target[0] - origin[0], target[1] - origin[1]];
 };
-const getVectorLength2D = ({ vector }) => {
+export const getVectorLength2D = ({ vector }) => {
   return Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
 };
-*/
 
 const moveFromPoint = ({ from, position, ratio }) => {
   const direction = getPointsVector({ origin: from, target: position });

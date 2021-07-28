@@ -4,8 +4,15 @@ import styled from 'styled-components';
 import * as dat from 'dat.gui';
 import throttle from 'lodash/throttle';
 
-import { faceLandmarkConfig } from '../resource/faceLandmarkVariables.js';
-import { getEyeRadiuses } from '../resource/getFaceMeshTransform.js';
+import {
+  faceLandmarkConfig,
+  faceLandmarksIndex,
+} from '../resource/faceLandmarkVariables.js';
+import {
+  getEyeRadiuses,
+  getPointsVector2D,
+  getVectorLength2D,
+} from '../resource/getFaceMeshTransform.js';
 
 const renderWorkerFileName =
   window.renderWorkerFileName || '../js/renderWorker.js';
@@ -15,6 +22,30 @@ const captureContraints = {
   audio: true,
   video: { width: 1280, height: 720, facingMode: 'user' },
 };
+
+const cheekIndexs = faceLandmarksIndex.cheek;
+const noseCenterIndexs = faceLandmarksIndex.nose.center;
+const cheekSizeIndexPairs = [
+  { origin: cheekIndexs.left.inner[9], target: noseCenterIndexs[8] },
+  { origin: cheekIndexs.left.inner[8], target: noseCenterIndexs[8] },
+  { origin: cheekIndexs.left.inner[7], target: noseCenterIndexs[6] },
+  { origin: cheekIndexs.left.inner[6], target: noseCenterIndexs[6] },
+  { origin: cheekIndexs.left.inner[5], target: noseCenterIndexs[4] },
+  { origin: cheekIndexs.left.inner[4], target: noseCenterIndexs[4] },
+  { origin: cheekIndexs.left.inner[3], target: noseCenterIndexs[0] },
+  { origin: cheekIndexs.left.inner[2], target: noseCenterIndexs[0] },
+  { origin: cheekIndexs.left.inner[1], target: noseCenterIndexs[0] },
+  //{ origin: faceLandmarksIndex.chin.inner, target: noseCenterIndexs[0] },
+  { origin: cheekIndexs.right.inner[9], target: noseCenterIndexs[8] },
+  { origin: cheekIndexs.right.inner[8], target: noseCenterIndexs[8] },
+  { origin: cheekIndexs.right.inner[7], target: noseCenterIndexs[6] },
+  { origin: cheekIndexs.right.inner[6], target: noseCenterIndexs[6] },
+  { origin: cheekIndexs.right.inner[5], target: noseCenterIndexs[4] },
+  { origin: cheekIndexs.right.inner[4], target: noseCenterIndexs[4] },
+  { origin: cheekIndexs.right.inner[3], target: noseCenterIndexs[0] },
+  { origin: cheekIndexs.right.inner[2], target: noseCenterIndexs[0] },
+  { origin: cheekIndexs.right.inner[1], target: noseCenterIndexs[0] },
+];
 
 export class Main extends React.PureComponent {
   state = { canvasHeight: '100%' };
@@ -29,8 +60,8 @@ export class Main extends React.PureComponent {
     landmarkToggles: {},
     deformConfig: {
       needDots: false,
-      eyesEnlarge: 1.1,
-      cheekSize: 0.9,
+      eyesSize: 1.3,
+      cheekSize: 0.95,
     },
   };
   controlUIObject = {
@@ -117,14 +148,28 @@ export class Main extends React.PureComponent {
       target: faceMesh.eyeCenters.left.textCoord,
       // *0.5 to map from position to textCoord
       radius: 0.5 * eyeRadiuses.left,
-      ratio: deformConfig.eyesEnlarge,
+      ratio: deformConfig.eyesSize,
     });
     circularDeforms.push({
       origin: faceMesh.eyeCenters.right.textCoord,
       target: faceMesh.eyeCenters.right.textCoord,
       // *0.5 to map from position to textCoord
       radius: 0.5 * eyeRadiuses.right,
-      ratio: deformConfig.eyesEnlarge,
+      ratio: deformConfig.eyesSize,
+    });
+
+    cheekSizeIndexPairs.forEach(pair => {
+      const origin = faceMesh.dots.textCoords[pair.origin];
+      const target = faceMesh.dots.textCoords[pair.target];
+      const radius = getVectorLength2D({
+        vector: getPointsVector2D({ origin, target }),
+      });
+      circularDeforms.push({
+        origin,
+        target,
+        radius: 0.5 * radius,
+        ratio: deformConfig.cheekSize,
+      });
     });
 
     return { circularDeforms };
@@ -177,11 +222,18 @@ export class Main extends React.PureComponent {
     );
     this.controlUIObject.DeformConfig.add(
       this.controlObject.deformConfig,
-      'eyesEnlarge'
+      'eyesSize'
     )
       .min(0)
       .max(2)
       .step(0.01);
+    this.controlUIObject.DeformConfig.add(
+      this.controlObject.deformConfig,
+      'cheekSize'
+    )
+      .min(0.8)
+      .max(1.2)
+      .step(0.001);
     this.handleWindowResize();
     window.addEventListener('resize', this.handleWindowResize);
   }

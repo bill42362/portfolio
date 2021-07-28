@@ -14,7 +14,7 @@ export const faceLandmarkConfig = {
   // flipHorizontal: true, // true
   predictIrises: false, // true
 
-  skipFrame: 4, // 2
+  skipFrame: 2, // 2
 };
 
 // coords are based on img/face-1024.png
@@ -110,5 +110,11 @@ export const faceLandmarksIndex = {
     inner: 199,
     middle: 175,
     outer: 152,
+  },
+  nose: {
+    // the fifth one is nose tip, last one is eyebrow center.
+    center: [2, 94, 19, 1, 4, 5, 195, 197, 6, 168, 8],
+    left: {},
+    right: {},
   },
 };
