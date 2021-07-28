@@ -108,18 +108,18 @@ export class Main extends React.PureComponent {
   }, 100);
 
   makeDeformData = ({ faceMesh, deformConfig }) => {
-    const circleDeforms = [];
+    const circularDeforms = [];
 
     const dotPositions = faceMesh.dots.positions;
     const eyeRadiuses = getEyeRadiuses({ dotPositions });
-    circleDeforms.push({
+    circularDeforms.push({
       origin: faceMesh.eyeCenters.left.textCoord,
       target: faceMesh.eyeCenters.left.textCoord,
       // *0.5 to map from position to textCoord
       radius: 0.5 * eyeRadiuses.left,
       ratio: deformConfig.eyesEnlarge,
     });
-    circleDeforms.push({
+    circularDeforms.push({
       origin: faceMesh.eyeCenters.right.textCoord,
       target: faceMesh.eyeCenters.right.textCoord,
       // *0.5 to map from position to textCoord
@@ -127,7 +127,7 @@ export class Main extends React.PureComponent {
       ratio: deformConfig.eyesEnlarge,
     });
 
-    return { circleDeforms };
+    return { circularDeforms };
   };
 
   faceDetectionWorkerMessageHandler = ({ data }) => {
@@ -139,7 +139,6 @@ export class Main extends React.PureComponent {
         deformConfig: this.controlObject.deformConfig,
       });
     }
-    console.log('faceData:', this.faceData);
   };
 
   componentDidMount() {

@@ -1,9 +1,8 @@
 // renderFrame.js
 import { createBuffer, createTexture } from '../resource/WebGL.js';
 import CopyTexture from '../resource/CopyTexture.js';
-import EnlargeEyes from '../resource/EnlargeEyes.js';
+import CircularDeform from '../resource/CircularDeform.js';
 import DrawDots from '../resource/DrawDots.js';
-import { getEyeRadiuses } from '../resource/getFaceMeshTransform.js';
 
 const textureNames = ['source', 'normalMap'];
 const frameBufferNames = ['normalMap'];
@@ -99,12 +98,12 @@ const Renderer = function ({ sizes }) {
     buffer: this.buffer.aTextCoord,
   });
 
-  this.enlargeEyes = new EnlargeEyes({ context: this.context });
-  this.enlargeEyes.dockBuffer({
+  this.circularDeform = new CircularDeform({ context: this.context });
+  this.circularDeform.dockBuffer({
     key: 'aPosition',
     buffer: this.buffer.aPosition,
   });
-  this.enlargeEyes.dockBuffer({
+  this.circularDeform.dockBuffer({
     key: 'aTextCoord',
     buffer: this.buffer.aTextCoord,
   });
@@ -156,24 +155,18 @@ Renderer.prototype.draw = async function ({ pixelSource, configs }) {
     //context.bindFramebuffer(context.FRAMEBUFFER, this.frameBuffer.normalMap);
     //context.clearBufferfv(context.COLOR, 0, [0.5, 0.5, 0.5, 1]);
 
-    this.enlargeEyes.dockBuffer({
+    this.circularDeform.dockBuffer({
       key: 'aPosition',
       buffer: this.buffer.aPosition,
     });
-    this.enlargeEyes.dockBuffer({
+    this.circularDeform.dockBuffer({
       key: 'aTextCoord',
       buffer: this.buffer.aTextCoord,
     });
-    this.enlargeEyes.draw({
+    this.circularDeform.draw({
       sourceTexture: this.texture.source,
       sourceTextureIndex: textureIndex.source,
-      eyesInfo: [
-        configs.eyeCentersTextCoord.left[0],
-        configs.eyeCentersTextCoord.left[1],
-        configs.eyeCentersTextCoord.right[0],
-        configs.eyeCentersTextCoord.right[1],
-      ],
-      enlargeConfig: [configs.enlargeRadius, configs.eyesEnlarge],
+      circularDeforms: configs.deformData.circularDeforms,
     });
 
     if (configs.needDots) {
@@ -218,15 +211,8 @@ const renderFrame = async ({ imageBitmap, faceData, deformConfig }) => {
   let configs = null;
   const mesh = faceData.faceMeshs?.[0];
   if (mesh) {
-    const eyeRadiuses = getEyeRadiuses({ dotPositions: mesh.dots.positions });
-
     configs = { ...deformConfig };
-
-    configs.enlargeRadius = 0.5 * Math.max(eyeRadiuses.left, eyeRadiuses.right);
-    configs.eyeCentersTextCoord = {
-      left: mesh.eyeCenters.left.textCoord,
-      right: mesh.eyeCenters.right.textCoord,
-    };
+    configs.deformData = faceData.deformData;
 
     configs.positionAttribute = {
       array: mesh.dots.positions.flatMap(a => a),
