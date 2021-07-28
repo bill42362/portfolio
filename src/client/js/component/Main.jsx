@@ -5,6 +5,7 @@ import * as dat from 'dat.gui';
 import throttle from 'lodash/throttle';
 
 import { faceLandmarkConfig } from '../resource/faceLandmarkVariables.js';
+import { getEyeRadiuses } from '../resource/getFaceMeshTransform.js';
 
 const renderWorkerFileName =
   window.renderWorkerFileName || '../js/renderWorker.js';
@@ -29,6 +30,7 @@ export class Main extends React.PureComponent {
     deformConfig: {
       needDots: false,
       eyesEnlarge: 1.1,
+      cheekSize: 0.9,
     },
   };
   controlUIObject = {
@@ -105,8 +107,39 @@ export class Main extends React.PureComponent {
     });
   }, 100);
 
+  makeDeformData = ({ faceMesh, deformConfig }) => {
+    const circleDeforms = [];
+
+    const dotPositions = faceMesh.dots.positions;
+    const eyeRadiuses = getEyeRadiuses({ dotPositions });
+    circleDeforms.push({
+      origin: faceMesh.eyeCenters.left.textCoord,
+      target: faceMesh.eyeCenters.left.textCoord,
+      // *0.5 to map from position to textCoord
+      radius: 0.5 * eyeRadiuses.left,
+      ratio: deformConfig.eyesEnlarge,
+    });
+    circleDeforms.push({
+      origin: faceMesh.eyeCenters.right.textCoord,
+      target: faceMesh.eyeCenters.right.textCoord,
+      // *0.5 to map from position to textCoord
+      radius: 0.5 * eyeRadiuses.right,
+      ratio: deformConfig.eyesEnlarge,
+    });
+
+    return { circleDeforms };
+  };
+
   faceDetectionWorkerMessageHandler = ({ data }) => {
     this.faceData = data;
+
+    if (data?.faceMeshs[0]) {
+      this.faceData.deformData = this.makeDeformData({
+        faceMesh: data.faceMeshs[0],
+        deformConfig: this.controlObject.deformConfig,
+      });
+    }
+    console.log('faceData:', this.faceData);
   };
 
   componentDidMount() {
