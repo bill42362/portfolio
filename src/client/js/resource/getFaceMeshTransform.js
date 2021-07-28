@@ -4,10 +4,10 @@ import { faceLandmarksIndex } from '../resource/faceLandmarkVariables.js';
 const averageTwoDots = (a, b) => {
   return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2];
 };
-const getPointsVector = ({ origin, target }) => {
+export const getPointsVector = ({ origin, target }) => {
   return [target[0] - origin[0], target[1] - origin[1], target[2] - target[2]];
 };
-const getVectorLength = ({ vector }) => {
+export const getVectorLength = ({ vector }) => {
   return Math.sqrt(
     vector[0] * vector[0] + vector[1] * vector[1] + vector[2] * vector[2]
   );

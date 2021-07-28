@@ -7,6 +7,10 @@ import {
   shrinkFactor,
 } from './resource/faceLandmarkVariables.js';
 import makeFaceMesh from './resource/makeFaceMesh.js';
+import {
+  getPointsVector,
+  getVectorLength,
+} from './resource/getFaceMeshTransform.js';
 
 const canvas = new OffscreenCanvas(1280, 720);
 const contex2d = canvas.getContext('2d');
@@ -78,12 +82,25 @@ onmessage = async ({ data: { type, payload } }) => {
 
           const faces =
             (await detectFace({ imageBitmap, faceLandmarkConfig })) || [];
-          lastDetectResult = {
-            faces,
-            faceMeshs: faces.map(face =>
+          const [changedFace] = faces.filter((newFace, index) => {
+            if (!lastDetectResult?.faces[index]) {
+              return true;
+            }
+            const noseTipDelta = getVectorLength({
+              vector: getPointsVector({
+                origin: newFace.annotations.noseTip[0],
+                target: lastDetectResult.faces[index].annotations.noseTip[0],
+              }),
+            });
+            return 1 < noseTipDelta;
+          });
+          let faceMeshs = lastDetectResult?.faceMeshs;
+          if (changedFace) {
+            faceMeshs = faces.map(face =>
               makeFaceMesh({ landmarks: face.scaledMesh, bitmapSize })
-            ),
-          };
+            );
+          }
+          lastDetectResult = { faces, faceMeshs };
           self.postMessage(lastDetectResult);
 
           isDetectorBusy = false;
