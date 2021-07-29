@@ -8,6 +8,7 @@ import {
 } from './resource/faceLandmarkVariables.js';
 import makeFaceMesh from './resource/makeFaceMesh.js';
 import {
+  addTwoVectors,
   getPointsVector,
   getVectorLength,
 } from './resource/getFaceMeshTransform.js';
@@ -82,25 +83,30 @@ onmessage = async ({ data: { type, payload } }) => {
 
           const faces =
             (await detectFace({ imageBitmap, faceLandmarkConfig })) || [];
-          const [changedFace] = faces.filter((newFace, index) => {
+
+          let noseTipDeltaVector = faces.reduce((current, newFace, index) => {
             if (!lastDetectResult?.faces[index]) {
-              return true;
+              // always update faceMesh if face count changed.
+              return [2, 2, 2];
             }
-            const noseTipDelta = getVectorLength({
-              vector: getPointsVector({
-                origin: newFace.annotations.noseTip[0],
-                target: lastDetectResult.faces[index].annotations.noseTip[0],
-              }),
+            const deltaVector = getPointsVector({
+              origin: newFace.annotations.noseTip[0],
+              target: lastDetectResult.faces[index].annotations.noseTip[0],
             });
-            return 1 < noseTipDelta;
-          });
+            return addTwoVectors(current, deltaVector);
+          }, lastDetectResult?.noseTipDeltaVector);
+
           let faceMeshs = lastDetectResult?.faceMeshs;
-          if (changedFace) {
+          const deltaLength = getVectorLength({ vector: noseTipDeltaVector });
+          if (2 < deltaLength) {
+            // only update faceMesh when accumulated enough noseTipDelta.
             faceMeshs = faces.map(face =>
               makeFaceMesh({ landmarks: face.scaledMesh, bitmapSize })
             );
+            noseTipDeltaVector = [0, 0, 0];
           }
-          lastDetectResult = { faces, faceMeshs };
+
+          lastDetectResult = { faces, faceMeshs, noseTipDeltaVector };
           self.postMessage(lastDetectResult);
 
           isDetectorBusy = false;
