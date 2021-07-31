@@ -135,4 +135,23 @@ const getMovingLeastSquareMesh = ({
   };
 };
 
+export const edgeAnchorPointPairs = [
+  { origin: [0, 0], target: [0, 0] },
+  { origin: [0, 0.25], target: [0, 0.25] },
+  { origin: [0, 0.5], target: [0, 0.5] },
+  { origin: [0, 0.75], target: [0, 0.75] },
+  { origin: [0, 1], target: [0, 1] },
+  { origin: [0.25, 0], target: [0.25, 0] },
+  { origin: [0.5, 0], target: [0.5, 0] },
+  { origin: [0.75, 0], target: [0.75, 0] },
+  { origin: [0.25, 1], target: [0.25, 1] },
+  { origin: [0.5, 1], target: [0.5, 1] },
+  { origin: [0.75, 1], target: [0.75, 1] },
+  { origin: [1, 0], target: [1, 0] },
+  { origin: [1, 0.25], target: [1, 0.25] },
+  { origin: [1, 0.5], target: [1, 0.5] },
+  { origin: [1, 0.75], target: [1, 0.75] },
+  { origin: [1, 1], target: [1, 1] },
+];
+
 export default getMovingLeastSquareMesh;
