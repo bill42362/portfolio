@@ -14,6 +14,7 @@ import {
   getVectorLength2D,
   averageTwoDots2D,
 } from '../resource/getFaceMeshTransform.js';
+import getMovingLeastSquareMesh from '../resource/MovingLeastSquare.js';
 
 const renderWorkerFileName =
   window.renderWorkerFileName || '../js/renderWorker.js';
@@ -173,7 +174,11 @@ export class Main extends React.PureComponent {
       });
     });
 
-    return { circularDeforms };
+    const movingLeastSquareMesh = getMovingLeastSquareMesh({
+      pointPairs: circularDeforms,
+    });
+
+    return { circularDeforms, movingLeastSquareMesh };
   };
 
   faceDetectionWorkerMessageHandler = ({ data }) => {
