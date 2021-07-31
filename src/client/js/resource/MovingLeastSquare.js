@@ -36,19 +36,19 @@ const getMovingLeastSquareMesh = ({
     const weightsSum = weights.reduce((cur, w) => cur + w, 0);
 
     const pStar = pointPairs.reduce(
-      (cur, p) => {
+      (cur, p, index) => {
         return [
-          (cur[0] + p.origin[0]) / weightsSum,
-          (cur[1] + p.origin[1]) / weightsSum,
+          cur[0] + (weights[index] * p.origin[0]) / weightsSum,
+          cur[1] + (weights[index] * p.origin[1]) / weightsSum,
         ];
       },
       [0, 0]
     );
     const qStar = pointPairs.reduce(
-      (cur, p) => {
+      (cur, p, index) => {
         return [
-          (cur[0] + p.target[0]) / weightsSum,
-          (cur[1] + p.target[1]) / weightsSum,
+          cur[0] + (weights[index] * p.target[0]) / weightsSum,
+          cur[1] + (weights[index] * p.target[1]) / weightsSum,
         ];
       },
       [0, 0]
@@ -104,7 +104,7 @@ const getMovingLeastSquareMesh = ({
 
     const position = [
       2 * (newTextCoord[0] - 0.5),
-      2 * (newTextCoord[1] - 0.5),
+      -2 * (newTextCoord[1] - 0.5),
       0,
     ];
 
