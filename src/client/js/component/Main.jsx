@@ -174,8 +174,24 @@ export class Main extends React.PureComponent {
       });
     });
 
+    const vectorRatio = 1 - deformConfig.cheekSize;
+    const movingLeastSquarePointPairs = cheekSizeIndexPairs.map(pair => {
+      const origin = faceMesh.dots.textCoords[pair.origin];
+      const target = faceMesh.dots.textCoords[pair.target];
+      const vector = getPointsVector2D({ origin, target });
+      return {
+        origin,
+        target: [
+          origin[0] + vectorRatio * vector[0],
+          origin[1] + vectorRatio * vector[1],
+        ],
+      };
+    });
+
     const movingLeastSquareMesh = getMovingLeastSquareMesh({
-      pointPairs: circularDeforms,
+      pointPairs: movingLeastSquarePointPairs,
+      stripCount: 100,
+      alpha: 1,
     });
 
     return { circularDeforms, movingLeastSquareMesh };

@@ -182,6 +182,10 @@ Renderer.prototype.draw = async function ({ pixelSource, configs }) {
         positionAttribute: configs.positionAttribute,
         colorAttribute: configs.colorAttribute,
       });
+      this.drawDots.draw({
+        positionAttribute: configs.movingLeastSquarePositionAttribute,
+        colorAttribute: configs.movingLeastSquareColorAttribute,
+      });
     }
   }
 
@@ -224,6 +228,15 @@ const renderFrame = async ({ imageBitmap, faceData, deformConfig }) => {
     };
     configs.colorAttribute = {
       array: mesh.dots.colors.flatMap(a => a),
+      numComponents: 3,
+    };
+
+    configs.movingLeastSquarePositionAttribute = {
+      array: faceData.deformData.movingLeastSquareMesh.positions,
+      numComponents: 3,
+    };
+    configs.movingLeastSquareColorAttribute = {
+      array: faceData.deformData.movingLeastSquareMesh.colors,
       numComponents: 3,
     };
   }
