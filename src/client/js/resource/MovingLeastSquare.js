@@ -1,4 +1,7 @@
 // MovingLeastSquare.js
+// SCHAEFER, S., MCPHAIL, T., AND WARREN, J. 2006. Image deformation using moving least squares. In SIGGRAPH ’06: ACM SIGGRAPH 2006 Papers, ACM Press, New York, NY, USA, 533–540.
+// https://people.engr.tamu.edu/schaefer/research/mls.pdf
+
 import {
   getPointsVector2D,
   getVectorLength2D,
