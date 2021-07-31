@@ -4,8 +4,9 @@ import {
   getVectorLength2D,
 } from '../resource/getFaceMeshTransform.js';
 
-const STRIP_COUNT = 5;
+const STRIP_COUNT = 3;
 const STEP = 1 / STRIP_COUNT;
+const LINE_COUNT = STRIP_COUNT + 1;
 
 /*
 const averageDots2D = ({ dots }) => {
@@ -18,12 +19,12 @@ const averageDots2D = ({ dots }) => {
 const aDotB2D = ({ a, b }) => a[0] * b[0] + a[1] * b[1];
 
 const getMlsData = ({ pointPairs = [], alpha = 1 } = {}) => {
-  const result = new Array(STRIP_COUNT * STRIP_COUNT).fill(0);
+  const result = new Array(LINE_COUNT * LINE_COUNT).fill(0);
 
   result.forEach((_, index) => {
-    const position = [
-      STEP * (index % STRIP_COUNT),
-      STEP * Math.floor(index / STRIP_COUNT),
+    const textCoord = [
+      STEP * (index % LINE_COUNT),
+      STEP * Math.floor(index / LINE_COUNT),
     ];
 
     const weights = pointPairs.map(({ origin }) => {
@@ -32,7 +33,7 @@ const getMlsData = ({ pointPairs = [], alpha = 1 } = {}) => {
         Math.pow(
           getVectorLength2D({
             vector: getPointsVector2D({
-              origin: position,
+              origin: textCoord,
               target: origin,
             }),
           }),
@@ -61,7 +62,7 @@ const getMlsData = ({ pointPairs = [], alpha = 1 } = {}) => {
       },
       [0, 0]
     );
-    const normalVector = getPointsVector2D({ origin: pStar, target: position });
+    const normalVector = getPointsVector2D({ origin: pStar, target: textCoord });
     const normalDistance = getVectorLength2D({ vector: normalVector });
 
     const pHats = pointPairs.map(p =>
@@ -102,12 +103,17 @@ const getMlsData = ({ pointPairs = [], alpha = 1 } = {}) => {
 
     const fvLength = getVectorLength2D({ vector: fvVector });
 
-    const newPosition = [
+    const newTextCoord = [
       (normalDistance * fvVector[0]) / fvLength + qStar[0],
       (normalDistance * fvVector[1]) / fvLength + qStar[1],
     ];
 
-    result[index] = { position, newPosition };
+    const position = [
+      2 * (newTextCoord[0] - 0.5),
+      2 * (newTextCoord[1] - 0.5),
+    ];
+
+    result[index] = { textCoord, newTextCoord, position };
   });
 
   return result;
