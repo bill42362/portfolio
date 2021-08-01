@@ -162,19 +162,21 @@ export class Main extends React.PureComponent {
       ratio: deformConfig.eyesSize,
     });
 
-    cheekSizeIndexPairs.forEach(pair => {
-      const origin = faceMesh.dots.textCoords[pair.origin];
-      const target = faceMesh.dots.textCoords[pair.target];
-      const radius = getVectorLength2D({
-        vector: getPointsVector2D({ origin, target }),
+    if (!window) {
+      cheekSizeIndexPairs.forEach(pair => {
+        const origin = faceMesh.dots.textCoords[pair.origin];
+        const target = faceMesh.dots.textCoords[pair.target];
+        const radius = getVectorLength2D({
+          vector: getPointsVector2D({ origin, target }),
+        });
+        circularDeforms.push({
+          origin,
+          target: averageTwoDots2D(origin, target),
+          radius: 0.5 * radius,
+          ratio: deformConfig.cheekSize,
+        });
       });
-      circularDeforms.push({
-        origin,
-        target: averageTwoDots2D(origin, target),
-        radius: 0.5 * radius,
-        ratio: deformConfig.cheekSize,
-      });
-    });
+    }
 
     const vectorRatio = 1 - deformConfig.cheekSize;
     const movingLeastSquarePointPairs = cheekSizeIndexPairs.map(pair => {
@@ -192,7 +194,7 @@ export class Main extends React.PureComponent {
 
     const movingLeastSquareMesh = getMovingLeastSquareMesh({
       pointPairs: movingLeastSquarePointPairs.concat(edgeAnchorPointPairs),
-      stripCount: 100,
+      stripCount: 99,
       alpha: 1,
     });
 

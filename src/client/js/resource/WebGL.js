@@ -72,7 +72,7 @@ export const createBuffer = ({ context, attribute }) => {
     count: Math.floor(attribute.array.length / attribute.numComponents),
     type: context.FLOAT,
     normalize: false,
-    offset: 0,
+    offset: attribute.offset || 0,
     // how many bytes to get from one set of values to the next
     // 0 = use type and numComponents above
     stride: 0,
@@ -92,7 +92,7 @@ export const updateBuffer = ({ context, buffer, attribute }) => {
     count: Math.floor(attribute.array.length / attribute.numComponents),
     type: context.FLOAT,
     normalize: false,
-    offset: 0,
+    offset: attribute.offset || 0,
     // how many bytes to get from one set of values to the next
     // 0 = use type and numComponents above
     stride: 0,
@@ -133,4 +133,45 @@ export const dockBuffer = ({ context, location, buffer }) => {
     buffer.stride,
     buffer.offset
   );
+};
+
+export const createElementsBuffer = ({ context, indexesData }) => {
+  const buffer = context.createBuffer();
+  context.bindBuffer(context.ELEMENT_ARRAY_BUFFER, buffer);
+  context.bufferData(
+    context.ELEMENT_ARRAY_BUFFER,
+    new Uint16Array(indexesData.array),
+    context.STATIC_DRAW
+  );
+  return {
+    buffer,
+    numComponents: 1,
+    count: indexesData.array.length,
+    type: context.UNSIGNED_SHORT,
+    normalize: false,
+    offset: indexesData.offset || 0,
+    // how many bytes to get from one set of values to the next
+    // 0 = use type and numComponents above
+    stride: 0,
+  };
+};
+
+export const updateElementsBuffer = ({ context, buffer, indexesData }) => {
+  context.bindBuffer(context.ELEMENT_ARRAY_BUFFER, buffer.buffer);
+  context.bufferData(
+    context.ELEMENT_ARRAY_BUFFER,
+    new Uint16Array(indexesData.array),
+    context.STATIC_DRAW
+  );
+  return {
+    buffer: buffer.buffer,
+    numComponents: 1,
+    count: indexesData.array.length,
+    type: context.UNSIGNED_SHORT,
+    normalize: false,
+    offset: indexesData.offset || 0,
+    // how many bytes to get from one set of values to the next
+    // 0 = use type and numComponents above
+    stride: 0,
+  };
 };

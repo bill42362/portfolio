@@ -114,13 +114,13 @@ const getMovingLeastSquareMesh = ({
     return { textCoord, newTextCoord, position, index: [xIndex, yIndex] };
   });
 
-  const elementIndexs = [];
+  const elementIndexes = [];
   points.forEach((point, index) => {
     if (point.index.includes(stripCount)) {
       // right or bottom edge
       return;
     }
-    elementIndexs.push(
+    elementIndexes.push(
       index,
       index + 1,
       index + lineCount + 1,
@@ -134,7 +134,7 @@ const getMovingLeastSquareMesh = ({
     positions: points.map(p => p.position).flatMap(a => a),
     textCoords: points.map(p => p.textCoord).flatMap(a => a),
     colors: points.map(() => [1, 0.5, 0]).flatMap(a => a),
-    elementIndexs,
+    elementIndexes,
   };
 };
 

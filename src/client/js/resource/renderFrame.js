@@ -1,11 +1,16 @@
 // renderFrame.js
-import { createBuffer, createTexture } from '../resource/WebGL.js';
+import {
+  createBuffer,
+  createTexture,
+  createElementsBuffer,
+  updateElementsBuffer,
+} from '../resource/WebGL.js';
 import CopyTexture from '../resource/CopyTexture.js';
 import CircularDeform from '../resource/CircularDeform.js';
 import DrawDots from '../resource/DrawDots.js';
 
-const textureNames = ['source', 'normalMap'];
-const frameBufferNames = ['normalMap'];
+const textureNames = ['source', 'circularDeform'];
+const frameBufferNames = ['circularDeform'];
 const textureIndex = textureNames.reduce(
   (current, textureName, index) => ({ ...current, [textureName]: index }),
   {}
@@ -13,12 +18,16 @@ const textureIndex = textureNames.reduce(
 
 const clearColor = [34, 47, 62, 1.0];
 const positionAttribute = {
-  array: [-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1],
-  numComponents: 2,
+  array: [-1, -1, 0, 1, -1, 0, 1, 1, 0, -1, -1, 0, 1, 1, 0, -1, 1, 0],
+  numComponents: 3,
 };
 const textCoordAttribute = {
   array: [0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0],
   numComponents: 2,
+};
+const indexesData = {
+  array: [],
+  numComponents: 1,
 };
 const dotsPositionAttribute = {
   array: [],
@@ -56,6 +65,10 @@ const Renderer = function ({ sizes }) {
   this.buffer.aTextCoord = createBuffer({
     context,
     attribute: textCoordAttribute,
+  });
+  this.buffer.elementIndexes = createElementsBuffer({
+    context,
+    indexesData,
   });
   this.buffer.aDotsPosition = createBuffer({
     context,
@@ -152,8 +165,11 @@ Renderer.prototype.draw = async function ({ pixelSource, configs }) {
       sourceTextureIndex: textureIndex.source,
     });
   } else {
-    //context.bindFramebuffer(context.FRAMEBUFFER, this.frameBuffer.normalMap);
-    //context.clearBufferfv(context.COLOR, 0, [0.5, 0.5, 0.5, 1]);
+    context.bindFramebuffer(
+      context.FRAMEBUFFER,
+      this.frameBuffer.circularDeform
+    );
+    context.clearBufferfv(context.COLOR, 0, [0.5, 0.5, 0.5, 1]);
 
     this.circularDeform.dockBuffer({
       key: 'aPosition',
@@ -166,7 +182,31 @@ Renderer.prototype.draw = async function ({ pixelSource, configs }) {
     this.circularDeform.draw({
       sourceTexture: this.texture.source,
       sourceTextureIndex: textureIndex.source,
+      positionAttribute: positionAttribute,
+      textureCoordAttribute: textCoordAttribute,
       circularDeforms: configs.deformData.circularDeforms,
+      targetFrameBuffer: this.frameBuffer.circularDeform,
+    });
+
+    this.copyTexture.dockBuffer({
+      key: 'aPosition',
+      buffer: this.buffer.aPosition,
+    });
+    this.copyTexture.dockBuffer({
+      key: 'aTextCoord',
+      buffer: this.buffer.aTextCoord,
+    });
+    this.buffer.elementIndexes = updateElementsBuffer({
+      context,
+      buffer: this.buffer.elementIndexes,
+      indexesData: configs.movingLeastSquareElementIndexes,
+    });
+    this.copyTexture.draw({
+      sourceTexture: this.texture.circularDeform,
+      sourceTextureIndex: textureIndex.circularDeform,
+      positionAttribute: configs.movingLeastSquarePositionAttribute,
+      textureCoordAttribute: configs.movingLeastSquareTextCoordAttribute,
+      elementsBuffer: this.buffer.elementIndexes,
     });
 
     if (configs.needDots) {
@@ -235,9 +275,17 @@ const renderFrame = async ({ imageBitmap, faceData, deformConfig }) => {
       array: faceData.deformData.movingLeastSquareMesh.positions,
       numComponents: 3,
     };
+    configs.movingLeastSquareTextCoordAttribute = {
+      array: faceData.deformData.movingLeastSquareMesh.textCoords,
+      numComponents: 2,
+    };
     configs.movingLeastSquareColorAttribute = {
       array: faceData.deformData.movingLeastSquareMesh.colors,
       numComponents: 3,
+    };
+    configs.movingLeastSquareElementIndexes = {
+      array: faceData.deformData.movingLeastSquareMesh.elementIndexes,
+      numComponents: 1,
     };
   }
   const newBitmap = await renderer.draw({ pixelSource: imageBitmap, configs });

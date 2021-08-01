@@ -59,6 +59,7 @@ CopyTexture.prototype.draw = function ({
   sourceTextureIndex,
   positionAttribute,
   textureCoordAttribute,
+  elementsBuffer,
   targetFrameBuffer,
 }) {
   const context = this.context;
@@ -78,7 +79,18 @@ CopyTexture.prototype.draw = function ({
     context.bindFramebuffer(context.FRAMEBUFFER, null);
     context.uniform1i(this.location.uIsFrameBuffer, 0);
   }
-  context.drawArrays(context.TRIANGLES, 0, this.buffer.aPosition.count);
+
+  if (elementsBuffer) {
+    context.bindBuffer(context.ELEMENT_ARRAY_BUFFER, elementsBuffer.buffer);
+    context.drawElements(
+      context.TRIANGLES,
+      elementsBuffer.count,
+      elementsBuffer.type,
+      elementsBuffer.offset
+    );
+  } else {
+    context.drawArrays(context.TRIANGLES, 0, this.buffer.aPosition.count);
+  }
 };
 
 export default CopyTexture;
