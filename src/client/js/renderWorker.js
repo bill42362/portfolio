@@ -21,13 +21,22 @@ onmessage = async ({ data: { type, payload } }) => {
     case 'input-frame': {
       const { imageBitmap, faceData, deformConfig } = payload;
 
-      const outputBitmap = await renderFrame({
-        imageBitmap,
-        faceData,
-        deformConfig,
-      });
+      if (faceData && deformConfig) {
+        const outputBitmap = await renderFrame({
+          imageBitmap,
+          faceData,
+          deformConfig,
+        });
 
-      bitmaprenderer.transferFromImageBitmap(outputBitmap);
+        if (outputBitmap) {
+          bitmaprenderer.transferFromImageBitmap(outputBitmap);
+          outputBitmap.close();
+        }
+      } else {
+        bitmaprenderer.transferFromImageBitmap(imageBitmap);
+      }
+
+      imageBitmap.close();
       break;
     }
     case 'warmup':
