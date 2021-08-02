@@ -14,7 +14,7 @@ export const faceLandmarkConfig = {
   // flipHorizontal: true, // true
   predictIrises: false, // true
 
-  skipFrame: 2, // 2
+  skipFrame: 2,
 };
 
 // coords are based on img/face-1024.png

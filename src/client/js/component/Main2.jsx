@@ -24,6 +24,7 @@ export class Main extends React.PureComponent {
     faceDetection: null,
   };
   captureObjects = {
+    captureTimeout: null,
     captureTick: null,
     mediaStream: null,
     videoTrack: null,
@@ -70,21 +71,26 @@ export class Main extends React.PureComponent {
     });
     this.controlUIObject.gui = gui;
 
-    this.controlUIObject.Capturing = gui.addFolder('Capturing');
-    this.controlUIObject.capturing.shouldCapture =
-      this.controlUIObject.Capturing.add(
-        this.controlObject.capturing,
-        'shouldCapture'
-      ).onChange(() => {
-        if (this.controlObject.capturing.shouldCapture) {
-          this.startCapturing();
-        } else {
-          this.stopCapturing();
-        }
-      });
+    const control = this.controlObject;
+    const ui = this.controlUIObject;
 
-    this.controlUIObject.Detecting = gui.addFolder('Detecting');
-    this.controlUIObject.Deforming = gui.addFolder('Deforming');
+    ui.Capturing = gui.addFolder('Capturing');
+    ui.capturing.shouldCapture = ui.Capturing.add(
+      control.capturing,
+      'shouldCapture'
+    ).onChange(() => {
+      if (control.capturing.shouldCapture) {
+        this.startCapturing();
+      } else {
+        this.stopCapturing();
+      }
+    });
+    ui.capturing.fps = ui.Capturing.add(control.capturing, 'fps')
+      .min(1)
+      .max(120);
+
+    ui.Detecting = gui.addFolder('Detecting');
+    ui.Deforming = gui.addFolder('Deforming');
   };
   initRendererWorker = () => {
     const offscreenCanvas = this.canvas.current.transferControlToOffscreen();
@@ -132,6 +138,7 @@ export class Main extends React.PureComponent {
     }
   };
   stopCapturing = () => {
+    window.clearTimeout(this.captureObjects.captureTimeout);
     window.cancelAnimationFrame(this.captureObjects.captureTick);
     this.captureObjects.imageCapture = null;
     this.captureObjects.mediaStream?.getTracks().forEach(t => t.stop());
@@ -139,8 +146,9 @@ export class Main extends React.PureComponent {
     this.captureObjects.mediaStream = null;
   };
   captureImage = async () => {
+    let imageBitmap = null;
     try {
-      const imageBitmap = await this.captureObjects.imageCapture?.grabFrame();
+      imageBitmap = await this.captureObjects.imageCapture?.grabFrame();
       if (imageBitmap) {
         this.workers.render?.postMessage({
           type: 'input-frame',
@@ -150,15 +158,6 @@ export class Main extends React.PureComponent {
             deformConfig: this.controlObject.deforming,
           },
         });
-        if (this.controlObject.detecting.shouldDetect) {
-          this.workers.faceDetection?.postMessage({
-            type: 'input-frame',
-            payload: {
-              imageBitmap,
-              faceLandmarkConfig: this.controlObject.detecting,
-            },
-          });
-        }
         this.captureObjects.lastImageBitmap?.close();
         this.captureObjects.lastImageBitmap = imageBitmap;
       }
@@ -166,10 +165,15 @@ export class Main extends React.PureComponent {
       // eslint-disable-next-line no-console
       console.log('captureImage() error:', error);
     }
-    if (this.controlObject.capturing.shouldCapture) {
-      this.captureObjects.captureTick = window.requestAnimationFrame(
-        this.captureImage
-      );
+    if (imageBitmap && this.controlObject.capturing.shouldCapture) {
+      this.captureObjects.captureTimeout = window.setTimeout(() => {
+        if (60 < this.controlObject.capturing.fps) {
+          return this.captureImage();
+        }
+        this.captureObjects.captureTick = window.requestAnimationFrame(
+          this.captureImage
+        );
+      }, 1000 / this.controlObject.capturing.fps);
     }
   };
 
