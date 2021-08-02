@@ -24,12 +24,18 @@ export class Main extends React.PureComponent {
     faceDetection: null,
   };
   captureObjects = {
-    captureTimeout: null,
-    captureTick: null,
+    timeout: null,
+    nextTick: null,
     mediaStream: null,
     videoTrack: null,
     imageCapture: null,
     lastImageBitmap: null,
+  };
+  detectObjects = {
+    timeout: null,
+    nextTick: null,
+    lastDetectedImageBitmap: null,
+    faceData: null,
   };
 
   controlObject = {
@@ -40,6 +46,8 @@ export class Main extends React.PureComponent {
     },
     detecting: {
       shouldDetect: false,
+      fps: 20,
+      needFaceDots: false,
       skipFrame: faceLandmarkConfig.skipFrame,
       shrinkFactor: 4,
       needIris: faceLandmarkConfig.shouldLoadIrisModel,
@@ -90,6 +98,20 @@ export class Main extends React.PureComponent {
       .max(120);
 
     ui.Detecting = gui.addFolder('Detecting');
+    ui.detecting.shouldDetect = ui.Detecting.add(
+      control.detecting,
+      'shouldDetect'
+    ).onChange(() => {
+      if (control.detecting.shouldDetect) {
+        this.startDetecting();
+      } else {
+        this.stopDetecting();
+      }
+    });
+    ui.detecting.fps = ui.Detecting.add(control.detecting, 'fps')
+      .min(1)
+      .max(60);
+
     ui.Deforming = gui.addFolder('Deforming');
   };
   initRendererWorker = () => {
@@ -138,8 +160,8 @@ export class Main extends React.PureComponent {
     }
   };
   stopCapturing = () => {
-    window.clearTimeout(this.captureObjects.captureTimeout);
-    window.cancelAnimationFrame(this.captureObjects.captureTick);
+    window.clearTimeout(this.captureObjects.timeout);
+    window.cancelAnimationFrame(this.captureObjects.nextTick);
     this.captureObjects.imageCapture = null;
     this.captureObjects.mediaStream?.getTracks().forEach(t => t.stop());
     this.captureObjects.videoTrack = null;
@@ -154,7 +176,7 @@ export class Main extends React.PureComponent {
           type: 'input-frame',
           payload: {
             imageBitmap,
-            faceData: this.faceData,
+            // faceData: this.detectObjects.faceData,
             deformConfig: this.controlObject.deforming,
           },
         });
@@ -166,14 +188,62 @@ export class Main extends React.PureComponent {
       console.log('captureImage() error:', error);
     }
     if (imageBitmap && this.controlObject.capturing.shouldCapture) {
-      this.captureObjects.captureTimeout = window.setTimeout(() => {
+      this.captureObjects.timeout = window.setTimeout(() => {
         if (60 < this.controlObject.capturing.fps) {
           return this.captureImage();
         }
-        this.captureObjects.captureTick = window.requestAnimationFrame(
+        this.captureObjects.nextTick = window.requestAnimationFrame(
           this.captureImage
         );
       }, 1000 / this.controlObject.capturing.fps);
+    }
+  };
+
+  startDetecting = () => {
+    if (!this.workers.faceDetection) {
+      this.workers.faceDetection = new Worker(faceDetectionWorkerFileName, {
+        type: 'module',
+      });
+      this.workers.faceDetection.addEventListener(
+        'message',
+        this.faceDetectionWorkerMessageHandler
+      );
+    }
+    this.detectFace();
+  };
+  stopDetecting = () => {
+    window.clearTimeout(this.detectObjects.timeout);
+    window.cancelAnimationFrame(this.detectObjects.nextTick);
+  };
+  faceDetectionWorkerMessageHandler = ({ data }) => {
+    // eslint-disable-next-line no-console
+    console.log('faceData:', data);
+    this.faceData = data;
+  };
+  detectFace = () => {
+    const control = this.controlObject;
+    const imageBitmap = this.captureObjects.lastImageBitmap;
+    const lastImageBitmap = this.detectObjects.lastDetectedImageBitmap;
+    if (imageBitmap && imageBitmap !== lastImageBitmap) {
+      this.workers.faceDetection?.postMessage({
+        type: 'input-frame',
+        payload: {
+          imageBitmap,
+          faceLandmarkConfig: control.detecting,
+        },
+      });
+      this.detectObjects.lastDetectedImageBitmap = imageBitmap;
+    }
+    if (control.detecting.shouldDetect) {
+      const fps = control.detecting.fps * (control.detecting.skipFrame + 1);
+      this.detectObjects.timeout = window.setTimeout(() => {
+        if (60 < fps) {
+          return this.detectFace();
+        }
+        this.detectObjects.nextTick = window.requestAnimationFrame(
+          this.detectFace
+        );
+      }, 1000 / fps);
     }
   };
 
@@ -185,11 +255,15 @@ export class Main extends React.PureComponent {
 
   componentWillUnmount = () => {
     this.stopCapturing();
+    this.stopDetecting();
 
     //this.workers.render?.removeEventListener('message', this.workerMessageHandler);
     this.workers.render?.terminate();
     this.workers.render = null;
-    //this.workers.faceDetection?.removeEventListener('message', this.workerMessageHandler);
+    this.workers.faceDetection?.removeEventListener(
+      'message',
+      this.faceDetectionWorkerMessageHandler
+    );
     this.workers.faceDetection?.terminate();
     this.workers.faceDetection = null;
 
