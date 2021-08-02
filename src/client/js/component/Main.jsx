@@ -59,6 +59,9 @@ export class Main extends React.PureComponent {
   captureObject = null;
   renderWorker = null;
   faceDetectionWorker = null;
+  gui = null;
+  captureTick = null;
+  faceData = null;
   controlObject = {
     shouldCapture: false,
     landmarkToggles: {},
@@ -73,9 +76,6 @@ export class Main extends React.PureComponent {
     DeformConfig: null,
     deformConfig: {},
   };
-  gui = null;
-  captureTick = null;
-  faceData = null;
 
   initWorkerRenderer = () => {
     const offscreenCanvas = this.canvas.current.transferControlToOffscreen();
@@ -232,6 +232,7 @@ export class Main extends React.PureComponent {
         if (this.controlObject.shouldCapture) {
           this.startCapturing();
         } else {
+          window.cancelAnimationFrame(this.captureTick);
           this.mediaStream?.getTracks().forEach(t => t.stop());
         }
       });
