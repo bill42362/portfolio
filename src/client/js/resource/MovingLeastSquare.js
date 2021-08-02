@@ -30,7 +30,7 @@ const getMovingLeastSquareMesh = ({
               origin: textCoord,
               target: origin,
             }),
-          }),
+          }) || 1e-100,
           2 * alpha
         )
       );
@@ -98,7 +98,7 @@ const getMovingLeastSquareMesh = ({
       [0, 0]
     );
 
-    const fvLength = getVectorLength2D({ vector: fvVector });
+    const fvLength = getVectorLength2D({ vector: fvVector }) || 1e-100;
 
     const newTextCoord = [
       (normalDistance * fvVector[0]) / fvLength + qStar[0],
