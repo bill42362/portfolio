@@ -3,11 +3,10 @@
 // https://people.engr.tamu.edu/schaefer/research/mls.pdf
 
 import {
+  aDotB2D,
   getPointsVector2D,
   getVectorLength2D,
-} from '../resource/getFaceMeshTransform.js';
-
-const aDotB2D = ({ a, b }) => a[0] * b[0] + a[1] * b[1];
+} from '../resource/LinearAlgebra.js';
 
 const getMovingLeastSquareMesh = ({
   pointPairs = [],

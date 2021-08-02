@@ -8,12 +8,12 @@ import {
   faceLandmarkConfig,
   faceLandmarksIndex,
 } from '../resource/faceLandmarkVariables.js';
+import { getEyeRadiuses } from '../resource/getFaceMeshTransform.js';
 import {
-  getEyeRadiuses,
   getPointsVector2D,
   getVectorLength2D,
   averageTwoDots2D,
-} from '../resource/getFaceMeshTransform.js';
+} from '../resource/LinearAlgebra.js';
 import getMovingLeastSquareMesh, {
   edgeAnchorPointPairs,
 } from '../resource/MovingLeastSquare.js';

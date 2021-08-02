@@ -1,21 +1,21 @@
 // getFaceMashDotColor.js
+import {
+  averageTwoDots,
+  averageThreeDots,
+  getPointsVector,
+  getVectorLength,
+} from '../resource/LinearAlgebra.js';
 const dotsDefaultColor = [0.5, 0.5, 0.5];
-
-const averageTwoDots = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, 0.5];
-const averageThreeDots = (a, b, c) => {
-  return [(a[0] + b[0] + c[0]) / 3, (a[1] + b[1] + c[1]) / 3, 0.5];
-};
-const getPointDistance = ({ origin, target }) => {
-  return [target[0] - origin[0], target[1] - origin[1], target[2] - target[2]];
-};
 
 const mapEyeIndexesWithCenterCoords =
   ({ eyesEnlargeRatio, dotPositions }) =>
   ({ eyeIndexes, centerCoords, centerCoordsOffset }) => {
     return eyeIndexes.map((dotIndex, index) => {
-      const distance = getPointDistance({
-        origin: dotPositions[dotIndex],
-        target: centerCoords[index + centerCoordsOffset],
+      const distance = getVectorLength({
+        vector: getPointsVector({
+          origin: dotPositions[dotIndex],
+          target: centerCoords[index + centerCoordsOffset],
+        }),
       });
       return {
         dotIndex,

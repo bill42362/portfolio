@@ -11,7 +11,7 @@ import {
   addTwoVectors,
   getPointsVector,
   getVectorLength,
-} from './resource/getFaceMeshTransform.js';
+} from './resource/LinearAlgebra.js';
 
 const canvas = new OffscreenCanvas(1280, 720);
 const contex2d = canvas.getContext('2d');
