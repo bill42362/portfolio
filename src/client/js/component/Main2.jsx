@@ -4,7 +4,19 @@ import styled from 'styled-components';
 import * as dat from 'dat.gui';
 import throttle from 'lodash/throttle';
 
+import {
+  averageTwoDots2D,
+  getPointsVector2D,
+  getVectorLength2D,
+} from '../resource/LinearAlgebra.js';
 import { faceLandmarkConfig } from '../resource/faceLandmarkVariables.js';
+import {
+  getEyeRadiuses,
+  cheekSizeIndexPairs,
+} from '../resource/getFaceMeshTransform.js';
+import getMovingLeastSquareMesh, {
+  edgeAnchorPointPairs,
+} from '../resource/MovingLeastSquare.js';
 
 const renderWorkerFileName =
   window.renderWorkerFileName || '../js/renderWorker.js';
@@ -36,6 +48,9 @@ export class Main extends React.PureComponent {
     lastDetectedImageBitmap: null,
     faceData: null,
   };
+  deformObjects = {
+    deformData: null,
+  };
 
   controlObject = {
     capturing: {
@@ -52,9 +67,8 @@ export class Main extends React.PureComponent {
       needIris: faceLandmarkConfig.shouldLoadIrisModel,
     },
     deforming: {
-      shouldDeform: false,
       shouldDeformEyes: false,
-      eyeSize: 1.3,
+      eyesSize: 1.3,
       shouldDeformCheeks: false,
       useMlsCheekDeforming: false,
       cheekSize: 0.95,
@@ -110,6 +124,26 @@ export class Main extends React.PureComponent {
       .max(60);
 
     ui.Deforming = gui.addFolder('Deforming');
+    ui.deforming.shouldDeformEyes = ui.Deforming.add(
+      control.deforming,
+      'shouldDeformEyes'
+    ).onChange(() => this.updateDeformData());
+    ui.deforming.eyesSize = ui.Deforming.add(control.deforming, 'eyesSize')
+      .min(0)
+      .max(2)
+      .step(0.01);
+    ui.deforming.shouldDeformCheeks = ui.Deforming.add(
+      control.deforming,
+      'shouldDeformCheeks'
+    ).onChange(() => this.updateDeformData());
+    ui.deforming.useMlsCheekDeforming = ui.Deforming.add(
+      control.deforming,
+      'useMlsCheekDeforming'
+    ).onChange(() => this.updateDeformData());
+    ui.deforming.cheekSize = ui.Deforming.add(control.deforming, 'cheekSize')
+      .min(0.8)
+      .max(1.2)
+      .step(0.001);
   };
   initRendererWorker = () => {
     const offscreenCanvas = this.canvas.current.transferControlToOffscreen();
@@ -197,6 +231,7 @@ export class Main extends React.PureComponent {
             imageBitmap,
             // faceData: this.detectObjects.faceData,
             deformConfig: this.controlObject.deforming,
+            // deformData: this.deformObjects.deformData,
           },
         });
         this.captureObjects.lastImageBitmap?.close();
@@ -226,6 +261,7 @@ export class Main extends React.PureComponent {
     if (data?.isNewFaceMeshes) {
       // eslint-disable-next-line no-console
       console.log('faceData:', data);
+      this.updateDeformData();
     }
   };
   detectFace = () => {
@@ -242,6 +278,97 @@ export class Main extends React.PureComponent {
       });
       this.detectObjects.lastDetectedImageBitmap = imageBitmap;
     }
+  };
+
+  makeDeformData = ({ faceMeshs, config }) => {
+    if (!faceMeshs?.length) {
+      return null;
+    }
+    const circularDeforms = faceMeshs.map(faceMesh => {
+      const result = [];
+      if (config.shouldDeformEyes) {
+        const dotPositions = faceMesh.dots.positions;
+        const eyeRadiuses = getEyeRadiuses({ dotPositions });
+        const eyeCenters = faceMesh.eyeCenters;
+        const leftEyeDeform = {
+          origin: eyeCenters.left.textCoord,
+          target: eyeCenters.left.textCoord,
+          // *0.5 to map from position to textCoord
+          radius: 0.5 * eyeRadiuses.left,
+          ratio: config.eyesSize,
+        };
+        const rightEyeDeform = {
+          origin: eyeCenters.right.textCoord,
+          target: eyeCenters.right.textCoord,
+          // *0.5 to map from position to textCoord
+          radius: 0.5 * eyeRadiuses.right,
+          ratio: config.eyesSize,
+        };
+        result.push(leftEyeDeform, rightEyeDeform);
+      }
+      if (config.shouldDeformCheeks && !config.useMlsCheekDeforming) {
+        const dotTextCoords = faceMesh.dots.textCoords;
+        const cheekDeforms = cheekSizeIndexPairs.map(pair => {
+          const origin = dotTextCoords[pair.origin];
+          const target = dotTextCoords[pair.target];
+          const radius = getVectorLength2D({
+            vector: getPointsVector2D({ origin, target }),
+          });
+          return {
+            origin,
+            target: averageTwoDots2D(origin, target),
+            radius: 0.5 * radius,
+            ratio: config.cheekSize,
+          };
+        });
+        result.push(...cheekDeforms);
+      }
+      return result;
+    });
+
+    let movingLeastSquareMesh = {
+      positions: [],
+      textCoords: [],
+      colors: [],
+      elementIndexes: [],
+    };
+
+    if (config.shouldDeformCheeks && config.useMlsCheekDeforming) {
+      const vectorRatio = 1 - config.cheekSize;
+      const movingLeastSquarePointPairs = faceMeshs
+        .map(faceMesh => {
+          const dotTextCoords = faceMesh.dots.textCoords;
+          return cheekSizeIndexPairs.map(pair => {
+            const origin = dotTextCoords[pair.origin];
+            const target = dotTextCoords[pair.target];
+            const vector = getPointsVector2D({ origin, target });
+            return {
+              origin,
+              target: [
+                origin[0] + vectorRatio * vector[0],
+                origin[1] + vectorRatio * vector[1],
+              ],
+            };
+          });
+        })
+        .flatMap(a => a);
+
+      movingLeastSquareMesh = getMovingLeastSquareMesh({
+        pointPairs: movingLeastSquarePointPairs.concat(edgeAnchorPointPairs),
+        stripCount: 99,
+        alpha: 1,
+      });
+    }
+
+    return {
+      circularDeforms: circularDeforms.flatMap(a => a),
+      movingLeastSquareMesh,
+    };
+  };
+  updateDeformData = () => {
+    const faceMeshs = this.detectObjects.faceData?.faceMeshs;
+    const config = this.controlObject.deforming;
+    this.deformObjects.deformData = this.makeDeformData({ faceMeshs, config });
   };
 
   componentDidMount = () => {

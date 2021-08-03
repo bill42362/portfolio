@@ -99,3 +99,27 @@ export const getEnlargeEyes = ({ dotPositions, ratio }) => {
 
   return result;
 };
+
+const cheekIndexs = faceLandmarksIndex.cheek;
+const noseCenterIndexs = faceLandmarksIndex.nose.center;
+export const cheekSizeIndexPairs = [
+  { origin: cheekIndexs.left.inner[9], target: noseCenterIndexs[8] },
+  { origin: cheekIndexs.left.inner[8], target: noseCenterIndexs[8] },
+  { origin: cheekIndexs.left.inner[7], target: noseCenterIndexs[6] },
+  { origin: cheekIndexs.left.inner[6], target: noseCenterIndexs[6] },
+  { origin: cheekIndexs.left.inner[5], target: noseCenterIndexs[4] },
+  { origin: cheekIndexs.left.inner[4], target: noseCenterIndexs[4] },
+  { origin: cheekIndexs.left.inner[3], target: noseCenterIndexs[0] },
+  { origin: cheekIndexs.left.inner[2], target: noseCenterIndexs[0] },
+  { origin: cheekIndexs.left.inner[1], target: noseCenterIndexs[0] },
+  //{ origin: faceLandmarksIndex.chin.inner, target: noseCenterIndexs[0] },
+  { origin: cheekIndexs.right.inner[9], target: noseCenterIndexs[8] },
+  { origin: cheekIndexs.right.inner[8], target: noseCenterIndexs[8] },
+  { origin: cheekIndexs.right.inner[7], target: noseCenterIndexs[6] },
+  { origin: cheekIndexs.right.inner[6], target: noseCenterIndexs[6] },
+  { origin: cheekIndexs.right.inner[5], target: noseCenterIndexs[4] },
+  { origin: cheekIndexs.right.inner[4], target: noseCenterIndexs[4] },
+  { origin: cheekIndexs.right.inner[3], target: noseCenterIndexs[0] },
+  { origin: cheekIndexs.right.inner[2], target: noseCenterIndexs[0] },
+  { origin: cheekIndexs.right.inner[1], target: noseCenterIndexs[0] },
+];
