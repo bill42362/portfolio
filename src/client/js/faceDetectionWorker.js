@@ -97,6 +97,7 @@ onmessage = async ({ data: { type, payload } }) => {
           }, lastDetectResult?.noseTipDeltaVector);
 
           let faceMeshs = lastDetectResult?.faceMeshs;
+          let isNewFaceMeshes = false;
           const deltaLength = getVectorLength({ vector: noseTipDeltaVector });
           if (2 < deltaLength) {
             // only update faceMesh when accumulated enough noseTipDelta.
@@ -104,9 +105,15 @@ onmessage = async ({ data: { type, payload } }) => {
               makeFaceMesh({ landmarks: face.scaledMesh, bitmapSize })
             );
             noseTipDeltaVector = [0, 0, 0];
+            isNewFaceMeshes = true;
           }
 
-          lastDetectResult = { faces, faceMeshs, noseTipDeltaVector };
+          lastDetectResult = {
+            faces,
+            faceMeshs,
+            noseTipDeltaVector,
+            isNewFaceMeshes,
+          };
           self.postMessage(lastDetectResult);
 
           isDetectorBusy = false;

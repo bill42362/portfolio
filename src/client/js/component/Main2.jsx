@@ -19,21 +19,20 @@ export class Main extends React.PureComponent {
   state = { canvasHeight: '100%' };
   canvas = React.createRef();
   canvasContext = null;
+  nextTick = null;
   workers = {
     render: null,
     faceDetection: null,
   };
   captureObjects = {
-    timeout: null,
-    nextTick: null,
+    lastTime: Date.now(),
     mediaStream: null,
     videoTrack: null,
     imageCapture: null,
     lastImageBitmap: null,
   };
   detectObjects = {
-    timeout: null,
-    nextTick: null,
+    lastTime: Date.now(),
     lastDetectedImageBitmap: null,
     faceData: null,
   };
@@ -104,8 +103,6 @@ export class Main extends React.PureComponent {
     ).onChange(() => {
       if (control.detecting.shouldDetect) {
         this.startDetecting();
-      } else {
-        this.stopDetecting();
       }
     });
     ui.detecting.fps = ui.Detecting.add(control.detecting, 'fps')
@@ -129,6 +126,34 @@ export class Main extends React.PureComponent {
     );
   };
 
+  // https://stackoverflow.com/a/19772220/2605764
+  animation = () => {
+    this.nextTick = window.requestAnimationFrame(this.animation);
+    const now = Date.now();
+    const control = this.controlObject;
+
+    if (control.capturing.shouldCapture) {
+      const capture = this.captureObjects;
+      const captureInterval = 1000 / control.capturing.fps;
+      const captureElapsed = now - capture.lastTime;
+      if (captureElapsed > captureInterval) {
+        capture.lastTime = now - (captureElapsed % captureInterval);
+        this.captureImage();
+      }
+    }
+
+    if (control.detecting.shouldDetect) {
+      const detect = this.detectObjects;
+      const fps = control.detecting.fps * control.detecting.skipFrame + 1;
+      const detectInterval = 1000 / fps;
+      const detectElapsed = now - detect.lastTime;
+      if (detectElapsed > detectInterval) {
+        detect.lastTime = now - (detectElapsed % detectInterval);
+        this.detectFace();
+      }
+    }
+  };
+
   handleWindowResize = throttle(() => {
     if (!this.canvas.current) {
       return;
@@ -137,9 +162,7 @@ export class Main extends React.PureComponent {
     const width = canvas.clientWidth;
     const { video } = captureContraints;
     const height = (video.height * width) / video.width;
-    this.setState({
-      canvasHeight: `${height}px`,
-    });
+    this.setState({ canvasHeight: `${height}px` });
   }, 100);
 
   startCapturing = async () => {
@@ -153,24 +176,20 @@ export class Main extends React.PureComponent {
       );
       objects.videoTrack = objects.mediaStream.getVideoTracks()[0];
       objects.imageCapture = new ImageCapture(objects.videoTrack);
-      this.captureImage();
     } catch (error) {
       // eslint-disable-next-line no-console
       console.log('startCapturing() error:', error);
     }
   };
   stopCapturing = () => {
-    window.clearTimeout(this.captureObjects.timeout);
-    window.cancelAnimationFrame(this.captureObjects.nextTick);
     this.captureObjects.imageCapture = null;
     this.captureObjects.mediaStream?.getTracks().forEach(t => t.stop());
     this.captureObjects.videoTrack = null;
     this.captureObjects.mediaStream = null;
   };
   captureImage = async () => {
-    let imageBitmap = null;
     try {
-      imageBitmap = await this.captureObjects.imageCapture?.grabFrame();
+      const imageBitmap = await this.captureObjects.imageCapture?.grabFrame();
       if (imageBitmap) {
         this.workers.render?.postMessage({
           type: 'input-frame',
@@ -184,18 +203,9 @@ export class Main extends React.PureComponent {
         this.captureObjects.lastImageBitmap = imageBitmap;
       }
     } catch (error) {
+      // silent error came from grabing too fast.
       // eslint-disable-next-line no-console
-      console.log('captureImage() error:', error);
-    }
-    if (imageBitmap && this.controlObject.capturing.shouldCapture) {
-      this.captureObjects.timeout = window.setTimeout(() => {
-        if (60 < this.controlObject.capturing.fps) {
-          return this.captureImage();
-        }
-        this.captureObjects.nextTick = window.requestAnimationFrame(
-          this.captureImage
-        );
-      }, 1000 / this.controlObject.capturing.fps);
+      error && console.log('captureImage() error:', error);
     }
   };
 
@@ -209,16 +219,14 @@ export class Main extends React.PureComponent {
         this.faceDetectionWorkerMessageHandler
       );
     }
-    this.detectFace();
-  };
-  stopDetecting = () => {
-    window.clearTimeout(this.detectObjects.timeout);
-    window.cancelAnimationFrame(this.detectObjects.nextTick);
   };
   faceDetectionWorkerMessageHandler = ({ data }) => {
-    // eslint-disable-next-line no-console
-    console.log('faceData:', data);
     this.faceData = data;
+
+    if (data?.isNewFaceMeshes) {
+      // eslint-disable-next-line no-console
+      console.log('faceData:', data);
+    }
   };
   detectFace = () => {
     const control = this.controlObject;
@@ -234,28 +242,19 @@ export class Main extends React.PureComponent {
       });
       this.detectObjects.lastDetectedImageBitmap = imageBitmap;
     }
-    if (control.detecting.shouldDetect) {
-      const fps = control.detecting.fps * (control.detecting.skipFrame + 1);
-      this.detectObjects.timeout = window.setTimeout(() => {
-        if (60 < fps) {
-          return this.detectFace();
-        }
-        this.detectObjects.nextTick = window.requestAnimationFrame(
-          this.detectFace
-        );
-      }, 1000 / fps);
-    }
   };
 
   componentDidMount = () => {
     this.initDatGui();
     this.handleWindowResize();
     window.addEventListener('resize', this.handleWindowResize);
+    this.animation();
   };
 
   componentWillUnmount = () => {
+    this.cancelAnimationFrame(this.nextTick);
+
     this.stopCapturing();
-    this.stopDetecting();
 
     //this.workers.render?.removeEventListener('message', this.workerMessageHandler);
     this.workers.render?.terminate();
