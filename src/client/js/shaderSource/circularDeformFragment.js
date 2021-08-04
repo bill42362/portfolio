@@ -3,12 +3,13 @@
 const circularDeformFragment = `#version 300 es
 precision lowp float;
 
-#define CIRCLE_COUNT 20
+#define MAX_CIRCLE_COUNT 40
 
 uniform sampler2D uSource;
 
-uniform vec3 uCircle[CIRCLE_COUNT]; // { origin.x, origin.y, radius }
-uniform vec3 uDeform[CIRCLE_COUNT]; // { target.x, target.y, ratio }
+uniform int uCircleCount;
+uniform vec3 uCircle[MAX_CIRCLE_COUNT]; // { origin.x, origin.y, radius }
+uniform vec3 uDeform[MAX_CIRCLE_COUNT]; // { target.x, target.y, ratio }
 
 in vec2 vTextCoord;
 out vec4 outColor;
@@ -24,17 +25,15 @@ vec2 getOffset(vec2 origin, vec2 target, vec2 current, float radius, float ratio
 void main() {
   vec2 offset = vec2(0.0);
 
-  #ifdef CIRCLE_COUNT
-    for(int iCount = 0; iCount < CIRCLE_COUNT; ++iCount) {
-      offset += getOffset(
-        uCircle[iCount].xy,
-        uDeform[iCount].xy,
-        vTextCoord,
-        uCircle[iCount].z,
-        uDeform[iCount].z
-      );
-    }
-  #endif
+  for(int iCount = 0; iCount < uCircleCount; ++iCount) {
+    offset += getOffset(
+      uCircle[iCount].xy,
+      uDeform[iCount].xy,
+      vTextCoord,
+      uCircle[iCount].z,
+      uDeform[iCount].z
+    );
+  }
 
   outColor = texture(uSource, vTextCoord + offset);
 }

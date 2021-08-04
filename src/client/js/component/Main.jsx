@@ -122,32 +122,34 @@ export class Main extends React.PureComponent {
     ui.detecting.fps = ui.Detecting.add(control.detecting, 'fps')
       .min(1)
       .max(60);
-    ui.detecting.shouldDeformEyes = ui.Detecting.add(
+    ui.detecting.needFaceDots = ui.Detecting.add(
       control.detecting,
       'needFaceDots'
-    );
+    ).onChange(this.handleDetectConfigChange);
 
     ui.Deforming = gui.addFolder('Deforming');
     ui.deforming.shouldDeformEyes = ui.Deforming.add(
       control.deforming,
       'shouldDeformEyes'
-    ).onChange(() => this.updateDeformData());
+    ).onChange(this.handleDeformConfigChange);
     ui.deforming.eyesSize = ui.Deforming.add(control.deforming, 'eyesSize')
       .min(0)
       .max(2)
-      .step(0.01);
+      .step(0.01)
+      .onChange(this.handleDeformConfigChange);
     ui.deforming.shouldDeformCheeks = ui.Deforming.add(
       control.deforming,
       'shouldDeformCheeks'
-    ).onChange(() => this.updateDeformData());
+    ).onChange(this.handleDeformConfigChange);
     ui.deforming.useMlsCheekDeforming = ui.Deforming.add(
       control.deforming,
       'useMlsCheekDeforming'
-    ).onChange(() => this.updateDeformData());
+    ).onChange(this.handleDeformConfigChange);
     ui.deforming.cheekSize = ui.Deforming.add(control.deforming, 'cheekSize')
       .min(0.8)
       .max(1.2)
-      .step(0.001);
+      .step(0.001)
+      .onChange(this.handleDeformConfigChange);
   };
   initRendererWorker = () => {
     const offscreenCanvas = this.canvas.current.transferControlToOffscreen();
@@ -201,7 +203,28 @@ export class Main extends React.PureComponent {
     const height = (video.height * width) / video.width;
     this.setState({ canvasHeight: `${height}px` });
   }, 100);
+  handleDetectConfigChange = () => {
+    this.detectObjects.faceRenderData = this.makeFaceRenderData({
+      faceMeshs: this.detectObjects.faceData.faceMeshs,
+      config: this.controlObject.detecting,
+    });
+    this.updateFrame();
+  };
+  handleDeformConfigChange = () => {
+    this.updateDeformData();
+    this.updateFrame();
+  };
 
+  updateFrame = () => {
+    this.workers.render?.postMessage({
+      type: 'input-frame',
+      payload: {
+        imageBitmap: this.captureObjects.lastImageBitmap,
+        faceData: this.detectObjects.faceRenderData,
+        deformData: this.deformObjects.deformData,
+      },
+    });
+  };
   startCapturing = async () => {
     try {
       if (!this.workers.render) {
@@ -228,16 +251,9 @@ export class Main extends React.PureComponent {
     try {
       const imageBitmap = await this.captureObjects.imageCapture?.grabFrame();
       if (imageBitmap) {
-        this.workers.render?.postMessage({
-          type: 'input-frame',
-          payload: {
-            imageBitmap,
-            faceData: this.detectObjects.faceRenderData,
-            deformData: this.deformObjects.deformData,
-          },
-        });
         this.captureObjects.lastImageBitmap?.close();
         this.captureObjects.lastImageBitmap = imageBitmap;
+        this.updateFrame();
       }
     } catch (error) {
       // silent error came from grabing too fast.

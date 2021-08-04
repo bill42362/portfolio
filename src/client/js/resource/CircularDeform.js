@@ -36,6 +36,10 @@ const CircularDeform = function ({ context } = {}) {
     this.core.program,
     'uSource'
   );
+  this.location.uCircleCount = context.getUniformLocation(
+    this.core.program,
+    'uCircleCount'
+  );
   this.location.uCircle = context.getUniformLocation(
     this.core.program,
     'uCircle'
@@ -80,6 +84,7 @@ CircularDeform.prototype.draw = function ({
   context.bindTexture(context.TEXTURE_2D, sourceTexture);
   context.uniform1i(this.location.uSource, sourceTextureIndex);
 
+  context.uniform1i(this.location.uCircleCount, circularDeforms.length);
   context.uniform3fv(
     this.location.uCircle,
     circularDeforms.map(c => c.origin.concat(c.radius)).flatMap(a => a)

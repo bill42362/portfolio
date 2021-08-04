@@ -155,9 +155,9 @@ Renderer.prototype.draw = async function ({
     pixelSource
   );
 
-  const hasCircularDeforms = deformData?.circularDeforms.length;
+  const hasCircularDeforms = !!deformData?.circularDeforms.length;
   const hasMovingLeastSquareMesh =
-    deformData?.movingLeastSquareMesh.positions.array.length;
+    !!deformData?.movingLeastSquareMesh.positions.array.length;
 
   if (hasCircularDeforms && hasMovingLeastSquareMesh) {
     context.bindFramebuffer(
