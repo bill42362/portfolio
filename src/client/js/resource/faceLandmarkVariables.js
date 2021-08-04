@@ -7,14 +7,12 @@ export const faceLandmarkConfig = {
   maxContinuousChecks: 3, // 5
   // detectionConfidence: 0.9, // 0.9
   maxFaces: 2, // 10
-  // iouThreshold: 0.3, // 0.3
+  iouThreshold: 0.3, // 0.3
   // scoreThreshold: 0.75, // 0.75
   // modelUrl: facemeshModlePath, // null
   // irisModelUrl: null, // null
   // flipHorizontal: true, // true
   predictIrises: false, // true
-
-  skipFrame: 2,
 };
 
 // coords are based on img/face-1024.png

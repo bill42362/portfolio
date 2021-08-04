@@ -11,6 +11,8 @@ import {
   addTwoVectors,
   getPointsVector,
   getVectorLength,
+  getPointsVector2D,
+  getVectorLength2D,
 } from './resource/LinearAlgebra.js';
 
 const canvas = new OffscreenCanvas(1280, 720);
@@ -57,67 +59,98 @@ const detectFace = async ({ imageBitmap, faceLandmarkConfig }) => {
   return result;
 };
 
-let frameCount = 0;
+const getFaceDistance = (a, b) => {
+  const bottomRightDistance = getVectorLength2D({
+    vector: getPointsVector2D({
+      origin: a.boundingBox.bottomRight,
+      target: b.boundingBox.bottomRight,
+    }),
+  });
+  const topLeftDistance = getVectorLength2D({
+    vector: getPointsVector2D({
+      origin: a.boundingBox.topLeft,
+      target: b.boundingBox.topLeft,
+    }),
+  });
+  return bottomRightDistance + topLeftDistance;
+};
+
+const getFaceSize = face => {
+  return getVectorLength2D({
+    vector: getPointsVector2D({
+      origin: face.boundingBox.bottomRight,
+      target: face.boundingBox.topLeft,
+    }),
+  });
+};
+
 let isDetectorBusy = false;
 let lastDetectResult = null;
 onmessage = async ({ data: { type, payload } }) => {
   switch (type) {
     case 'input-frame': {
       const { imageBitmap, faceLandmarkConfig } = payload;
-      ++frameCount;
-      const skipFrame = Math.max(faceLandmarkConfig.skipFrame ?? 21, 0);
-      const shouldDetect = skipFrame < frameCount;
       const bitmapSize = {
         width: imageBitmap.width,
         height: imageBitmap.height,
       };
 
-      if (shouldDetect) {
-        frameCount = 0;
+      if (isDetectorBusy) {
+        log('detection skipped due to busy');
+        self.postMessage(lastDetectResult);
+      } else {
+        isDetectorBusy = true;
 
-        if (isDetectorBusy) {
-          log('detection skipped due to busy');
-          self.postMessage(lastDetectResult);
-        } else {
-          isDetectorBusy = true;
+        let faces =
+          (await detectFace({ imageBitmap, faceLandmarkConfig })) || [];
 
-          const faces =
-            (await detectFace({ imageBitmap, faceLandmarkConfig })) || [];
-
-          let noseTipDeltaVector = faces.reduce((current, newFace, index) => {
-            if (!lastDetectResult?.faces[index]) {
-              // always update faceMesh if face count changed.
-              return [2, 2, 2];
-            }
-            const deltaVector = getPointsVector({
-              origin: newFace.annotations.noseTip[0],
-              target: lastDetectResult.faces[index].annotations.noseTip[0],
-            });
-            return addTwoVectors(current, deltaVector);
-          }, lastDetectResult?.noseTipDeltaVector);
-
-          let faceMeshs = lastDetectResult?.faceMeshs;
-          let isNewFaceMeshes = false;
-          const deltaLength = getVectorLength({ vector: noseTipDeltaVector });
-          if (2 < deltaLength) {
-            // only update faceMesh when accumulated enough noseTipDelta.
-            faceMeshs = faces.map(face =>
-              makeFaceMesh({ landmarks: face.scaledMesh, bitmapSize })
-            );
-            noseTipDeltaVector = [0, 0, 0];
-            isNewFaceMeshes = true;
+        // remove duplicated faces.
+        faces = faces.reduce((cur, face) => {
+          const size = getFaceSize(face);
+          const threshold = (1 - defaultFaceLandmarkConfig.iouThreshold) * size;
+          const overlapFace = cur.find(element => {
+            const distance = getFaceDistance(element, face);
+            return threshold > distance;
+          });
+          if (!overlapFace) {
+            cur.push(face);
           }
+          return cur;
+        }, []);
 
-          lastDetectResult = {
-            faces,
-            faceMeshs,
-            noseTipDeltaVector,
-            isNewFaceMeshes,
-          };
-          self.postMessage(lastDetectResult);
+        let noseTipDeltaVector = faces.reduce((current, newFace, index) => {
+          if (!lastDetectResult?.faces[index]) {
+            // always update faceMesh if face count changed.
+            return [2, 2, 2];
+          }
+          const deltaVector = getPointsVector({
+            origin: newFace.annotations.noseTip[0],
+            target: lastDetectResult.faces[index].annotations.noseTip[0],
+          });
+          return addTwoVectors(current, deltaVector);
+        }, lastDetectResult?.noseTipDeltaVector);
 
-          isDetectorBusy = false;
+        let faceMeshs = lastDetectResult?.faceMeshs;
+        let isNewFaceMeshes = false;
+        const deltaLength = getVectorLength({ vector: noseTipDeltaVector });
+        if (2 < deltaLength) {
+          // only update faceMesh when accumulated enough noseTipDelta.
+          faceMeshs = faces.map(face =>
+            makeFaceMesh({ landmarks: face.scaledMesh, bitmapSize })
+          );
+          noseTipDeltaVector = [0, 0, 0];
+          isNewFaceMeshes = true;
         }
+
+        lastDetectResult = {
+          faces,
+          faceMeshs,
+          noseTipDeltaVector,
+          isNewFaceMeshes,
+        };
+        self.postMessage(lastDetectResult);
+
+        isDetectorBusy = false;
       }
       break;
     }

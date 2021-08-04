@@ -63,7 +63,6 @@ export class Main extends React.PureComponent {
       shouldDetect: false,
       fps: 20,
       needFaceDots: false,
-      skipFrame: faceLandmarkConfig.skipFrame,
       shrinkFactor: 4,
       needIris: faceLandmarkConfig.shouldLoadIrisModel,
     },
@@ -183,8 +182,7 @@ export class Main extends React.PureComponent {
 
     if (control.detecting.shouldDetect) {
       const detect = this.detectObjects;
-      const fps = control.detecting.fps * control.detecting.skipFrame + 1;
-      const detectInterval = 1000 / fps;
+      const detectInterval = 1000 / control.detecting.fps;
       const detectElapsed = now - detect.lastTime;
       if (detectElapsed > detectInterval) {
         detect.lastTime = now - (detectElapsed % detectInterval);
