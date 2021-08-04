@@ -132,7 +132,11 @@ const Renderer = function ({ sizes }) {
   });
 };
 
-Renderer.prototype.draw = async function ({ pixelSource, configs }) {
+Renderer.prototype.draw = async function ({
+  pixelSource,
+  faceData,
+  deformData,
+}) {
   if (!pixelSource || !this.context) {
     return;
   }
@@ -151,26 +155,19 @@ Renderer.prototype.draw = async function ({ pixelSource, configs }) {
     pixelSource
   );
 
-  if (!configs) {
-    this.copyTexture.dockBuffer({
-      key: 'aPosition',
-      buffer: this.buffer.aPosition,
-    });
-    this.copyTexture.dockBuffer({
-      key: 'aTextCoord',
-      buffer: this.buffer.aTextCoord,
-    });
-    this.copyTexture.draw({
-      sourceTexture: this.texture.source,
-      sourceTextureIndex: textureIndex.source,
-    });
-  } else {
+  const hasCircularDeforms = deformData?.circularDeforms.length;
+  const hasMovingLeastSquareMesh =
+    deformData?.movingLeastSquareMesh.positions.array.length;
+
+  if (hasCircularDeforms && hasMovingLeastSquareMesh) {
     context.bindFramebuffer(
       context.FRAMEBUFFER,
       this.frameBuffer.circularDeform
     );
     context.clearBufferfv(context.COLOR, 0, [0.5, 0.5, 0.5, 1]);
+  }
 
+  if (hasCircularDeforms) {
     this.circularDeform.dockBuffer({
       key: 'aPosition',
       buffer: this.buffer.aPosition,
@@ -182,12 +179,16 @@ Renderer.prototype.draw = async function ({ pixelSource, configs }) {
     this.circularDeform.draw({
       sourceTexture: this.texture.source,
       sourceTextureIndex: textureIndex.source,
-      positionAttribute: positionAttribute,
+      positionAttribute,
       textureCoordAttribute: textCoordAttribute,
-      circularDeforms: configs.deformData.circularDeforms,
-      targetFrameBuffer: this.frameBuffer.circularDeform,
+      circularDeforms: deformData.circularDeforms,
+      targetFrameBuffer: hasMovingLeastSquareMesh
+        ? this.frameBuffer.circularDeform
+        : undefined,
     });
+  }
 
+  if (hasMovingLeastSquareMesh || !hasCircularDeforms) {
     this.copyTexture.dockBuffer({
       key: 'aPosition',
       buffer: this.buffer.aPosition,
@@ -196,37 +197,54 @@ Renderer.prototype.draw = async function ({ pixelSource, configs }) {
       key: 'aTextCoord',
       buffer: this.buffer.aTextCoord,
     });
+  }
+  if (hasMovingLeastSquareMesh) {
     this.buffer.elementIndexes = updateElementsBuffer({
       context,
       buffer: this.buffer.elementIndexes,
-      indexesData: configs.movingLeastSquareElementIndexes,
+      indexesData: deformData.movingLeastSquareMesh.elementIndexes,
     });
+    const sourceTexture = hasCircularDeforms
+      ? this.texture.circularDeform
+      : this.texture.source;
+    const sourceTextureIndex = hasCircularDeforms
+      ? textureIndex.circularDeform
+      : textureIndex.source;
     this.copyTexture.draw({
-      sourceTexture: this.texture.circularDeform,
-      sourceTextureIndex: textureIndex.circularDeform,
-      positionAttribute: configs.movingLeastSquarePositionAttribute,
-      textureCoordAttribute: configs.movingLeastSquareTextCoordAttribute,
+      sourceTexture,
+      sourceTextureIndex,
+      positionAttribute: deformData.movingLeastSquareMesh.positions,
+      textureCoordAttribute: deformData.movingLeastSquareMesh.textCoords,
       elementsBuffer: this.buffer.elementIndexes,
     });
+  } else if (!hasCircularDeforms) {
+    this.copyTexture.draw({
+      sourceTexture: this.texture.source,
+      sourceTextureIndex: textureIndex.source,
+      positionAttribute,
+      textureCoordAttribute: textCoordAttribute,
+    });
+  }
 
-    if (configs.needDots) {
-      this.drawDots.dockBuffer({
-        key: 'aPosition',
-        buffer: this.buffer.aDotsPosition,
-      });
-      this.drawDots.dockBuffer({
-        key: 'aColor',
-        buffer: this.buffer.aDotsColor,
-      });
-      this.drawDots.draw({
-        positionAttribute: configs.positionAttribute,
-        colorAttribute: configs.colorAttribute,
-      });
-      this.drawDots.draw({
-        positionAttribute: configs.movingLeastSquarePositionAttribute,
-        colorAttribute: configs.movingLeastSquareColorAttribute,
-      });
-    }
+  if (faceData?.positions.array.length) {
+    this.drawDots.dockBuffer({
+      key: 'aPosition',
+      buffer: this.buffer.aDotsPosition,
+    });
+    this.drawDots.dockBuffer({
+      key: 'aColor',
+      buffer: this.buffer.aDotsColor,
+    });
+    this.drawDots.draw({
+      positionAttribute: faceData.positions,
+      colorAttribute: faceData.colors,
+    });
+    /*
+    this.drawDots.draw({
+      positionAttribute: configs.movingLeastSquarePositionAttribute,
+      colorAttribute: configs.movingLeastSquareColorAttribute,
+    });
+    */
   }
 
   return createImageBitmap(this.canvas);
@@ -239,8 +257,8 @@ export const initRenderer = ({ sizes }) => {
 
 let isRendererBusy = false;
 let outputBitmap = null;
-const renderFrame = async ({ imageBitmap, faceData, deformConfig }) => {
-  if (isRendererBusy || !imageBitmap || !faceData) {
+const renderFrame = async ({ imageBitmap, faceData, deformData }) => {
+  if (isRendererBusy || !imageBitmap) {
     return outputBitmap;
   }
   isRendererBusy = true;
@@ -252,43 +270,11 @@ const renderFrame = async ({ imageBitmap, faceData, deformConfig }) => {
     return outputBitmap;
   }
 
-  let configs = null;
-  const mesh = faceData.faceMeshs?.[0];
-  if (mesh) {
-    configs = { ...deformConfig };
-    configs.deformData = faceData.deformData;
-
-    configs.positionAttribute = {
-      array: mesh.dots.positions.flatMap(a => a),
-      numComponents: 3,
-    };
-    configs.textCoordAttribute = {
-      array: mesh.dots.textCoords.flatMap(a => a),
-      numComponents: 2,
-    };
-    configs.colorAttribute = {
-      array: mesh.dots.colors.flatMap(a => a),
-      numComponents: 3,
-    };
-
-    configs.movingLeastSquarePositionAttribute = {
-      array: faceData.deformData.movingLeastSquareMesh.positions,
-      numComponents: 3,
-    };
-    configs.movingLeastSquareTextCoordAttribute = {
-      array: faceData.deformData.movingLeastSquareMesh.textCoords,
-      numComponents: 2,
-    };
-    configs.movingLeastSquareColorAttribute = {
-      array: faceData.deformData.movingLeastSquareMesh.colors,
-      numComponents: 3,
-    };
-    configs.movingLeastSquareElementIndexes = {
-      array: faceData.deformData.movingLeastSquareMesh.elementIndexes,
-      numComponents: 1,
-    };
-  }
-  const newBitmap = await renderer.draw({ pixelSource: imageBitmap, configs });
+  const newBitmap = await renderer.draw({
+    pixelSource: imageBitmap,
+    faceData,
+    deformData,
+  });
   outputBitmap?.close();
   outputBitmap = newBitmap;
   isRendererBusy = false;

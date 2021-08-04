@@ -19,21 +19,23 @@ onmessage = async ({ data: { type, payload } }) => {
       break;
     }
     case 'input-frame': {
-      const { imageBitmap, faceData, deformConfig } = payload;
+      const { imageBitmap, faceData, deformData } = payload;
 
-      if (faceData && deformConfig) {
-        const outputBitmap = await renderFrame({
+      let outputBitmap = null;
+
+      try {
+        outputBitmap = await renderFrame({
           imageBitmap,
           faceData,
-          deformConfig,
+          deformData,
         });
+      } catch (error) {
+        log('renderFrame() error:', error);
+      }
 
-        if (outputBitmap) {
-          bitmaprenderer.transferFromImageBitmap(outputBitmap);
-          outputBitmap.close();
-        }
-      } else {
-        bitmaprenderer.transferFromImageBitmap(imageBitmap);
+      if (outputBitmap) {
+        bitmaprenderer.transferFromImageBitmap(outputBitmap);
+        outputBitmap.close();
       }
 
       imageBitmap.close();
