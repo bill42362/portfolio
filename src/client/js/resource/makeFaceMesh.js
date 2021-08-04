@@ -15,7 +15,7 @@ const translateLandmark =
   };
 const vertexToTextCoord = v => [0.5 + v[0] / 2, 0.5 - v[1] / 2];
 
-const makeFaceMesh = ({ landmarks, bitmapSize }) => {
+const makeFaceMesh = ({ landmarks, boundingBox, bitmapSize }) => {
   const translator = translateLandmark({
     width: bitmapSize.width,
     height: bitmapSize.height,
@@ -36,6 +36,14 @@ const makeFaceMesh = ({ landmarks, bitmapSize }) => {
     right: [1, 0, 1],
   };
 
+  const { topLeft, bottomRight } = boundingBox;
+  const boundingBoxPositions = {
+    topLeft: translator(topLeft),
+    bottomRight: translator(bottomRight),
+    topRight: translator([bottomRight[0], topLeft[1]]),
+    bottomLeft: translator([topLeft[0], bottomRight[1]]),
+  };
+
   return {
     dots: {
       positions: dotPositions,
@@ -52,6 +60,28 @@ const makeFaceMesh = ({ landmarks, bitmapSize }) => {
         position: eyeCenterPositions.right,
         textCoord: eyeCenterTextCoords.right,
         color: eyeCenterColors.right,
+      },
+    },
+    boundingBox: {
+      topLeft: {
+        position: boundingBoxPositions.topLeft,
+        textCoord: vertexToTextCoord(boundingBoxPositions.topLeft),
+        color: [1, 0.5, 0.5],
+      },
+      bottomRight: {
+        position: boundingBoxPositions.bottomRight,
+        textCoord: vertexToTextCoord(boundingBoxPositions.bottomRight),
+        color: [1, 0.5, 0.5],
+      },
+      topRight: {
+        position: boundingBoxPositions.topRight,
+        textCoord: vertexToTextCoord(boundingBoxPositions.topRight),
+        color: [1, 0.5, 0.5],
+      },
+      bottomLeft: {
+        position: boundingBoxPositions.bottomLeft,
+        textCoord: vertexToTextCoord(boundingBoxPositions.bottomLeft),
+        color: [1, 0.5, 0.5],
       },
     },
   };

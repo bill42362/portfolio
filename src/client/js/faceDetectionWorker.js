@@ -136,7 +136,11 @@ onmessage = async ({ data: { type, payload } }) => {
         if (2 < deltaLength) {
           // only update faceMesh when accumulated enough noseTipDelta.
           faceMeshs = faces.map(face =>
-            makeFaceMesh({ landmarks: face.scaledMesh, bitmapSize })
+            makeFaceMesh({
+              landmarks: face.scaledMesh,
+              boundingBox: face.boundingBox,
+              bitmapSize,
+            })
           );
           noseTipDeltaVector = [0, 0, 0];
           isNewFaceMeshes = true;
