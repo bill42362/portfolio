@@ -18,6 +18,10 @@ import getMovingLeastSquareMesh, {
   edgeAnchorPointPairs,
 } from '../resource/MovingLeastSquare.js';
 
+import RihannaImageSource from '../../img/rihanna.png';
+//import RihannaNobackImageSource from '../../img/rihanna-noback.png';
+//import RihannaNoeyesImageSource from '../../img/rihanna-noeyes.png';
+
 const renderWorkerFileName =
   window.renderWorkerFileName || '../js/renderWorker.js';
 const faceDetectionWorkerFileName =
@@ -35,6 +39,7 @@ export class Main extends React.PureComponent {
   workers = {
     render: null,
     faceDetection: null,
+    morphFaceDetection: null,
   };
   captureObjects = {
     lastTime: Date.now(),
@@ -50,6 +55,12 @@ export class Main extends React.PureComponent {
     faceRenderData: null,
   };
   deformObjects = {
+    deformData: null,
+  };
+  morphObjects = {
+    targetImage: new Image(512, 512),
+    targetImageBitmap: null,
+    faceData: null,
     deformData: null,
   };
 
@@ -73,6 +84,10 @@ export class Main extends React.PureComponent {
       useMlsCheekDeforming: false,
       cheekSize: 0.95,
     },
+    morphing: {
+      shouldMorph: false,
+      morphRatio: 0,
+    },
   };
   controlUIObject = {
     gui: null,
@@ -82,6 +97,8 @@ export class Main extends React.PureComponent {
     detecting: {},
     Deforming: null,
     deforming: {},
+    Morphing: null,
+    morphing: {},
   };
 
   initDatGui = () => {
@@ -150,6 +167,16 @@ export class Main extends React.PureComponent {
       .max(1.2)
       .step(0.001)
       .onChange(this.handleDeformConfigChange);
+
+    ui.Morphing = gui.addFolder('Morphing');
+    ui.morphing.shouldMorph = ui.Morphing.add(
+      control.morphing,
+      'shouldMorph'
+    ).onChange(() => {
+      if (control.morphing.shouldMorph) {
+        this.startMorphing();
+      }
+    });
   };
   initRendererWorker = () => {
     const offscreenCanvas = this.canvas.current.transferControlToOffscreen();
@@ -416,7 +443,68 @@ export class Main extends React.PureComponent {
     this.deformObjects.deformData = this.makeDeformData({ faceMeshs, config });
   };
 
+  handleMorphFaceWorkerMessage = ({ data }) => {
+    this.morphObjects.faceData = data;
+    this.updateMorphDeformData();
+  };
+  startMorphing = async () => {
+    if (!this.workers.morphFaceDetection) {
+      this.workers.morphFaceDetection = new Worker(
+        faceDetectionWorkerFileName,
+        { type: 'module' }
+      );
+      this.workers.morphFaceDetection.addEventListener(
+        'message',
+        this.handleMorphFaceWorkerMessage
+      );
+    }
+    if (!this.morphObjects.targetImageBitmap) {
+      const { targetImage } = this.morphObjects;
+      this.morphObjects.targetImageBitmap = await createImageBitmap(
+        targetImage
+      );
+    }
+    if (!this.morphObjects.faceData) {
+      this.workers.morphFaceDetection?.postMessage({
+        type: 'input-frame',
+        payload: {
+          imageBitmap: this.morphObjects.targetImageBitmap,
+          faceLandmarkConfig: this.controlObject.detecting,
+        },
+      });
+    }
+  };
+  makeMorphDeformData = ({ originFaceMeshs, targetFaceMeshs }) => {
+    // eslint-disable-next-line no-console
+    // console.log('makeMorphDeformData() originFaceMeshs:', originFaceMeshs, ', targetFaceMeshs:', targetFaceMeshs);
+    if (!originFaceMeshs || !targetFaceMeshs) {
+      return null;
+    }
+    let meshData = {
+      positions: [],
+      textCoords: [],
+      colors: [],
+      elementIndexes: [],
+    };
+    return {
+      movingLeastSquareMesh: {
+        positions: { array: meshData.positions, numComponents: 3 },
+        textCoords: { array: meshData.textCoords, numComponents: 3 },
+        colors: { array: meshData.colors, numComponents: 3 },
+        elementIndexes: { array: meshData.elementIndexes, numComponents: 1 },
+      },
+    };
+  };
+  updateMorphDeformData = () => {
+    this.morphObjects.deformData = this.makeMorphDeformData({
+      originFaceMeshs: this.morphObjects.faceData?.faceMeshs,
+      targetFaceMeshs: this.detectObjects.faceData?.faceMeshs,
+      config: this.controlObject.morphing,
+    });
+  };
+
   componentDidMount = () => {
+    this.morphObjects.targetImage.src = RihannaImageSource;
     this.initDatGui();
     this.handleWindowResize();
     window.addEventListener('resize', this.handleWindowResize);
@@ -437,6 +525,12 @@ export class Main extends React.PureComponent {
     );
     this.workers.faceDetection?.terminate();
     this.workers.faceDetection = null;
+    this.workers.morphFaceDetection?.removeEventListener(
+      'message',
+      this.handleMorphFaceWorkerMessage
+    );
+    this.workers.morphFaceDetection?.terminate();
+    this.workers.morphFaceDetection = null;
 
     window.removeEventListener('resize', this.handleWindowResize);
   };
