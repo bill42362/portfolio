@@ -19,16 +19,10 @@ onmessage = async ({ data: { type, payload } }) => {
       break;
     }
     case 'input-frame': {
-      const { imageBitmap, faceData, deformData } = payload;
-
       let outputBitmap = null;
 
       try {
-        outputBitmap = await renderFrame({
-          imageBitmap,
-          faceData,
-          deformData,
-        });
+        outputBitmap = await renderFrame(payload);
       } catch (error) {
         log('renderFrame() error:', error);
       }
@@ -38,7 +32,7 @@ onmessage = async ({ data: { type, payload } }) => {
         outputBitmap.close();
       }
 
-      imageBitmap.close();
+      payload.imageBitmap.close();
       break;
     }
     case 'warmup':

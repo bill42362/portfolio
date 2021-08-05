@@ -9,8 +9,8 @@ import CopyTexture from '../resource/CopyTexture.js';
 import CircularDeform from '../resource/CircularDeform.js';
 import DrawDots from '../resource/DrawDots.js';
 
-const textureNames = ['source', 'circularDeform'];
-const frameBufferNames = ['circularDeform'];
+const textureNames = ['source', 'morphSource', 'morphResult', 'circularDeform'];
+const frameBufferNames = ['morphResult', 'circularDeform'];
 const textureIndex = textureNames.reduce(
   (current, textureName, index) => ({ ...current, [textureName]: index }),
   {}
@@ -134,8 +134,10 @@ const Renderer = function ({ sizes }) {
 
 Renderer.prototype.draw = async function ({
   pixelSource,
+  morphPixelSource,
   faceData,
   deformData,
+  morphDeformData,
 }) {
   if (!pixelSource || !this.context) {
     return;
@@ -149,22 +151,78 @@ Renderer.prototype.draw = async function ({
   context.texImage2D(
     context.TEXTURE_2D,
     0, // mip level
-    context.RGBA, // internam format
+    context.RGBA, // internal format
     context.RGBA, // src format
     context.UNSIGNED_BYTE, // src type
     pixelSource
   );
 
+  const shouldRenderMorphLayer =
+    morphPixelSource &&
+    !!morphDeformData?.movingLeastSquareMesh.positions.array.length;
   const hasCircularDeforms = !!deformData?.circularDeforms.length;
   const hasMovingLeastSquareMesh =
     !!deformData?.movingLeastSquareMesh.positions.array.length;
+
+  if (shouldRenderMorphLayer) {
+    const shouldUseFrameBuffer = hasCircularDeforms || hasMovingLeastSquareMesh;
+    if (shouldUseFrameBuffer) {
+      context.bindFramebuffer(
+        context.FRAMEBUFFER,
+        this.frameBuffer.morphResult
+      );
+      context.clearBufferfv(context.COLOR, 0, [0, 0, 0, 0]);
+    }
+
+    this.copyTexture.dockBuffer({
+      key: 'aPosition',
+      buffer: this.buffer.aPosition,
+    });
+    this.copyTexture.dockBuffer({
+      key: 'aTextCoord',
+      buffer: this.buffer.aTextCoord,
+    });
+    const targetFrameBuffer = shouldUseFrameBuffer
+      ? this.frameBuffer.morphResult
+      : undefined;
+    this.copyTexture.draw({
+      sourceTexture: this.texture.source,
+      sourceTextureIndex: textureIndex.source,
+      positionAttribute,
+      textureCoordAttribute: textCoordAttribute,
+      targetFrameBuffer,
+    });
+
+    context.bindTexture(context.TEXTURE_2D, this.texture.morphSource);
+    context.texImage2D(
+      context.TEXTURE_2D,
+      0, // mip level
+      context.RGBA, // internal format
+      context.RGBA, // src format
+      context.UNSIGNED_BYTE, // src type
+      morphPixelSource
+    );
+    this.buffer.elementIndexes = updateElementsBuffer({
+      context,
+      buffer: this.buffer.elementIndexes,
+      indexesData: morphDeformData.movingLeastSquareMesh.elementIndexes,
+    });
+    this.copyTexture.draw({
+      sourceTexture: this.texture.morphSource,
+      sourceTextureIndex: textureIndex.morphSource,
+      positionAttribute: morphDeformData.movingLeastSquareMesh.positions,
+      textureCoordAttribute: morphDeformData.movingLeastSquareMesh.textCoords,
+      elementsBuffer: this.buffer.elementIndexes,
+      targetFrameBuffer,
+    });
+  }
 
   if (hasCircularDeforms && hasMovingLeastSquareMesh) {
     context.bindFramebuffer(
       context.FRAMEBUFFER,
       this.frameBuffer.circularDeform
     );
-    context.clearBufferfv(context.COLOR, 0, [0.5, 0.5, 0.5, 1]);
+    context.clearBufferfv(context.COLOR, 1, [0.5, 0.5, 0.5, 1]);
   }
 
   if (hasCircularDeforms) {
@@ -176,9 +234,15 @@ Renderer.prototype.draw = async function ({
       key: 'aTextCoord',
       buffer: this.buffer.aTextCoord,
     });
+    const sourceTexture = shouldRenderMorphLayer
+      ? this.texture.morphResult
+      : this.texture.source;
+    const sourceTextureIndex = shouldRenderMorphLayer
+      ? textureIndex.morphResult
+      : textureIndex.source;
     this.circularDeform.draw({
-      sourceTexture: this.texture.source,
-      sourceTextureIndex: textureIndex.source,
+      sourceTexture,
+      sourceTextureIndex,
       positionAttribute,
       textureCoordAttribute: textCoordAttribute,
       circularDeforms: deformData.circularDeforms,
@@ -188,7 +252,10 @@ Renderer.prototype.draw = async function ({
     });
   }
 
-  if (hasMovingLeastSquareMesh || !hasCircularDeforms) {
+  if (
+    hasMovingLeastSquareMesh ||
+    !(hasCircularDeforms || shouldRenderMorphLayer)
+  ) {
     this.copyTexture.dockBuffer({
       key: 'aPosition',
       buffer: this.buffer.aPosition,
@@ -206,9 +273,13 @@ Renderer.prototype.draw = async function ({
     });
     const sourceTexture = hasCircularDeforms
       ? this.texture.circularDeform
+      : shouldRenderMorphLayer
+      ? this.texture.morphResult
       : this.texture.source;
     const sourceTextureIndex = hasCircularDeforms
       ? textureIndex.circularDeform
+      : shouldRenderMorphLayer
+      ? textureIndex.morphResult
       : textureIndex.source;
     this.copyTexture.draw({
       sourceTexture,
@@ -217,7 +288,7 @@ Renderer.prototype.draw = async function ({
       textureCoordAttribute: deformData.movingLeastSquareMesh.textCoords,
       elementsBuffer: this.buffer.elementIndexes,
     });
-  } else if (!hasCircularDeforms) {
+  } else if (!hasCircularDeforms && !shouldRenderMorphLayer) {
     this.copyTexture.draw({
       sourceTexture: this.texture.source,
       sourceTextureIndex: textureIndex.source,
@@ -257,7 +328,13 @@ export const initRenderer = ({ sizes }) => {
 
 let isRendererBusy = false;
 let outputBitmap = null;
-const renderFrame = async ({ imageBitmap, faceData, deformData }) => {
+const renderFrame = async ({
+  imageBitmap,
+  morphImageBitmap,
+  faceData,
+  deformData,
+  morphDeformData,
+}) => {
   if (isRendererBusy || !imageBitmap) {
     return outputBitmap;
   }
@@ -272,8 +349,10 @@ const renderFrame = async ({ imageBitmap, faceData, deformData }) => {
 
   const newBitmap = await renderer.draw({
     pixelSource: imageBitmap,
+    morphPixelSource: morphImageBitmap,
     faceData,
     deformData,
+    morphDeformData,
   });
   outputBitmap?.close();
   outputBitmap = newBitmap;
