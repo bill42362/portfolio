@@ -18,8 +18,8 @@ import getMovingLeastSquareMesh, {
   edgeAnchorPointPairs,
 } from '../resource/MovingLeastSquare.js';
 
-//import RihannaImageSource from '../../img/rihanna.png';
-import RihannaImageSource from '../../img/rihanna-noback.png';
+import RihannaImageSource from '../../img/rihanna.png';
+//import RihannaImageSource from '../../img/rihanna-noback.png';
 //import RihannaImageSource from '../../img/rihanna-noeyes.png';
 
 const renderWorkerFileName =
@@ -61,6 +61,7 @@ export class Main extends React.PureComponent {
     targetImage: new Image(512, 512),
     targetImageBitmap: null,
     faceData: null,
+    faceRenderData: null,
     deformData: null,
   };
 
@@ -248,7 +249,8 @@ export class Main extends React.PureComponent {
     this.updateFrame();
   };
   handleMorphConfigChange = () => {
-    this.updateMorphDeformData();
+    //this.updateMorphDeformData();
+    this.updateMorphRenderData();
     this.updateFrame();
   };
 
@@ -257,10 +259,12 @@ export class Main extends React.PureComponent {
       type: 'input-frame',
       payload: {
         imageBitmap: this.captureObjects.lastImageBitmap,
-        morphImageBitmap: this.morphObjects.targetImageBitmap,
         faceData: this.detectObjects.faceRenderData,
         deformData: this.deformObjects.deformData,
-        morphDeformData: this.morphObjects.deformData,
+        morphData: {
+          imageBitmap: this.morphObjects.targetImageBitmap,
+          faceData: this.morphObjects.faceRenderData,
+        },
       },
     });
   };
@@ -341,7 +345,8 @@ export class Main extends React.PureComponent {
         config: this.controlObject.detecting,
       });
       this.updateDeformData();
-      this.updateMorphDeformData();
+      this.updateMorphRenderData();
+      //this.updateMorphDeformData();
     }
   };
   detectFace = () => {
@@ -458,7 +463,8 @@ export class Main extends React.PureComponent {
 
   handleMorphFaceWorkerMessage = ({ data }) => {
     this.morphObjects.faceData = data;
-    this.updateMorphDeformData();
+    this.updateMorphRenderData();
+    //this.updateMorphDeformData();
   };
   startMorphing = async () => {
     if (!this.workers.morphFaceDetection) {
@@ -532,6 +538,43 @@ export class Main extends React.PureComponent {
     this.morphObjects.deformData = this.makeMorphDeformData({
       originFaceMeshs: this.morphObjects.faceData?.faceMeshs,
       targetFaceMeshs: this.detectObjects.faceData?.faceMeshs,
+      config: this.controlObject.morphing,
+    });
+  };
+  makeMorphRenderData = ({ detectFaceMeshs, morphFaceMeshs, config }) => {
+    const result = {
+      positions: { array: [], numComponents: 3 },
+      textCoords: { array: [], numComponents: 2 },
+      colors: { array: [], numComponents: 3 },
+      indexes: { array: [], numComponents: 1 },
+    };
+    if (!detectFaceMeshs || !morphFaceMeshs || !config.shouldMorph) {
+      return result;
+    }
+
+    detectFaceMeshs.forEach((detectFaceMesh, index) => {
+      const morphFaceMesh = morphFaceMeshs[index];
+      if (!morphFaceMesh) {
+        return;
+      }
+      const indexes = detectFaceMesh.dots.indexes.map(
+        a => a + result.positions.array.length
+      );
+      result.positions.array.push(...detectFaceMesh.dots.positions);
+      result.textCoords.array.push(...morphFaceMesh.dots.textCoords);
+      result.colors.array.push(...morphFaceMesh.dots.colors);
+      result.indexes.array.push(...indexes);
+    });
+    result.positions.array = result.positions.array.flatMap(a => a);
+    result.textCoords.array = result.textCoords.array.flatMap(a => a);
+    result.colors.array = result.colors.array.flatMap(a => a);
+
+    return result;
+  };
+  updateMorphRenderData = () => {
+    this.morphObjects.faceRenderData = this.makeMorphRenderData({
+      detectFaceMeshs: this.detectObjects.faceData?.faceMeshs,
+      morphFaceMeshs: this.morphObjects.faceData?.faceMeshs,
       config: this.controlObject.morphing,
     });
   };

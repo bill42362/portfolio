@@ -137,7 +137,7 @@ Renderer.prototype.draw = async function ({
   morphPixelSource,
   faceData,
   deformData,
-  morphDeformData,
+  morphData,
 }) {
   if (!pixelSource || !this.context) {
     return;
@@ -158,8 +158,7 @@ Renderer.prototype.draw = async function ({
   );
 
   const shouldRenderMorphLayer =
-    morphPixelSource &&
-    !!morphDeformData?.movingLeastSquareMesh.positions.array.length;
+    morphPixelSource && morphData.faceData?.positions.array.length;
   const hasCircularDeforms = !!deformData?.circularDeforms.length;
   const hasMovingLeastSquareMesh =
     !!deformData?.movingLeastSquareMesh.positions.array.length;
@@ -205,13 +204,13 @@ Renderer.prototype.draw = async function ({
     this.buffer.elementIndexes = updateElementsBuffer({
       context,
       buffer: this.buffer.elementIndexes,
-      indexesData: morphDeformData.movingLeastSquareMesh.elementIndexes,
+      indexesData: morphData.faceData.indexes,
     });
     this.copyTexture.draw({
       sourceTexture: this.texture.morphSource,
       sourceTextureIndex: textureIndex.morphSource,
-      positionAttribute: morphDeformData.movingLeastSquareMesh.positions,
-      textureCoordAttribute: morphDeformData.movingLeastSquareMesh.textCoords,
+      positionAttribute: morphData.faceData.positions,
+      textureCoordAttribute: morphData.faceData.textCoords,
       elementsBuffer: this.buffer.elementIndexes,
       targetFrameBuffer,
     });
@@ -330,10 +329,9 @@ let isRendererBusy = false;
 let outputBitmap = null;
 const renderFrame = async ({
   imageBitmap,
-  morphImageBitmap,
   faceData,
   deformData,
-  morphDeformData,
+  morphData,
 }) => {
   if (isRendererBusy || !imageBitmap) {
     return outputBitmap;
@@ -349,10 +347,10 @@ const renderFrame = async ({
 
   const newBitmap = await renderer.draw({
     pixelSource: imageBitmap,
-    morphPixelSource: morphImageBitmap,
+    morphPixelSource: morphData.imageBitmap,
     faceData,
     deformData,
-    morphDeformData,
+    morphData,
   });
   outputBitmap?.close();
   outputBitmap = newBitmap;

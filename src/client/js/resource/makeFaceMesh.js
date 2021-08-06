@@ -25,6 +25,7 @@ const makeFaceMesh = ({ landmarks, boundingBox, bitmapSize }) => {
   const dotPositions = landmarks.map(translator);
   const dotTextCoords = dotPositions.map(vertexToTextCoord);
   const dotColors = dotPositions.map(() => [1, 1, 0]);
+  const { triangles: dotIndexes } = Delaunator.from(dotPositions);
 
   const eyeCenterPositions = getEyeCenters({ dotPositions });
   const eyeCenterTextCoords = {
@@ -49,6 +50,7 @@ const makeFaceMesh = ({ landmarks, boundingBox, bitmapSize }) => {
       positions: dotPositions,
       textCoords: dotTextCoords,
       colors: dotColors,
+      indexes: dotIndexes,
     },
     eyeCenters: {
       left: {

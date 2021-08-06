@@ -133,7 +133,7 @@ onmessage = async ({ data: { type, payload } }) => {
         let faceMeshs = lastDetectResult?.faceMeshs;
         let isNewFaceMeshes = false;
         const deltaLength = getVectorLength({ vector: noseTipDeltaVector });
-        if (2 < deltaLength) {
+        if (-1 < deltaLength) {
           // only update faceMesh when accumulated enough noseTipDelta.
           faceMeshs = faces.map(face =>
             makeFaceMesh({
