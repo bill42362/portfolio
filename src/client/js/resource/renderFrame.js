@@ -6,6 +6,7 @@ import {
   updateElementsBuffer,
 } from '../resource/WebGL.js';
 import CopyTexture from '../resource/CopyTexture.js';
+import BlendTextureByAlpha from '../resource/BlendTextureByAlpha.js';
 import CircularDeform from '../resource/CircularDeform.js';
 import DrawDots from '../resource/DrawDots.js';
 
@@ -111,6 +112,24 @@ const Renderer = function ({ sizes }) {
     buffer: this.buffer.aTextCoord,
   });
 
+  this.blendTextureByAlpha = new BlendTextureByAlpha({ context: this.context });
+  this.blendTextureByAlpha.dockBuffer({
+    key: 'aPosition',
+    buffer: this.buffer.aPosition,
+  });
+  this.blendTextureByAlpha.dockBuffer({
+    key: 'aBaseTextCoord',
+    buffer: this.buffer.aTextCoord,
+  });
+  this.blendTextureByAlpha.dockBuffer({
+    key: 'aAddonTextCoord',
+    buffer: this.buffer.aDotsTextCoord,
+  });
+  this.blendTextureByAlpha.dockBuffer({
+    key: 'aAddonColor',
+    buffer: this.buffer.aDotsColor,
+  });
+
   this.circularDeform = new CircularDeform({ context: this.context });
   this.circularDeform.dockBuffer({
     key: 'aPosition',
@@ -206,11 +225,31 @@ Renderer.prototype.draw = async function ({
       buffer: this.buffer.elementIndexes,
       indexesData: morphData.faceData.indexes,
     });
-    this.copyTexture.draw({
-      sourceTexture: this.texture.morphSource,
-      sourceTextureIndex: textureIndex.morphSource,
+    this.blendTextureByAlpha.dockBuffer({
+      key: 'aPosition',
+      buffer: this.buffer.aPosition,
+    });
+    this.blendTextureByAlpha.dockBuffer({
+      key: 'aBaseTextCoord',
+      buffer: this.buffer.aTextCoord,
+    });
+    this.blendTextureByAlpha.dockBuffer({
+      key: 'aAddonTextCoord',
+      buffer: this.buffer.aDotsTextCoord,
+    });
+    this.blendTextureByAlpha.dockBuffer({
+      key: 'aAddonColor',
+      buffer: this.buffer.aDotsColor,
+    });
+    this.blendTextureByAlpha.draw({
+      baseSourceTexture: this.texture.source,
+      baseSourceTextureIndex: textureIndex.source,
+      addonSourceTexture: this.texture.morphSource,
+      addonSourceTextureIndex: textureIndex.morphSource,
       positionAttribute: morphData.faceData.positions,
-      textureCoordAttribute: morphData.faceData.textCoords,
+      baseTextureCoordAttribute: morphData.faceData.baseTextCoords,
+      addonTextureCoordAttribute: morphData.faceData.textCoords,
+      addonColorAttribute: morphData.faceData.colors,
       elementsBuffer: this.buffer.elementIndexes,
       targetFrameBuffer,
     });

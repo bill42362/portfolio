@@ -28,12 +28,8 @@ const BlendTextureByAlpha = function ({ context } = {}) {
   this.location = {};
   attributeLocationKeys.forEach(key => {
     this.location[key] = context.getAttribLocation(this.core.program, key);
-    //context.enableVertexAttribArray(this.location[key]);
+    context.enableVertexAttribArray(this.location[key]);
   });
-  context.enableVertexAttribArray(this.location.aPosition);
-  context.enableVertexAttribArray(this.location.aBaseTextCoord);
-  context.enableVertexAttribArray(this.location.aAddonTextCoord);
-  context.enableVertexAttribArray(this.location.aAddonColor);
 
   this.location.uIsFrameBuffer = context.getUniformLocation(
     this.core.program,
@@ -47,7 +43,6 @@ const BlendTextureByAlpha = function ({ context } = {}) {
     this.core.program,
     'uAddonSource'
   );
-  console.log('BlendTextureByAlpha() this.location:', this.location);
 };
 
 BlendTextureByAlpha.prototype.dockBuffer = function ({ key, buffer }) {

@@ -547,6 +547,7 @@ export class Main extends React.PureComponent {
       textCoords: { array: [], numComponents: 2 },
       colors: { array: [], numComponents: 3 },
       indexes: { array: [], numComponents: 1 },
+      baseTextCoords: { array: [], numComponents: 2 },
     };
     if (!detectFaceMeshs || !morphFaceMeshs || !config.shouldMorph) {
       return result;
@@ -564,10 +565,12 @@ export class Main extends React.PureComponent {
       result.textCoords.array.push(...morphFaceMesh.dots.textCoords);
       result.colors.array.push(...morphFaceMesh.dots.colors);
       result.indexes.array.push(...indexes);
+      result.baseTextCoords.array.push(...detectFaceMesh.dots.textCoords);
     });
     result.positions.array = result.positions.array.flatMap(a => a);
     result.textCoords.array = result.textCoords.array.flatMap(a => a);
     result.colors.array = result.colors.array.flatMap(a => a);
+    result.baseTextCoords.array = result.baseTextCoords.array.flatMap(a => a);
 
     return result;
   };

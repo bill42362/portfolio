@@ -3,6 +3,8 @@ import { createProgram, dockBuffer, updateBuffer } from '../resource/WebGL.js';
 import mirrorVertexShaderSource from '../shaderSource/mirrorVertex.js';
 import mirrorFragmentShaderSource from '../shaderSource/mirrorFragment.js';
 
+const attributeLocationKeys = ['aPosition', 'aTextCoord'];
+
 const CopyTexture = function ({ context } = {}) {
   if (!context) {
     throw new Error('need context arg');
@@ -17,16 +19,10 @@ const CopyTexture = function ({ context } = {}) {
   this.buffer = {};
 
   this.location = {};
-  this.location.aPosition = context.getAttribLocation(
-    this.core.program,
-    'aPosition'
-  );
-  this.location.aTextCoord = context.getAttribLocation(
-    this.core.program,
-    'aTextCoord'
-  );
-  context.enableVertexAttribArray(this.location.aPosition);
-  context.enableVertexAttribArray(this.location.aTextCoord);
+  attributeLocationKeys.forEach(key => {
+    this.location[key] = context.getAttribLocation(this.core.program, key);
+    context.enableVertexAttribArray(this.location[key]);
+  });
 
   this.location.uIsFrameBuffer = context.getUniformLocation(
     this.core.program,
