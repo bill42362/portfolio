@@ -339,6 +339,12 @@ export class Main extends React.PureComponent {
   faceDetectionWorkerMessageHandler = ({ data }) => {
     this.detectObjects.faceData = data;
 
+    if (data) {
+      // decrease detection fps by feedback.
+      const newFps = Math.min(Math.floor(1000 / data.detectDuration) - 1, 20);
+      this.controlUIObject.detecting.fps.setValue(newFps);
+    }
+
     if (data?.isNewFaceMeshes) {
       this.detectObjects.faceRenderData = this.makeFaceRenderData({
         faceMeshs: data.faceMeshs,

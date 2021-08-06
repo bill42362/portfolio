@@ -99,6 +99,7 @@ onmessage = async ({ data: { type, payload } }) => {
         log('detection skipped due to busy');
         self.postMessage(lastDetectResult);
       } else {
+        const startTime = self.performance.now();
         isDetectorBusy = true;
 
         let faces =
@@ -151,6 +152,7 @@ onmessage = async ({ data: { type, payload } }) => {
           faceMeshs,
           noseTipDeltaVector,
           isNewFaceMeshes,
+          detectDuration: self.performance.now() - startTime,
         };
         self.postMessage(lastDetectResult);
 
