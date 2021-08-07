@@ -10,7 +10,6 @@ import {
   getPointsVector2D,
   getVectorLength2D,
 } from '../resource/LinearAlgebra.js';
-import { faceLandmarkConfig } from '../resource/faceLandmarkVariables.js';
 import {
   getEyeRadiuses,
   cheekSizeIndexPairs,
@@ -53,8 +52,6 @@ export class Main extends React.PureComponent {
     lastDetectedImageBitmap: null,
     faceData: null,
     faceRenderData: null,
-    faceBaseData: null,
-    faceDiffData: null,
   };
   deformObjects = {
     deformData: null,
@@ -63,9 +60,10 @@ export class Main extends React.PureComponent {
     targetImage: new Image(512, 512),
     targetImageBitmap: null,
     faceData: null,
-    faceRenderBaseData: null,
+    faceRenderBaseData: null, // to cache textCoords of target image
     faceRenderData: null,
     deformData: null,
+    detectFaceBaseData: null, // to store user's reference face data
   };
 
   controlObject = {
@@ -79,7 +77,6 @@ export class Main extends React.PureComponent {
       fps: 20,
       needFaceDots: false,
       shrinkFactor: 4,
-      needIris: faceLandmarkConfig.shouldLoadIrisModel,
     },
     deforming: {
       shouldDeformEyes: false,
@@ -90,7 +87,7 @@ export class Main extends React.PureComponent {
     },
     morphing: {
       shouldMorph: false,
-      morphRatio: 0,
+      shouldLockBaseFase: false,
     },
   };
   controlUIObject = {
@@ -182,11 +179,17 @@ export class Main extends React.PureComponent {
       }
       this.handleMorphConfigChange();
     });
-    ui.morphing.morphRatio = ui.Morphing.add(control.morphing, 'morphRatio')
-      .min(0)
-      .max(1)
-      .step(0.01)
-      .onChange(this.handleMorphConfigChange);
+    ui.morphing.shouldLockBaseFase = ui.Morphing.add(
+      control.morphing,
+      'shouldLockBaseFase'
+    ).onChange(() => {
+      if (control.morphing.shouldLockBaseFase) {
+        this.morphObjects.detectFaceBaseData = this.detectObjects.faceData;
+      } else {
+        this.morphObjects.detectFaceBaseData = null;
+      }
+      this.handleMorphConfigChange();
+    });
   };
   initRendererWorker = () => {
     const offscreenCanvas = this.canvas.current.transferControlToOffscreen();
@@ -341,7 +344,6 @@ export class Main extends React.PureComponent {
   };
   faceDetectionWorkerMessageHandler = ({ data }) => {
     this.detectObjects.faceData = data;
-
     if (data) {
       // decrease detection fps by feedback.
       const newFps = Math.min(Math.floor(1000 / data.detectDuration) - 1, 20);
@@ -579,6 +581,7 @@ export class Main extends React.PureComponent {
   };
   makeMorphRenderData = ({
     detectFaceMeshs = [],
+    detectFaceBaseMeshs = [],
     morphRenderBaseData,
     morphFaceMeshCount = 0,
     config,
@@ -593,30 +596,44 @@ export class Main extends React.PureComponent {
       return result;
     }
 
-    result.positions.array = morphRenderBaseData?.positions.array || [];
+    result.positions.array =
+      morphRenderBaseData?.positions.array.slice(0) || [];
     result.textCoords.array = morphRenderBaseData?.textCoords.array || [];
     result.colors.array = morphRenderBaseData?.colors.array || [];
     result.indexes.array = morphRenderBaseData?.indexes.array || [];
 
-    let detectPositions = [];
     detectFaceMeshs.forEach((detectFaceMesh, index) => {
       if (index >= morphFaceMeshCount) {
         return;
       }
-      detectPositions.push(...detectFaceMesh.dots.positions);
+      const detectPositions = detectFaceMesh.dots.positions;
+      const detectBasePositions = detectFaceBaseMeshs[index]?.dots.positions;
+      if (detectBasePositions) {
+        const positionsDiff = detectPositions
+          .map((p, pIndex) => {
+            const dbp = detectBasePositions[pIndex];
+            return [p[0] - dbp[0], p[1] - dbp[1], dbp[2]];
+          })
+          .flatMap(a => a);
+        positionsDiff.forEach((diff, dIndex) => {
+          result.positions.array[index * positionsDiff.length + dIndex] += diff;
+        });
+      } else {
+        const positions = detectPositions.flatMap(a => a);
+        result.positions.array.splice(
+          positions.length * index,
+          positions.length,
+          ...positions
+        );
+      }
     });
-    detectPositions = detectPositions.flatMap(a => a);
-    result.positions.array.splice(
-      0,
-      detectPositions.length,
-      ...detectPositions
-    );
 
     return result;
   };
   updateMorphRenderData = () => {
     this.morphObjects.faceRenderData = this.makeMorphRenderData({
       detectFaceMeshs: this.detectObjects.faceData?.faceMeshs,
+      detectFaceBaseMeshs: this.morphObjects.detectFaceBaseData?.faceMeshs,
       morphRenderBaseData: this.morphObjects.morphRenderBaseData,
       morphFaceMeshCount: this.morphObjects.faceData?.faceMeshs.length,
       config: this.controlObject.morphing,
