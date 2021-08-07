@@ -123,3 +123,36 @@ export const cheekSizeIndexPairs = [
   { origin: cheekIndexs.right.inner[2], target: noseCenterIndexs[0] },
   { origin: cheekIndexs.right.inner[1], target: noseCenterIndexs[0] },
 ];
+
+export const edgePointsMesh = {
+  positions: [
+    [-1, -1, 0],
+    [0, -1, 0],
+    [1, -1, 0],
+    [-1, 0, 0],
+    [1, 0, 0],
+    [-1, 1, 0],
+    [0, 1, 0],
+    [1, 1, 0],
+  ],
+  textCoords: [
+    [0, 1],
+    [0.5, 1],
+    [1, 1],
+    [0, 0.5],
+    [1, 0.5],
+    [0, 0],
+    [0.5, 0],
+    [1, 0],
+  ],
+  colors: [
+    [0, 1, 1],
+    [0, 1, 1],
+    [0, 1, 1],
+    [0, 1, 1],
+    [0, 1, 1],
+    [0, 1, 1],
+    [0, 1, 1],
+    [0, 1, 1],
+  ],
+};

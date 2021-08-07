@@ -3,6 +3,7 @@ import React from 'react';
 import styled from 'styled-components';
 import * as dat from 'dat.gui';
 import throttle from 'lodash/throttle';
+import Delaunator from 'delaunator';
 
 import {
   averageTwoDots2D,
@@ -13,14 +14,13 @@ import { faceLandmarkConfig } from '../resource/faceLandmarkVariables.js';
 import {
   getEyeRadiuses,
   cheekSizeIndexPairs,
+  edgePointsMesh,
 } from '../resource/getFaceMeshTransform.js';
 import getMovingLeastSquareMesh, {
   edgeAnchorPointPairs,
 } from '../resource/MovingLeastSquare.js';
 
 import RihannaImageSource from '../../img/rihanna.png';
-//import RihannaImageSource from '../../img/rihanna-noback.png';
-//import RihannaImageSource from '../../img/rihanna-noeyes.png';
 
 const renderWorkerFileName =
   window.renderWorkerFileName || '../js/renderWorker.js';
@@ -53,6 +53,8 @@ export class Main extends React.PureComponent {
     lastDetectedImageBitmap: null,
     faceData: null,
     faceRenderData: null,
+    faceBaseData: null,
+    faceDiffData: null,
   };
   deformObjects = {
     deformData: null,
@@ -61,6 +63,7 @@ export class Main extends React.PureComponent {
     targetImage: new Image(512, 512),
     targetImageBitmap: null,
     faceData: null,
+    faceRenderBaseData: null,
     faceRenderData: null,
     deformData: null,
   };
@@ -469,6 +472,9 @@ export class Main extends React.PureComponent {
 
   handleMorphFaceWorkerMessage = ({ data }) => {
     this.morphObjects.faceData = data;
+    this.morphObjects.morphRenderBaseData = this.makeMorphRenderBaseData({
+      morphFaceMeshs: data.faceMeshs,
+    });
     this.updateMorphRenderData();
     //this.updateMorphDeformData();
   };
@@ -547,43 +553,72 @@ export class Main extends React.PureComponent {
       config: this.controlObject.morphing,
     });
   };
-  makeMorphRenderData = ({ detectFaceMeshs, morphFaceMeshs, config }) => {
+  makeMorphRenderBaseData = ({ morphFaceMeshs }) => {
     const result = {
       positions: { array: [], numComponents: 3 },
       textCoords: { array: [], numComponents: 2 },
       colors: { array: [], numComponents: 3 },
       indexes: { array: [], numComponents: 1 },
-      baseTextCoords: { array: [], numComponents: 2 },
     };
-    if (!detectFaceMeshs || !morphFaceMeshs || !config.shouldMorph) {
-      return result;
-    }
 
-    detectFaceMeshs.forEach((detectFaceMesh, index) => {
-      const morphFaceMesh = morphFaceMeshs[index];
-      if (!morphFaceMesh) {
-        return;
-      }
-      const indexes = detectFaceMesh.dots.indexes.map(
-        a => a + result.positions.array.length
-      );
-      result.positions.array.push(...detectFaceMesh.dots.positions);
+    morphFaceMeshs.forEach(morphFaceMesh => {
+      result.positions.array.push(...morphFaceMesh.dots.positions);
       result.textCoords.array.push(...morphFaceMesh.dots.textCoords);
       result.colors.array.push(...morphFaceMesh.dots.colors);
-      result.indexes.array.push(...indexes);
-      result.baseTextCoords.array.push(...detectFaceMesh.dots.textCoords);
     });
+    result.positions.array.push(...edgePointsMesh.positions);
+    result.textCoords.array.push(...edgePointsMesh.textCoords);
+    result.colors.array.push(...edgePointsMesh.colors);
+    result.indexes.array = Delaunator.from(result.positions.array).triangles;
+
     result.positions.array = result.positions.array.flatMap(a => a);
     result.textCoords.array = result.textCoords.array.flatMap(a => a);
     result.colors.array = result.colors.array.flatMap(a => a);
-    result.baseTextCoords.array = result.baseTextCoords.array.flatMap(a => a);
+
+    return result;
+  };
+  makeMorphRenderData = ({
+    detectFaceMeshs = [],
+    morphRenderBaseData,
+    morphFaceMeshCount = 0,
+    config,
+  }) => {
+    const result = {
+      positions: { array: [], numComponents: 3 },
+      textCoords: { array: [], numComponents: 2 },
+      colors: { array: [], numComponents: 3 },
+      indexes: { array: [], numComponents: 1 },
+    };
+    if (!config.shouldMorph) {
+      return result;
+    }
+
+    result.positions.array = morphRenderBaseData?.positions.array || [];
+    result.textCoords.array = morphRenderBaseData?.textCoords.array || [];
+    result.colors.array = morphRenderBaseData?.colors.array || [];
+    result.indexes.array = morphRenderBaseData?.indexes.array || [];
+
+    let detectPositions = [];
+    detectFaceMeshs.forEach((detectFaceMesh, index) => {
+      if (index >= morphFaceMeshCount) {
+        return;
+      }
+      detectPositions.push(...detectFaceMesh.dots.positions);
+    });
+    detectPositions = detectPositions.flatMap(a => a);
+    result.positions.array.splice(
+      0,
+      detectPositions.length,
+      ...detectPositions
+    );
 
     return result;
   };
   updateMorphRenderData = () => {
     this.morphObjects.faceRenderData = this.makeMorphRenderData({
       detectFaceMeshs: this.detectObjects.faceData?.faceMeshs,
-      morphFaceMeshs: this.morphObjects.faceData?.faceMeshs,
+      morphRenderBaseData: this.morphObjects.morphRenderBaseData,
+      morphFaceMeshCount: this.morphObjects.faceData?.faceMeshs.length,
       config: this.controlObject.morphing,
     });
   };

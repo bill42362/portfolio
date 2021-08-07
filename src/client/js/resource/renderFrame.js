@@ -166,18 +166,31 @@ Renderer.prototype.draw = async function ({
   context.clearColor(...clearColor);
   context.clear(context.COLOR_BUFFER_BIT);
 
-  context.bindTexture(context.TEXTURE_2D, this.texture.source);
-  context.texImage2D(
-    context.TEXTURE_2D,
-    0, // mip level
-    context.RGBA, // internal format
-    context.RGBA, // src format
-    context.UNSIGNED_BYTE, // src type
-    pixelSource
-  );
-
   const shouldRenderMorphLayer =
     morphPixelSource && morphData.faceData?.positions.array.length;
+
+  if (shouldRenderMorphLayer) {
+    context.bindTexture(context.TEXTURE_2D, this.texture.morphSource);
+    context.texImage2D(
+      context.TEXTURE_2D,
+      0, // mip level
+      context.RGBA, // internal format
+      context.RGBA, // src format
+      context.UNSIGNED_BYTE, // src type
+      morphPixelSource
+    );
+  } else {
+    context.bindTexture(context.TEXTURE_2D, this.texture.source);
+    context.texImage2D(
+      context.TEXTURE_2D,
+      0, // mip level
+      context.RGBA, // internal format
+      context.RGBA, // src format
+      context.UNSIGNED_BYTE, // src type
+      pixelSource
+    );
+  }
+
   const hasCircularDeforms = !!deformData?.circularDeforms.length;
   const hasMovingLeastSquareMesh =
     !!deformData?.movingLeastSquareMesh.positions.array.length;
@@ -200,56 +213,19 @@ Renderer.prototype.draw = async function ({
       key: 'aTextCoord',
       buffer: this.buffer.aTextCoord,
     });
-    const targetFrameBuffer = shouldUseFrameBuffer
-      ? this.frameBuffer.morphResult
-      : undefined;
-    this.copyTexture.draw({
-      sourceTexture: this.texture.source,
-      sourceTextureIndex: textureIndex.source,
-      positionAttribute,
-      textureCoordAttribute: textCoordAttribute,
-      targetFrameBuffer,
-    });
-
-    context.bindTexture(context.TEXTURE_2D, this.texture.morphSource);
-    context.texImage2D(
-      context.TEXTURE_2D,
-      0, // mip level
-      context.RGBA, // internal format
-      context.RGBA, // src format
-      context.UNSIGNED_BYTE, // src type
-      morphPixelSource
-    );
     this.buffer.elementIndexes = updateElementsBuffer({
       context,
       buffer: this.buffer.elementIndexes,
       indexesData: morphData.faceData.indexes,
     });
-    this.blendTextureByAlpha.dockBuffer({
-      key: 'aPosition',
-      buffer: this.buffer.aPosition,
-    });
-    this.blendTextureByAlpha.dockBuffer({
-      key: 'aBaseTextCoord',
-      buffer: this.buffer.aTextCoord,
-    });
-    this.blendTextureByAlpha.dockBuffer({
-      key: 'aAddonTextCoord',
-      buffer: this.buffer.aDotsTextCoord,
-    });
-    this.blendTextureByAlpha.dockBuffer({
-      key: 'aAddonColor',
-      buffer: this.buffer.aDotsColor,
-    });
-    this.blendTextureByAlpha.draw({
-      baseSourceTexture: this.texture.source,
-      baseSourceTextureIndex: textureIndex.source,
-      addonSourceTexture: this.texture.morphSource,
-      addonSourceTextureIndex: textureIndex.morphSource,
+    const targetFrameBuffer = shouldUseFrameBuffer
+      ? this.frameBuffer.morphResult
+      : undefined;
+    this.copyTexture.draw({
+      sourceTexture: this.texture.morphSource,
+      sourceTextureIndex: textureIndex.morphSource,
       positionAttribute: morphData.faceData.positions,
-      baseTextureCoordAttribute: morphData.faceData.baseTextCoords,
-      addonTextureCoordAttribute: morphData.faceData.textCoords,
-      addonColorAttribute: morphData.faceData.colors,
+      textureCoordAttribute: morphData.faceData.textCoords,
       elementsBuffer: this.buffer.elementIndexes,
       targetFrameBuffer,
     });
