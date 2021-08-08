@@ -6,11 +6,11 @@ import { getEyeCenters } from '../resource/getFaceMeshTransform.js';
 
 const translateLandmark =
   ({ width, height, shrinkFactor }) =>
-  ([x, y]) => {
+  ([x, y, z]) => {
     return [
       (2 * shrinkFactor * x) / width - 1,
       (-2 * shrinkFactor * y) / height + 1,
-      0,
+      z / 100, // near -> negetive, -50 ~ +100
     ];
   };
 const vertexToTextCoord = v => [0.5 + v[0] / 2, 0.5 - v[1] / 2];
@@ -24,7 +24,7 @@ const makeFaceMesh = ({ landmarks, boundingBox, bitmapSize }) => {
 
   const dotPositions = landmarks.map(translator);
   const dotTextCoords = dotPositions.map(vertexToTextCoord);
-  const dotColors = dotPositions.map(() => [1, 1, 0]);
+  const dotColors = dotPositions.map(p => [p[2], -p[2], 0]);
   const { triangles: dotIndexes } = Delaunator.from(dotPositions);
 
   const eyeCenterPositions = getEyeCenters({ dotPositions });

@@ -53,6 +53,9 @@ const Renderer = function ({ sizes }) {
     throw new Error('Browser not support WebGL2.0');
   }
 
+  context.enable(context.DEPTH_TEST);
+  context.depthFunc(context.LESS); // default context.LESS
+
   this.slice = textureNames.reduce(
     (current, textureName) => ({ ...current, [textureName]: {} }),
     {}
@@ -164,7 +167,7 @@ Renderer.prototype.draw = async function ({
 
   const context = this.context;
   context.clearColor(...clearColor);
-  context.clear(context.COLOR_BUFFER_BIT);
+  context.clear(context.COLOR_BUFFER_BIT | context.DEPTH_BUFFER_BIT);
 
   const shouldRenderMorphLayer =
     morphPixelSource && morphData.faceData?.positions.array.length;
@@ -312,6 +315,7 @@ Renderer.prototype.draw = async function ({
   }
 
   if (faceData?.positions.array.length) {
+    context.disable(context.DEPTH_TEST);
     this.drawDots.dockBuffer({
       key: 'aPosition',
       buffer: this.buffer.aDotsPosition,
@@ -330,6 +334,7 @@ Renderer.prototype.draw = async function ({
       colorAttribute: configs.movingLeastSquareColorAttribute,
     });
     */
+    context.enable(context.DEPTH_TEST);
   }
 
   return createImageBitmap(this.canvas);
