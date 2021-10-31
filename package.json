@@ -67,7 +67,7 @@
     "imagemin-mozjpeg": "^9.0.0",
     "imagemin-pngquant": "^9.0.2",
     "imagemin-svgo": "^8.0.0",
-    "img-loader": "^3.0.2",
+    "img-loader": "^4.0.0",
     "prettier": "^2.3.2",
     "rimraf": "^3.0.2",
     "stats-webpack-plugin": "^0.7.0",
