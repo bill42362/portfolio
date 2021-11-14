@@ -10,3 +10,28 @@ registries:
     url: https://github.com
     username: ${{secrets.GH_USERNAME}}
     password: ${{secrets.GH_TOKEN}}
+updates:
+  - package-ecosystem: "github-actions"
+    # Workflow files stored in the
+    # default location of `.github/workflows`
+    directory: "/"
+    registries:
+      - "dockerhub"
+      - "github"
+    assignees:
+      - "bill42362"
+    reviewers:
+      - "bill42362"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "npm"
+    directory: "/"
+    registries:
+      - "dockerhub"
+      - "github"
+    assignees:
+      - "bill42362"
+    reviewers:
+      - "bill42362"
+    schedule:
+      interval: "daily"
