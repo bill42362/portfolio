@@ -16,9 +16,12 @@ import {
   LoadingManager,
   Clock,
 } from 'three';
+
+import isWebAssemblySupported from '../resource/isWebAssemblySupported.js';
+import loadScriptTag from '../resource/loadScriptTag.js';
+
 import Horkeukamui160 from '../../model/Horkeukamui/Horkeukamui-160.pmx';
 import WaveMotion from '../../motion/wavefile_v2.vmd';
-
 import '../../model/Horkeukamui/tex/body_N.png';
 import '../../model/Horkeukamui/tex/body.dds';
 import '../../model/Horkeukamui/tex/body2_N.png';
@@ -184,7 +187,7 @@ export class Main extends React.PureComponent {
           }
         });
 
-        this.mmdAnimationHelper.add(mesh, { animation, physics: false });
+        this.mmdAnimationHelper.add(mesh, { animation, physics: true });
         this.mmdAnimationHelper.enable('animation', false);
 
         // TODO: draw just one frame instead of animation.
@@ -198,6 +201,12 @@ export class Main extends React.PureComponent {
   };
 
   async componentDidMount() {
+    const loadAmmoPromise = loadScriptTag({
+      id: 'ammo-js',
+      src: isWebAssemblySupported
+        ? 'library/ammo/ammo.99d0ec0.wasm.js'
+        : 'library/ammo/ammo.99d0ec0.js',
+    });
     dat = await import('dat.gui');
     this.gui = new dat.GUI({ hideable: true, closed: false, closeOnTop: true });
     this.clock = new Clock();
@@ -216,6 +225,11 @@ export class Main extends React.PureComponent {
         }
       });
     window.addEventListener('resize', this.handleWindowResize);
+    await loadAmmoPromise;
+    // Need to init ammo.js async.
+    // https://github.com/mrdoob/three.js/pull/16100
+    const AmmoLib = await window.Ammo();
+    window.Ammo = AmmoLib;
     this.loadModels();
   }
 
