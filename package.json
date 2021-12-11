@@ -11,14 +11,21 @@
   "scripts": {
     "clean": "rimraf dist",
     "prettier": "prettier -l --write '**/*.js' '**/*.jsx' '**/*.json' --ignore-path .gitignore",
-    "build": "yarn clean && yarn buildclient && yarn buildserver && yarn buildhtml && yarn buildssrjs",
-    "start": "yarn build && yarn mkcert; node dist/server",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
     "dockerrun": "docker buildx build . -t local && docker run -p 3000:3000 local",
     "test": "jest --coverage --config jest/jest.config.js"
   },
   "homepage": "https://github.com/bill42362/portfolio",
   "dependencies": {
+    "next": "12.0.7",
+    "react": "17.0.2",
+    "react-dom": "17.0.2"
   },
   "devDependencies": {
+    "eslint": "8.4.0",
+    "eslint-config-next": "12.0.7"
   }
 }
