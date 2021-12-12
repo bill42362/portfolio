@@ -34,6 +34,7 @@ const GlobalStyle = createGlobalStyle`
   a:hover { opacity: .7; }
 `;
 
+// ref: https://flatuicolors.com/palette/ca
 const theme = {
   colors: {
     lightPink: '#ff9ff3',
