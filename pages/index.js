@@ -13,12 +13,20 @@ const branchName = isServer
 export default function Home({ props }) {
   // eslint-disable-next-line no-console
   console.log('Home() props:', props);
+
   return (
     <StyledHome>
       <Main />
       <Footer branchName={branchName} />
     </StyledHome>
   );
+}
+
+export async function getStaticProps() {
+  return {
+    props: {},
+    revalidate: 10,
+  };
 }
 
 Home.propTypes = {
