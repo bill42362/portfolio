@@ -1,10 +1,11 @@
 // Footer.jsx
 import React from 'react';
 import PropTypes from 'prop-types';
+import Image from 'next/image';
 import styled from 'styled-components';
 
-import EmailIcon from '../../img/email-icon.svg';
-import GithubIcon from '../../img/github-icon.svg';
+import EmailIcon from '../public/img/email-icon.svg';
+import GithubIcon from '../public/img/github-icon.svg';
 
 const githubBaseUrl = 'https://github.com/bill42362/portfolio';
 
@@ -17,10 +18,10 @@ export class Footer extends React.PureComponent {
     return (
       <StyledFooter>
         <Link href={githubUrl} target="_blank">
-          <img src={GithubIcon} alt="github" />
+          <Image alt="github" src={GithubIcon} width={150} height={150} />
         </Link>
         <Link href={`mailto:${email}`} target="_blank">
-          <img src={EmailIcon} alt="email" />
+          <Image alt="email" src={EmailIcon} width={150} height={150} />
         </Link>
       </StyledFooter>
     );
@@ -52,14 +53,11 @@ const Link = styled.a`
   border-radius: 50%;
   width: 36px;
   height: 36px;
-  background-color: #576574;
+  background-color: ${({ theme }) => theme.colors.darkGray};
+  padding: 6px;
 
   & + & {
     margin-left: 8px;
-  }
-  img {
-    width: 60%;
-    height: auto;
   }
 `;
 
