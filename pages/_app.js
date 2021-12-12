@@ -1,6 +1,5 @@
 // _app.js
 import Head from 'next/head';
-import Script from 'next/script';
 import { createGlobalStyle, ThemeProvider } from 'styled-components';
 import styledNormalize from 'styled-normalize';
 import serialize from 'serialize-javascript';
@@ -66,9 +65,11 @@ const theme = {
 const isServer = typeof window === 'undefined';
 const title = 'Portfolio';
 const description = "Bill's portfolio";
-const ssrEnviroment = isServer ? {
-  branchName: process.env.BRANCH_NAME,
-} : window.__SSR_ENVIRONMENT__;
+const ssrEnviroment = isServer
+  ? {
+      branchName: process.env.BRANCH_NAME,
+    }
+  : window.__SSR_ENVIRONMENT__;
 
 function App({ Component, pageProps }) {
   return (

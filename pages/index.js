@@ -1,6 +1,4 @@
 // index.js
-import Head from 'next/head';
-import Image from 'next/image';
 import styled from 'styled-components';
 import PropTypes from 'prop-types';
 
@@ -12,7 +10,7 @@ const branchName = isServer
   ? process.env.BRANCH_NAME
   : window.__SSR_ENVIRONMENT__?.branchName;
 
-export default function Home(props) {
+export default function Home({ props }) {
   // eslint-disable-next-line no-console
   console.log('Home() props:', props);
   return (
