@@ -1,8 +1,9 @@
 // Footer.jsx
 import React from 'react';
 import PropTypes from 'prop-types';
-import Image from 'next/image';
 import styled from 'styled-components';
+
+import Image from '../component/Image.jsx';
 
 import EmailIcon from '../public/img/email-icon.svg';
 import GithubIcon from '../public/img/github-icon.svg';
