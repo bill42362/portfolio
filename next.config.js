@@ -11,7 +11,15 @@ const eslintConfigFilepath = path.resolve(
   isProd ? './.eslintrc.strict.json' : './.eslintrc.json'
 );
 
+const prodConfig = {
+  basePath: process.env.HTML_BASE,
+  distDir: 'dist/server',
+  generateBuildId: async () => process.env.SHORT_SHA || null,
+};
+
 const config = {
+  // swcMinify: true,
+
   webpack: (config, { dev }) => {
     if (dev) {
       config.plugins.push(new ESLintPlugin({
@@ -30,6 +38,8 @@ const config = {
 
   // https://simonallen.coderbridge.io/2021/07/15/nextjs-export-static/
   assetPrefix: '.',
+
+  ...(isProd ? prodConfig : {}),
 };
 
 const configWithPlugins = withPlugins(

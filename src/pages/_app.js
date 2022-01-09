@@ -4,6 +4,9 @@ import { createGlobalStyle, ThemeProvider } from 'styled-components';
 import styledNormalize from 'styled-normalize';
 import serialize from 'serialize-javascript';
 
+import FaviconSource from '../public/img/x-men-school.svg';
+// import FaviconIcoSource from '../public/img/x-men-school.ico';
+
 const GlobalStyle = createGlobalStyle`
   ${styledNormalize};
   *, ::after, ::before { box-sizing: border-box; }
@@ -81,7 +84,8 @@ function App({ Component, pageProps }) {
 
         <meta name="author" content="Bill" />
         <meta name="description" content={description} />
-        <link rel="icon" href="img/x-men-school.ico" />
+        <link rel="icon" href={FaviconSource} type="image/svg+xml" />
+        {/* <link rel="icon" href={FaviconIcoSource} /> */}
 
         <meta
           property="og:url"

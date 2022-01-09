@@ -15,6 +15,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "export": "next export -o dist/client",
     "dockerrun": "docker buildx build . -t local && docker run -p 3000:3000 local",
     "test": "jest --coverage --config jest/jest.config.js"
   },
