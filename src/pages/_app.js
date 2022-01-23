@@ -67,13 +67,10 @@ const theme = {
 };
 
 const isServer = typeof window === 'undefined';
-const title = 'Portfolio';
+const branchName = process.env.BRANCH_NAME || 'local';
+const title = `${branchName} | Portfolio`;
 const description = "Bill's portfolio";
-const ssrEnviroment = isServer
-  ? {
-      branchName: process.env.BRANCH_NAME,
-    }
-  : window.__SSR_ENVIRONMENT__;
+const ssrEnviroment = isServer ? { branchName } : window.__SSR_ENVIRONMENT__;
 
 function App({ Component, pageProps }) {
   return (
@@ -83,6 +80,7 @@ function App({ Component, pageProps }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
 
         <meta name="author" content="Bill" />
+        <title>{title}</title>
         <meta name="description" content={description} />
         {/* somehow broken in Docker */}
         {/* <link rel="icon" href={FaviconSource} type="image/svg+xml" /> */}
