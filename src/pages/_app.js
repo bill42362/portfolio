@@ -4,8 +4,8 @@ import { createGlobalStyle, ThemeProvider } from 'styled-components';
 import styledNormalize from 'styled-normalize';
 import serialize from 'serialize-javascript';
 
-// import FaviconSource from '../public/img/x-men-school.svg';
-// import FaviconIcoSource from '../public/img/x-men-school.ico';
+import FaviconSource from '../public/img/x-men-school.svg';
+import FaviconIcoSource from '../public/img/x-men-school.ico';
 
 const GlobalStyle = createGlobalStyle`
   ${styledNormalize};
@@ -82,9 +82,14 @@ function App({ Component, pageProps }) {
         <meta name="author" content="Bill" />
         <title>{title}</title>
         <meta name="description" content={description} />
-        {/* somehow broken in Docker */}
-        {/* <link rel="icon" href={FaviconSource} type="image/svg+xml" /> */}
-        {/* <link rel="icon" href={FaviconIcoSource} /> */}
+
+        {/* add .src to fix next export issue */}
+        <link
+          rel="icon"
+          href={FaviconSource.src || FaviconSource}
+          type="image/svg+xml"
+        />
+        <link rel="icon" href={FaviconIcoSource.src || FaviconIcoSource} />
 
         <meta
           property="og:url"
