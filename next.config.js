@@ -15,10 +15,17 @@ const prodConfig = {
   basePath: process.env.HTML_BASE,
   distDir: 'dist/server',
   generateBuildId: async () => process.env.SHORT_SHA || null,
+  swcMinify: true,
 };
 
 const config = {
-  // swcMinify: true,
+  experimental: {
+    // ssr and displayName are configured by default
+    styledComponents: {
+      ssr: true,
+      displayName: true,
+    },
+  },
 
   webpack: (config, { dev }) => {
     if (dev) {
