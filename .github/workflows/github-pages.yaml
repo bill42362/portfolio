@@ -48,7 +48,7 @@ jobs:
           push: true
   build-server:
     name: Build Server
-    needs: build-client
+    needs: setup
     runs-on: ubuntu-latest
     steps:
       - name: Inject slug/short variables
@@ -85,7 +85,7 @@ jobs:
           push: true
   build-client:
     name: Build Client
-    needs: setup
+    needs: build-server
     runs-on: ubuntu-latest
     steps:
       - name: Inject slug/short variables
