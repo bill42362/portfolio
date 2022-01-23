@@ -1,8 +1,5 @@
 // next.config.js
 const path = require('path');
-const ESLintPlugin = require('eslint-webpack-plugin');
-const optimizedImages = require('next-optimized-images');
-const withPlugins = require('next-compose-plugins');
 
 const nodeEnv = process.env.NODE_ENV || 'develop';
 const isProd = 'production' === nodeEnv;
@@ -29,6 +26,7 @@ const config = {
 
   webpack: (config, { dev }) => {
     if (dev) {
+      const ESLintPlugin = require('eslint-webpack-plugin');
       config.plugins.push(new ESLintPlugin({
         overrideConfigFile: eslintConfigFilepath,
         threads: true,
@@ -49,18 +47,25 @@ const config = {
   ...(isProd ? prodConfig : {}),
 };
 
-const configWithPlugins = withPlugins(
-  [
+let configWithPlugins = config;
+
+if (!isProd) {
+  const optimizedImages = require('next-optimized-images');
+  const withPlugins = require('next-compose-plugins');
+
+  configWithPlugins = withPlugins(
     [
-      optimizedImages,
-      {
-        // optimisation disabled by default, to enable check https://github.com/cyrilwanner/next-optimized-images
-        optimizeImages: true,
-        inlineImageLimit: 8, // just for test image loader
-      },
+      [
+        optimizedImages,
+        {
+          // optimisation disabled by default, to enable check https://github.com/cyrilwanner/next-optimized-images
+          optimizeImages: true,
+          inlineImageLimit: 8, // just for test image loader
+        },
+      ],
     ],
-  ],
-  config,
-);
+    config,
+  );
+}
 
 module.exports = configWithPlugins;

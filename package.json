@@ -22,6 +22,7 @@
   "homepage": "https://github.com/bill42362/portfolio",
   "dependencies": {
     "next": "12.0.8",
+    "prop-types": "^15.8.1",
     "react": "17.0.2",
     "react-dom": "17.0.2",
     "react-is": "^17.0.2",
