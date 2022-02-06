@@ -1,17 +1,13 @@
-// App.jsx
-import React from 'react';
-import PropTypes from 'prop-types';
-import { hot } from 'react-hot-loader/root';
-import styled, {
-  createGlobalStyle,
-  StyleSheetManager,
-} from 'styled-components';
+// _app.js
+import Head from 'next/head';
+import { createGlobalStyle, ThemeProvider } from 'styled-components';
 import styledNormalize from 'styled-normalize';
-import { Helmet } from 'react-helmet';
+import serialize from 'serialize-javascript';
 
-import Main from '../component/Main.jsx';
-import Footer from '../component/Footer.jsx';
-import XMenLogoSource from '../../img/x-men-school.svg';
+import env from '../resource/env.js';
+
+import FaviconSource from '../public/img/x-men-school.svg';
+import FaviconIcoSource from '../public/img/x-men-school.ico';
 
 const GlobalStyle = createGlobalStyle`
   ${styledNormalize};
@@ -43,28 +39,60 @@ const GlobalStyle = createGlobalStyle`
   a:hover { opacity: .7; }
 `;
 
-const isServer = typeof window === 'undefined';
-const title = 'Portfolio';
-const description = "Bill's portfolio";
-const branchName = isServer
-  ? process.env.BRANCH_NAME
-  : window.__SSR_ENVIRONMENT__.branchName;
+// ref: https://flatuicolors.com/palette/ca
+const theme = {
+  colors: {
+    lightPink: '#ff9ff3',
+    lightYellow: '#feca57',
+    lightRed: '#ff6b6b',
+    lightCyan: '#48dbfb',
+    lightGreen: '#1dd1a1',
 
-const App = ({ request }) => {
-  // eslint-disable-next-line no-console
-  console.log('App() request:', request);
+    pink: '#f368e0',
+    yellow: '#ff9f43',
+    red: '#ee5253',
+    cyan: '#0abde3',
+    green: '#10ac84',
+
+    lightJade: '#00d2d3',
+    lightBlue: '#54a0ff',
+    lightPurple: '#5f27cd',
+    white: '#c8d6e5',
+    darkGray: '#576574',
+
+    jade: '#01a3a4',
+    blue: '#2e86de',
+    purple: '#341f97',
+    gray: '#8395a7',
+    black: '#222f3e',
+  },
+};
+
+const title = `${env.branchName} | Portfolio`;
+const description = "Bill's portfolio";
+
+function App({ Component, pageProps }) {
   return (
     <>
-      <Helmet defaultTitle="Portfolio" titleTemplate="%s - Portfolio">
+      <Head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
 
         <meta name="author" content="Bill" />
+        <title>{title}</title>
         <meta name="description" content={description} />
+
+        {/* add .src to fix next export issue */}
+        <link
+          rel="icon"
+          href={FaviconSource.src || FaviconSource}
+          type="image/svg+xml"
+        />
+        <link rel="icon" href={FaviconIcoSource.src || FaviconIcoSource} />
 
         <meta
           property="og:url"
-          content="https://github.com/bill42362/portfolio"
+          content={`https://github.com/bill42362/portfolio/${env.branchName}`}
         />
         <meta property="og:type" content="website" />
         <meta property="og:title" content={title} />
@@ -73,53 +101,22 @@ const App = ({ request }) => {
         <meta property="twitter:card" content="summary" />
         <meta property="twitter:site" content="@bill_portfolio" />
         {/* <meta property="twitter:image" content={twitterImageSource} /> */}
-      </Helmet>
+
+        <script
+          type="text/javascript"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.__SSR_ENVIRONMENT__ = ${serialize(env)};
+            `,
+          }}
+        />
+      </Head>
       <GlobalStyle />
-      <StyledApp>
-        {!window && <img src={XMenLogoSource} title="Xavier school" />}
-        <Main />
-        <Footer branchName={branchName} />
-      </StyledApp>
+      <ThemeProvider theme={theme}>
+        <Component {...pageProps} />
+      </ThemeProvider>
     </>
   );
-};
+}
 
-App.propTypes = {
-  request: PropTypes.object,
-};
-
-App.defaultProps = {
-  request: null,
-};
-
-const StyledApp = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  height: 100vh;
-  background-color: #222f3e;
-`;
-
-const Body = ({ sheet, ...props }) => {
-  if (sheet.instance) {
-    return (
-      <StyleSheetManager sheet={sheet.instance}>
-        <App {...props} />
-      </StyleSheetManager>
-    );
-  } else {
-    return <App {...props} />;
-  }
-};
-
-Body.propTypes = {
-  ...App.propTypes,
-  sheet: PropTypes.object,
-};
-
-Body.defaultProps = {
-  ...App.defaultProps,
-  sheet: {},
-};
-
-export default hot(Body);
+export default App;

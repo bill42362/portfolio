@@ -1,34 +1,12 @@
 {
-  "parser": "babel-eslint",
-  "env": {
-    "browser": true,
-    "commonjs": true,
-    "es6": true,
-    "jest": true,
-    "node": true
-  },
-  "globals": {
-    "process": false
-  },
   "extends": [
     "eslint:recommended",
-    "plugin:react/recommended",
-    "plugin:react-hooks/recommended",
-    "plugin:prettier/recommended"
+    "next/core-web-vitals",
+    "eslint-config-prettier"
   ],
-  "settings": {
-    "react": {
-      "version": "16.4"
-    }
-  },
-  "parserOptions": {
-    "ecmaFeatures": {
-      "experimentalObjectRestSpread": true,
-      "jsx": true
-    },
-    "sourceType": "module"
-  },
-  "plugins": ["react", "react-hooks", "prettier"],
+  "plugins": [
+    "eslint-plugin-prettier"
+  ],
   "rules": {
     "no-debugger": ["warn"],
     "no-console": ["warn"],

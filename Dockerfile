@@ -1,5 +1,5 @@
 # syntax = docker/dockerfile:experimental
-FROM    node:12-alpine AS install-production
+FROM    node:16-alpine AS install-production
 
 WORKDIR /workspace
 ENV     NODE_ENV production
@@ -10,32 +10,25 @@ RUN     yarn install --production
 
 ###
 
-FROM    node:12-alpine AS install-develop
+FROM    install-production AS install-develop
 
 WORKDIR /workspace
+ENV     NODE_ENV develop
 
-RUN     apk add --no-cache build-base pkgconfig libtool automake autoconf nasm zlib-dev
-COPY    --from=install-production /workspace/node_modules node_modules
-COPY    package.json .
-COPY    yarn.lock .
 RUN     yarn install
 
 ###
 
-FROM    node:12-alpine AS build-client
+FROM    install-develop AS build-server
 
 WORKDIR /workspace
 ENV     NODE_ENV production
 
-COPY    --from=install-develop /workspace/node_modules node_modules
-COPY    babel.config.js .
 COPY    .eslintrc.strict.json .
 COPY    .eslintrc.json .
 COPY    .prettierrc .
-COPY    webpack webpack
-COPY    default.config.json config.json
-COPY    package.json .
-COPY    src/client src/client
+COPY    next.config.js .
+COPY    src src
 
 ARG     SHORT_SHA
 ENV     SHORT_SHA $SHORT_SHA
@@ -43,14 +36,17 @@ ARG     BRANCH_NAME
 ENV     BRANCH_NAME $BRANCH_NAME
 ARG     TAG_NAME
 ENV     TAG_NAME $TAG_NAME
-ARG     HTML_BASE
-ENV     HTML_BASE $HTML_BASE
 
-RUN     yarn buildclient
+RUN     yarn build
 
-COPY    src/server src/server
-RUN     yarn buildhtml
-RUN     yarn buildssrjs
+###
+
+FROM    build-server AS build-client
+
+WORKDIR /workspace
+ENV     NODE_ENV production
+
+RUN     yarn export
 
 ###
 
@@ -59,34 +55,7 @@ COPY    --from=build-client /workspace/dist/client /
 
 ###
 
-FROM    node:12-alpine AS build-server
-
-WORKDIR /workspace
-ENV     NODE_ENV production
-
-COPY    --from=install-develop /workspace/node_modules node_modules
-COPY    --from=build-client /workspace/dist dist
-COPY    babel.config.js .
-COPY    .eslintrc.strict.json .
-COPY    .eslintrc.json .
-COPY    .prettierrc .
-COPY    webpack webpack
-COPY    package.json .
-COPY    default.config.json config.json
-COPY    src/server src/server
-
-ARG     SHORT_SHA
-ENV     SHORT_SHA $SHORT_SHA
-ARG     BRANCH_NAME
-ENV     BRANCH_NAME $BRANCH_NAME
-ARG     TAG_NAME
-ENV     TAG_NAME $TAG_NAME
-
-RUN     yarn buildserver
-
-###
-
-FROM    node:12-alpine
+FROM    install-production
 
 WORKDIR /workspace
 ENV     NODE_ENV production
@@ -94,8 +63,8 @@ ENV     NODE_ENV production
 EXPOSE  3000
 
 RUN     apk add --no-cache tini # to skip --init for docker run
-COPY    --from=install-production /workspace/node_modules node_modules
-COPY    --from=build-server /workspace/dist dist
+COPY    next.config.js .
+COPY    --from=build-server /workspace/dist/server dist/server
 
 ARG     SHORT_SHA
 ENV     SHORT_SHA $SHORT_SHA
@@ -104,4 +73,4 @@ ENV     BRANCH_NAME $BRANCH_NAME
 ARG     TAG_NAME
 ENV     TAG_NAME $TAG_NAME
 
-ENTRYPOINT ["/sbin/tini", "--", "node", "dist/server"]
+ENTRYPOINT ["/sbin/tini", "--", "yarn", "start"]
