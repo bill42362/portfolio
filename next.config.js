@@ -8,6 +8,14 @@ const eslintConfigFilepath = path.resolve(
   isProd ? './.eslintrc.strict.json' : './.eslintrc.json'
 );
 
+const devConfig = {
+  /* config for next-optimized-images */
+  images: {
+    loader: 'custom',
+    disableStaticImages: true,
+  },
+};
+
 const prodConfig = {
   basePath: process.env.HTML_BASE,
   distDir: 'dist/server',
@@ -44,7 +52,7 @@ const config = {
   // https://simonallen.coderbridge.io/2021/07/15/nextjs-export-static/
   assetPrefix: '.',
 
-  ...(isProd ? prodConfig : {}),
+  ...(isProd ? prodConfig : devConfig),
 };
 
 let configWithPlugins = config;
@@ -60,7 +68,8 @@ if (!isProd) {
         {
           // optimisation disabled by default, to enable check https://github.com/cyrilwanner/next-optimized-images
           optimizeImages: true,
-          inlineImageLimit: 8, // just for test image loader
+          // inlineImageLimit: 8, // just for test image loader
+          handleImages: ['jpeg', 'png', 'svg', 'webp', 'gif', 'ico'],
         },
       ],
     ],
