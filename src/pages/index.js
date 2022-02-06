@@ -5,10 +5,7 @@ import PropTypes from 'prop-types';
 import Main from '../component/Main.jsx';
 import Footer from '../component/Footer.jsx';
 
-const isServer = typeof window === 'undefined';
-const branchName = isServer
-  ? process.env.BRANCH_NAME
-  : window.__SSR_ENVIRONMENT__?.branchName;
+import env from '../resource/env.js';
 
 export default function Home({ props }) {
   // eslint-disable-next-line no-console
@@ -17,7 +14,7 @@ export default function Home({ props }) {
   return (
     <StyledHome>
       <Main />
-      <Footer branchName={branchName} />
+      <Footer branchName={env.branchName} />
     </StyledHome>
   );
 }

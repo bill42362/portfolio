@@ -4,6 +4,8 @@ import { createGlobalStyle, ThemeProvider } from 'styled-components';
 import styledNormalize from 'styled-normalize';
 import serialize from 'serialize-javascript';
 
+import env from '../resource/env.js';
+
 import FaviconSource from '../public/img/x-men-school.svg';
 import FaviconIcoSource from '../public/img/x-men-school.ico';
 
@@ -66,11 +68,8 @@ const theme = {
   },
 };
 
-const isServer = typeof window === 'undefined';
-const branchName = process.env.BRANCH_NAME || 'local';
-const title = `${branchName} | Portfolio`;
+const title = `${env.branchName} | Portfolio`;
 const description = "Bill's portfolio";
-const ssrEnviroment = isServer ? { branchName } : window.__SSR_ENVIRONMENT__;
 
 function App({ Component, pageProps }) {
   return (
@@ -93,7 +92,7 @@ function App({ Component, pageProps }) {
 
         <meta
           property="og:url"
-          content="https://github.com/bill42362/portfolio"
+          content={`https://github.com/bill42362/portfolio/${env.branchName}`}
         />
         <meta property="og:type" content="website" />
         <meta property="og:title" content={title} />
@@ -107,7 +106,7 @@ function App({ Component, pageProps }) {
           type="text/javascript"
           dangerouslySetInnerHTML={{
             __html: `
-              window.__SSR_ENVIRONMENT__ = ${serialize(ssrEnviroment)};
+              window.__SSR_ENVIRONMENT__ = ${serialize(env)};
             `,
           }}
         />
