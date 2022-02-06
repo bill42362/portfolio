@@ -100,7 +100,9 @@ function App({ Component, pageProps }) {
         <meta property="og:site_name" content={title} />
         <meta property="twitter:card" content="summary" />
         <meta property="twitter:site" content="@bill_portfolio" />
-        {/* <meta property="twitter:image" content={twitterImageSource} /> */}
+        <meta property="twitter:image" content={FaviconIcoSource.src || FaviconIcoSource} />
+        <meta property="git:short_sha" content={env.shortSha} />
+        <meta property="git:tag_name" content={env.tagName} />
 
         <script
           type="text/javascript"

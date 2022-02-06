@@ -3,6 +3,8 @@
 const isServer = typeof window === 'undefined';
 let env = {
   branchName: process.env.BRANCH_NAME || 'local',
+  shortSha: process.env.SHORT_SHA || 'null',
+  tagName: process.env.TAG_NAME || 'null',
 };
 
 if (!isServer) {
