@@ -8,7 +8,7 @@ import { DDSLoader } from 'three/examples/jsm/loaders/DDSLoader.js';
 import { MMDAnimationHelper } from 'three/examples/jsm/animation/MMDAnimationHelper.js';
 import {
   Scene,
-  WebGLRenderer,
+  WebGL1Renderer,
   PerspectiveCamera,
   AxesHelper,
   DirectionalLight,
@@ -196,7 +196,7 @@ export class Main extends React.PureComponent {
   };
 
   initRenderer = () => {
-    const renderer = new WebGLRenderer({
+    const renderer = new WebGL1Renderer({
       canvas: this.canvas.current,
       antialias: true,
     });
