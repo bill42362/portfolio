@@ -2,6 +2,10 @@
 import React from 'react';
 import styled from 'styled-components';
 import throttle from 'lodash/throttle';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { MMDLoader } from 'three/examples/jsm/loaders/MMDLoader.js';
+import { DDSLoader } from 'three/examples/jsm/loaders/DDSLoader.js';
+import { MMDAnimationHelper } from 'three/examples/jsm/animation/MMDAnimationHelper.js';
 import {
   Scene,
   WebGLRenderer,
@@ -9,8 +13,12 @@ import {
   AxesHelper,
   DirectionalLight,
   DirectionalLightHelper,
+  LoadingManager,
 } from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+
+const loadingManager = new LoadingManager();
+loadingManager.addHandler(/\.dds$/i, new DDSLoader());
+const mmdLoader = new MMDLoader(loadingManager);
 
 let dat = null;
 
@@ -138,6 +146,13 @@ export class Main extends React.PureComponent {
     }
   }, 100);
 
+  loadModels = () => {
+    // eslint-disable-next-line no-console
+    console.log('mmdLoader:', mmdLoader);
+    // eslint-disable-next-line no-console
+    console.log('MMDAnimationHelper:', MMDAnimationHelper);
+  };
+
   async componentDidMount() {
     dat = await import('dat.gui');
     this.gui = new dat.GUI({ hideable: true, closed: false, closeOnTop: true });
@@ -151,6 +166,7 @@ export class Main extends React.PureComponent {
         }
       });
     window.addEventListener('resize', this.handleWindowResize);
+    this.loadModels();
   }
 
   componentWillUnmount() {
