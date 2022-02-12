@@ -15,8 +15,22 @@ import {
   DirectionalLightHelper,
   LoadingManager,
 } from 'three';
-import Horkeukamui160 from '../../model/Horkeukamui-160.pmx';
-import '../../model/tex/Penis.dds';
+import Horkeukamui160 from '../../model/Horkeukamui/Horkeukamui-160.pmx';
+
+import '../../model/Horkeukamui/tex/body_N.png';
+import '../../model/Horkeukamui/tex/body.dds';
+import '../../model/Horkeukamui/tex/body2_N.png';
+import '../../model/Horkeukamui/tex/body2.dds';
+import '../../model/Horkeukamui/tex/cloth_N.png';
+import '../../model/Horkeukamui/tex/cloth.dds';
+import '../../model/Horkeukamui/tex/cloth2.dds';
+import '../../model/Horkeukamui/tex/cloth3.dds';
+import '../../model/Horkeukamui/tex/cloth4.dds';
+import '../../model/Horkeukamui/tex/cloth23_N.png';
+import '../../model/Horkeukamui/tex/head.dds';
+import '../../model/Horkeukamui/tex/nose.dds';
+import '../../model/Horkeukamui/tex/Penis.dds';
+import '../../model/Horkeukamui/tex/toon.dds';
 
 const loadingManager = new LoadingManager();
 loadingManager.addHandler(/\.dds$/i, new DDSLoader());
@@ -155,6 +169,7 @@ export class Main extends React.PureComponent {
       mmd.scale.set(0.3, 0.3, 0.3);
       mmd.position.set(0, -4, 0);
       mmd.rotation.y = Math.PI * 0.6;
+      window.Horkeukamui = mmd;
       this.scene.add(mmd);
       mmd.material.forEach(material => {
         if ('屁股兜' === material.name) {
@@ -174,6 +189,7 @@ export class Main extends React.PureComponent {
           //material.opacity = 1;
         }
       });
+      this.renderNextFrame();
     });
   };
 
