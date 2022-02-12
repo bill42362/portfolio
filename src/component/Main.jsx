@@ -35,7 +35,7 @@ import {
   Cloth23Normal,
   englishMap,
 } from '../resource/horkeukamuiVariables.js';
-import WaveMotion from '../../motion/wavefile_v2.vmd';
+import WaveMotion from '../public/motion/wavefile_v2.vmd';
 
 const loadingManager = new LoadingManager();
 loadingManager.addHandler(/\.dds$/i, new DDSLoader());
