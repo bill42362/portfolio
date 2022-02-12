@@ -2,7 +2,6 @@
 import React from 'react';
 import styled from 'styled-components';
 import throttle from 'lodash/throttle';
-import * as dat from 'dat.gui';
 import {
   Scene,
   WebGLRenderer,
@@ -12,6 +11,8 @@ import {
   DirectionalLightHelper,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+
+let dat = null;
 
 export class Main extends React.PureComponent {
   canvas = React.createRef();
@@ -137,7 +138,8 @@ export class Main extends React.PureComponent {
     }
   }, 100);
 
-  componentDidMount() {
+  async componentDidMount() {
+    dat = await import('dat.gui');
     this.gui = new dat.GUI({ hideable: true, closed: false, closeOnTop: true });
     this.initScene();
     this.initRenderer();
