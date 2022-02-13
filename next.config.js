@@ -33,6 +33,22 @@ const config = {
   },
 
   webpack: (config, { dev }) => {
+    const publicAssetConfig = {
+      test: /public.*\.(pmx|vmd|dds|png)$/i,
+      type: 'asset/resource',
+      generator: {
+        // https://webpack.js.org/configuration/module/#rulegenerator
+        // https://webpack.js.org/configuration/output/#outputfilename
+        filename: pathData => {
+          const path = pathData.filename.replace(/^public(.*\/)[^\/]*$/g, '$1');
+          // return `${path}[name].[contenthash:8][ext]`;
+          return `${path}[name][ext]`;
+        },
+        publicPath: '.',
+        emit: false,
+      },
+    };
+    config.module.rules = [publicAssetConfig, ...config.module.rules];
     if (dev) {
       const ESLintPlugin = require('eslint-webpack-plugin');
       config.plugins.push(new ESLintPlugin({

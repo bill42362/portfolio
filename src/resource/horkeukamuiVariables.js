@@ -1,21 +1,21 @@
 // horkeukamuiVariables.js
 
-import Horkeukamui160 from '../public/model/Horkeukamui/Horkeukamui-160.pmx';
-import Horkeukamui185 from '../public/model/Horkeukamui/Horkeukamui-185.pmx';
-import BodyNormal from '../public/model/Horkeukamui/tex/body_N.png';
-import '../public/model/Horkeukamui/tex/body.dds';
-import Body2Normal from '../public/model/Horkeukamui/tex/body2_N.png';
-import '../public/model/Horkeukamui/tex/body2.dds';
-import ClothNormal from '../public/model/Horkeukamui/tex/cloth_N.png';
-import '../public/model/Horkeukamui/tex/cloth.dds';
-import '../public/model/Horkeukamui/tex/cloth2.dds';
-import '../public/model/Horkeukamui/tex/cloth3.dds';
-import '../public/model/Horkeukamui/tex/cloth4.dds';
-import Cloth23Normal from '../public/model/Horkeukamui/tex/cloth23_N.png';
-import '../public/model/Horkeukamui/tex/head.dds';
-import '../public/model/Horkeukamui/tex/nose.dds';
-import '../public/model/Horkeukamui/tex/Penis.dds';
-import '../public/model/Horkeukamui/tex/toon.dds';
+import Horkeukamui160 from '../../public/model/Horkeukamui/Horkeukamui-160.pmx';
+import Horkeukamui185 from '../../public/model/Horkeukamui/Horkeukamui-185.pmx';
+import BodyNormal from '../../public/model/Horkeukamui/tex/body_N.png';
+import '../../public/model/Horkeukamui/tex/body.dds';
+import Body2Normal from '../../public/model/Horkeukamui/tex/body2_N.png';
+import '../../public/model/Horkeukamui/tex/body2.dds';
+import ClothNormal from '../../public/model/Horkeukamui/tex/cloth_N.png';
+import '../../public/model/Horkeukamui/tex/cloth.dds';
+import '../../public/model/Horkeukamui/tex/cloth2.dds';
+import '../../public/model/Horkeukamui/tex/cloth3.dds';
+import '../../public/model/Horkeukamui/tex/cloth4.dds';
+import Cloth23Normal from '../../public/model/Horkeukamui/tex/cloth23_N.png';
+import '../../public/model/Horkeukamui/tex/head.dds';
+import '../../public/model/Horkeukamui/tex/nose.dds';
+import '../../public/model/Horkeukamui/tex/Penis.dds';
+import '../../public/model/Horkeukamui/tex/toon.dds';
 
 export {
   Horkeukamui160,

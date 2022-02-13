@@ -28,6 +28,7 @@ COPY    .eslintrc.strict.json .
 COPY    .eslintrc.json .
 COPY    .prettierrc .
 COPY    next.config.js .
+COPY    public public
 COPY    src src
 
 ARG     SHORT_SHA
@@ -65,6 +66,7 @@ EXPOSE  3000
 RUN     apk add --no-cache tini # to skip --init for docker run
 COPY    next.config.js .
 COPY    --from=build-server /workspace/dist/server dist/server
+COPY    --from=build-server /workspace/public public
 
 ARG     SHORT_SHA
 ENV     SHORT_SHA $SHORT_SHA
