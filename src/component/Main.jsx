@@ -25,7 +25,7 @@ import {
 } from 'three';
 
 import isWebAssemblySupported from '../resource/isWebAssemblySupported.js';
-// import loadScriptTag from '../resource/loadScriptTag.js';
+import loadScriptTag from '../resource/loadScriptTag.js';
 
 import {
   Horkeukamui160 as Horkeukamui,
@@ -36,7 +36,8 @@ import {
   englishMap,
 } from '../resource/horkeukamuiVariables.js';
 import WaveMotion from '../../public/motion/wavefile_v2.vmd';
-console.log('Horkeukamui:', Horkeukamui);
+
+const isProd = process.env.NODE_ENV === 'production';
 
 const loadingManager = new LoadingManager();
 loadingManager.addHandler(/\.dds$/i, new DDSLoader());
@@ -396,8 +397,7 @@ export class Main extends React.PureComponent {
           material.opacity = +needDisplay;
         });
 
-        // this.mmdAnimationHelper.add(mesh, { animation, physics: true });
-        this.mmdAnimationHelper.add(mesh, { animation, physics: false });
+        this.mmdAnimationHelper.add(mesh, { animation, physics: !!window.Ammo });
         this.mmdAnimationHelper.enable('animation', false);
 
         // need to be after animation since animation might change morph influences.
@@ -409,14 +409,11 @@ export class Main extends React.PureComponent {
   };
 
   async componentDidMount() {
-    /*
-    const loadAmmoPromise = loadScriptTag({
-      id: 'ammo-js',
-      src: isWebAssemblySupported
-        ? 'library/ammo/ammo.99d0ec0.wasm.js'
-        : 'library/ammo/ammo.99d0ec0.js',
-    });
-    */
+    const ammoBase = isProd ? './' : '/';
+    const ammoExt = isWebAssemblySupported ? 'wasm.js' : 'js';
+    const ammoUrl = `${ammoBase}library/ammo/ammo.99d0ec0.${ammoExt}`;
+    const loadAmmoPromise = loadScriptTag({ id: 'ammo-js', src: ammoUrl });
+
     dat = await import('dat.gui');
     this.gui = new dat.GUI({ hideable: true, closed: false, closeOnTop: true });
     this.clock = new Clock();
@@ -436,13 +433,18 @@ export class Main extends React.PureComponent {
         }
       });
     window.addEventListener('resize', this.handleWindowResize);
-    /*
-    await loadAmmoPromise;
-    // Need to init ammo.js async.
-    // https://github.com/mrdoob/three.js/pull/16100
-    const AmmoLib = await window.Ammo();
-    window.Ammo = AmmoLib;
-    */
+
+    try {
+      await loadAmmoPromise;
+      // Need to init ammo.js async.
+      // https://github.com/mrdoob/three.js/pull/16100
+      const AmmoLib = await window.Ammo();
+      window.Ammo = AmmoLib;
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.log('load ammo.js failed. error:', error);
+    }
+
     this.loadModels();
   }
 

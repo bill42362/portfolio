@@ -24,7 +24,9 @@ const loadScriptTag = ({
 
     const isScriptMounted = !!scriptElement;
 
-    if (!scriptElement) {
+    // can't use `!scriptElement` here, it somehow made isScriptMounted
+    // unpredicatable in later statement on production.
+    if (!isScriptMounted) {
       scriptElement = document.createElement('script');
       Object.keys(rest).forEach(key => (scriptElement[key] = rest[key]));
       scriptElement.id = id;
