@@ -24,7 +24,7 @@ const prodConfig = {
 };
 
 const config = {
-  experimental: {
+  compiler: {
     // ssr and displayName are configured by default
     styledComponents: {
       ssr: true,
