@@ -2,7 +2,6 @@
 import Head from 'next/head';
 import { createGlobalStyle, ThemeProvider } from 'styled-components';
 import styledNormalize from 'styled-normalize';
-import serialize from 'serialize-javascript';
 
 import env from '../resource/env.js';
 
@@ -106,15 +105,6 @@ function App({ Component, pageProps }) {
         />
         <meta property="git:short_sha" content={env.shortSha} />
         <meta property="git:tag_name" content={env.tagName} />
-
-        <script
-          type="text/javascript"
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.__SSR_ENVIRONMENT__ = ${serialize(env)};
-            `,
-          }}
-        />
       </Head>
       <GlobalStyle />
       <ThemeProvider theme={theme}>
