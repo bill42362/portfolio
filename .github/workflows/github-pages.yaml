@@ -158,7 +158,7 @@ jobs:
             type=registry,ref=${{ env.DOCKER_TAG_BRANCH }}.build-client
           outputs: type=local,dest=output-folder
       - name: Deploy to github page
-        uses: JamesIves/github-pages-deploy-action@4.1.7
+        uses: JamesIves/github-pages-deploy-action@v4.4.0
         with:
           token: ${{ secrets.GH_TOKEN }} # https://github.com/settings/tokens
           branch: gh-pages
