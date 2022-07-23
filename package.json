@@ -21,17 +21,17 @@
   },
   "homepage": "https://github.com/bill42362/portfolio",
   "dependencies": {
+    "dat.gui": "^0.7.7",
+    "lodash": "^4.17.21",
     "next": "12.2.3",
     "prop-types": "^15.8.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "dat.gui": "^0.7.7",
-    "lodash": "^4.17.21",
     "react-is": "^18.2.0",
     "serialize-javascript": "^6.0.0",
     "styled-components": "^5.3.3",
     "styled-normalize": "^8.0.7",
-    "three": "0.137.5"
+    "three": "0.142.0"
   },
   "devDependencies": {
     "eslint": "8.20.0",
