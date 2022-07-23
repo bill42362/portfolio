@@ -124,6 +124,8 @@ jobs:
     name: Deploy Client
     needs: build-client
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Inject slug/short variables
         uses: rlespinasse/github-slug-action@v3.x
@@ -160,7 +162,6 @@ jobs:
       - name: Deploy to github page
         uses: JamesIves/github-pages-deploy-action@v4.4.0
         with:
-          token: ${{ secrets.GH_TOKEN }} # https://github.com/settings/tokens
           branch: gh-pages
           folder: output-folder
           target-folder: ${{ env.GITHUB_REF_SLUG }}
