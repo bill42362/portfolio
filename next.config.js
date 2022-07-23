@@ -58,7 +58,9 @@ const config = {
     }
     return config;
   },
-  reactStrictMode: true,
+  // will make Home mount twice.
+  // https://github.com/vercel/next.js/issues/35822
+  // reactStrictMode: true,
 
   /* config for next-optimized-images */
   images: {
